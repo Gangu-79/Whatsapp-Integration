@@ -1,0 +1,16 @@
+{
+  "name": "whatsapp-campaign-gateway",
+  "version": "1.0.0",
+  "description": "Local WhatsApp Business Gateway for automated campaign broadcasting",
+  "main": "gateway.js",
+  "scripts": {
+    "start": "node gateway.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.16",
+    "express": "^4.18.2",
+    "multer": "^2.4.0",
+    "pino": "^8.15.0",
+    "qrcode": "^1.5.4"
+  }
+}

@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Campaign Engine | Premium Outreach Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070611;
+      --bg-alt: #0d0b1a;
+      --card-bg: rgba(18, 14, 38, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-hover: rgba(147, 112, 255, 0.35);
+      --pur: #8b5cf6;
+      --pur-glow: rgba(139, 92, 246, 0.4);
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.35);
+      --grn: #10b981;
+      --grn-glow: rgba(16, 185, 129, 0.35);
+      --red: #f43f5e;
+      --amb: #f59e0b;
+      --txt-primary: #ffffff;
+      --txt-secondary: #94a3b8;
+      --txt-muted: #64748b;
+      --glass-panel: rgba(255, 255, 255, 0.03);
+      --font-display: 'Outfit', sans-serif;
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      width: 100%;
+    }
+
+    body {
+      width: 100%;
+      min-height: 100vh;
+      font-family: var(--font-sans);
+      background-color: var(--bg);
+      color: var(--txt-primary);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Ambient Background Lighting FX */
+    .bg-lights {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .light-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.28;
+      animation: floatBlob 18s ease-in-out infinite alternate;
+    }
+
+    .blob-1 {
+      top: -10%;
+      left: -10%;
+      width: 55vw;
+      height: 55vw;
+      background: radial-gradient(circle, #7c3aed 0%, rgba(124,58,237,0) 70%);
+    }
+
+    .blob-2 {
+      top: 40%;
+      right: -15%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, #0284c7 0%, rgba(2,132,199,0) 70%);
+      animation-delay: -6s;
+    }
+
+    .blob-3 {
+      bottom: -10%;
+      left: 20%;
+      width: 45vw;
+      height: 45vw;
+      background: radial-gradient(circle, #d946ef 0%, rgba(217,70,239,0) 70%);
+      animation-delay: -12s;
+    }
+
+    @keyframes floatBlob {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(40px, -50px) scale(1.08); }
+      100% { transform: translate(-30px, 30px) scale(0.95); }
+    }
+
+    .bg-noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* ─── FLOATING TOPBAR ─── */
+    .topbar-wrapper {
+      position: fixed;
+      top: 20px;
+      left: 0;
+      right: 0;
+      z-index: 500;
+      display: flex;
+      justify-content: center;
+      padding: 0 24px;
+      pointer-events: none;
+    }
+
+    .topbar {
+      pointer-events: auto;
+      width: 100%;
+      max-width: 1240px;
+      height: 62px;
+      background: rgba(13, 11, 26, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 100px;
+      padding: 0 14px 0 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      transition: all 0.3s ease;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.3px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.5);
+    }
+
+    .logo-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: #ffffff;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px;
+      border-radius: 100px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .nav-link {
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--txt-secondary);
+      text-decoration: none;
+      border-radius: 100px;
+      transition: all 0.25s;
+    }
+
+    .nav-link:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-link.active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .conn-badge {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 7px 16px;
+      border-radius: 100px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--txt-secondary);
+      transition: all 0.3s;
+    }
+
+    .conn-badge.live {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: var(--grn);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--amb);
+      box-shadow: 0 0 10px var(--amb);
+      transition: all 0.3s;
+    }
+
+    .dot.on {
+      background: var(--grn);
+      box-shadow: 0 0 12px var(--grn);
+      animation: pulseDot 2s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { box-shadow: 0 0 6px var(--grn); }
+      50% { box-shadow: 0 0 16px var(--grn); }
+    }
+
+    .btn-quickstart {
+      padding: 9px 20px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 18px rgba(139, 92, 246, 0.35);
+      transition: all 0.25s;
+    }
+
+    .btn-quickstart:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+    }
+
+    /* ─── PAGE LAYOUT ─── */
+    .page-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 120px 24px 80px;
+    }
+
+    /* ─── HERO SECTION ─── */
+    .hero-section {
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px 0 80px;
+      position: relative;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 20px;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #a78bfa;
+      margin-bottom: 32px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .hero-pill-sparkle {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #c084fc;
+      box-shadow: 0 0 12px #c084fc;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 7.5vw, 6.5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2.5px;
+      color: #ffffff;
+      margin-bottom: 28px;
+      text-transform: uppercase;
+    }
+
+    .hero-title .gradient-text {
+      background: linear-gradient(135deg, #ffffff 0%, #c084fc 50%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    .hero-subtitle {
+      max-width: 680px;
+      font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+      color: var(--txt-secondary);
+      line-height: 1.6;
+      margin-bottom: 44px;
+      font-weight: 400;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-hero-primary {
+      padding: 16px 36px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #0284c7 100%);
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.45);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-hero-primary:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 16px 40px rgba(139, 92, 246, 0.6);
+    }
+
+    .btn-hero-secondary {
+      padding: 16px 32px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      backdrop-filter: blur(12px);
+      transition: all 0.25s;
+    }
+
+    .btn-hero-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .hero-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      width: 100%;
+      max-width: 900px;
+      margin-top: 70px;
+      padding: 24px 32px;
+      background: rgba(18, 14, 38, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      backdrop-filter: blur(20px);
+    }
+
+    .hero-stat-item {
+      text-align: center;
+    }
+
+    .hero-stat-val {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    .hero-stat-lbl {
+      font-size: 13px;
+      color: var(--txt-muted);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* ─── SECTION HEADER ─── */
+    .section-header {
+      margin-bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .section-tag {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: #c084fc;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    .section-desc {
+      font-size: 15px;
+      color: var(--txt-secondary);
+      max-width: 540px;
+    }
+
+    /* ─── ENGINE GRID ─── */
+    .engine-section {
+      padding-top: 40px;
+      margin-bottom: 60px;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 28px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 1024px) {
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ─── CARD COMPONENT ─── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 30px 28px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    }
+
+    .card:hover {
+      border-color: var(--card-border-hover);
+      box-shadow: 0 20px 50px rgba(124, 58, 237, 0.15);
+      transform: translateY(-4px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .card-num {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      display: grid;
+      place-items: center;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 800;
+      color: #c084fc;
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+
+    .card-subtitle {
+      font-size: 12.5px;
+      color: var(--txt-secondary);
+      margin-top: 3px;
+    }
+
+    /* Form & Control Inputs */
+    .lbl {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--txt-muted);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .inp {
+      width: 100%;
+      background: rgba(7, 6, 17, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 13px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #ffffff;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.25s;
+    }
+
+    .inp:focus {
+      border-color: #8b5cf6;
+      background: rgba(7, 6, 17, 0.95);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+    }
+
+    .inp::placeholder {
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* CARD 03 TEXTAREA OPTIMIZATION: Fills Card 03 height & clean custom scrollbar */
+    textarea.inp {
+      resize: vertical;
+      min-height: 270px;
+      flex: 1;
+      line-height: 1.65;
+    }
+
+    textarea.inp::-webkit-scrollbar {
+      width: 6px;
+    }
+    textarea.inp::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
+    }
+    textarea.inp::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.35);
+      border-radius: 10px;
+    }
+    textarea.inp::-webkit-scrollbar-thumb:hover {
+      background: rgba(139, 92, 246, 0.6);
+    }
+
+    /* Mode Toggles */
+    .mode-toggle {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      margin-bottom: 18px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--txt-secondary);
+      background: transparent;
+      transition: all 0.25s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
+
+    .mode-btn svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor;
+    }
+
+    .mode-btn.on {
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 13.5px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.25s;
+      white-space: nowrap;
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+      color: #ffffff;
+      padding: 12px 20px;
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(139, 92, 246, 0.5);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-row .inp {
+      flex: 1;
+    }
+
+    /* Pairing Code Box */
+    .pair-box {
+      display: none;
+      margin-top: 16px;
+      background: rgba(7, 6, 17, 0.9);
+      border: 1.5px dashed rgba(139, 92, 246, 0.4);
+      border-radius: 18px;
+      padding: 18px 16px;
+      text-align: center;
+    }
+
+    .pair-lbl {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--txt-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .pair-code {
+      font-family: var(--font-mono);
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 5px;
+      color: var(--cyan);
+      text-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+      cursor: pointer;
+      user-select: all;
+      margin: 4px 0;
+    }
+
+    .pair-hint {
+      font-size: 11.5px;
+      color: var(--txt-secondary);
+      cursor: pointer;
+    }
+
+    .pair-steps {
+      text-align: left;
+      font-size: 11.5px;
+      color: var(--txt-secondary);
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      line-height: 1.7;
+    }
+
+    .pair-steps ol {
+      margin-left: 18px;
+    }
+
+    .pair-steps b {
+      color: #fff;
+    }
+
+    /* QR Code Display */
+    .qr-box {
+      display: none;
+      margin-top: 16px;
+      text-align: center;
+      background: rgba(7, 6, 17, 0.9);
+      border: 1.5px dashed rgba(6, 182, 212, 0.3);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .qr-box img {
+      width: 160px;
+      height: 160px;
+      border-radius: 12px;
+      border: 2px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .qr-hint {
+      font-size: 12px;
+      color: var(--txt-secondary);
+      margin-top: 10px;
+    }
+
+    .qr-timer {
+      font-size: 11px;
+      color: var(--amb);
+      margin-top: 6px;
+      font-weight: 700;
+    }
+
+    /* Upload Zones */
+    .upload-zone {
+      border: 2px dashed rgba(139, 92, 246, 0.25);
+      border-radius: 18px;
+      padding: 22px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      background: rgba(139, 92, 246, 0.02);
+      position: relative;
+      overflow: hidden;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-zone:hover, .upload-zone.drag {
+      border-color: #8b5cf6;
+      background: rgba(139, 92, 246, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .upload-zone input[type=file] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+    }
+
+    .upload-default {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-icon {
+      width: 42px;
+      height: 42px;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 10px;
+    }
+
+    .upload-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #a78bfa;
+    }
+
+    .upload-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+
+    .upload-sub {
+      font-size: 11.5px;
+      color: var(--txt-muted);
+    }
+
+    /* IMAGE PREVIEW DIRECTLY INSIDE DROP BOX */
+    .upload-preview-inside {
+      display: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 6;
+    }
+
+    .upload-preview-inside img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .img-remove-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(244, 63, 94, 0.92);
+      border: none;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+      z-index: 10;
+    }
+
+    .img-remove-btn:hover {
+      background: #f43f5e;
+      transform: scale(1.1);
+    }
+
+    .img-remove-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: #ffffff;
+    }
+
+    .file-badge {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--grn);
+      margin-top: 10px;
+    }
+
+    .file-badge.on {
+      display: flex;
+    }
+
+    .file-badge svg {
+      width: 14px;
+      height: 14px;
+      fill: var(--grn);
+    }
+
+    .saved-status {
+      font-size: 12px;
+      color: var(--grn);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .saved-status.on {
+      opacity: 1;
+    }
+
+    .saved-status svg {
+      width: 12px;
+      height: 12px;
+      fill: var(--grn);
+    }
+
+    /* ─── LAUNCH CONTROL CARD ─── */
+    .launch-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 32px 36px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stats-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 14px 18px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--txt-muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btn-launch {
+      width: 100%;
+      padding: 18px 32px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+      border: none;
+      border-radius: 18px;
+      cursor: pointer;
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 10px 32px rgba(139, 92, 246, 0.4);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-launch:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 44px rgba(139, 92, 246, 0.6);
+    }
+
+    .btn-launch:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-launch svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    /* Live Terminal Console */
+    .console-log {
+      display: none;
+      background: #06050b;
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 18px;
+      overflow: hidden;
+      margin-top: 24px;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.8);
+    }
+
+    .console-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: rgba(139, 92, 246, 0.08);
+      border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+    }
+
+    .dot-red { width: 10px; height: 10px; border-radius: 50%; background: #ff5f57; }
+    .dot-yellow { width: 10px; height: 10px; border-radius: 50%; background: #febc2e; }
+    .dot-green { width: 10px; height: 10px; border-radius: 50%; background: #28c840; }
+
+    .console-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--txt-muted);
+      margin-left: 8px;
+      letter-spacing: 1px;
+    }
+
+    .console-body {
+      padding: 16px 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      max-height: 280px;
+      overflow-y: auto;
+      line-height: 1.8;
+      color: #a5b4fc;
+    }
+
+    .console-body::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .console-body::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.3);
+      border-radius: 10px;
+    }
+
+    .log-ok { color: var(--grn); font-weight: 700; }
+    .log-err { color: var(--red); font-weight: 700; }
+    .log-dim { color: var(--txt-muted); }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(18, 14, 38, 0.95);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 100px;
+      padding: 12px 28px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+      z-index: 9999;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      backdrop-filter: blur(16px);
+      white-space: nowrap;
+    }
+
+    .toast.on {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.ok_ {
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--grn);
+    }
+
+    .toast.err_ {
+      border-color: rgba(244, 63, 94, 0.5);
+      color: var(--red);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 80px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--txt-muted);
+      font-size: 13px;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .sp8 { height: 12px; }
+    @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+    .spin { display: inline-block; animation: spin 0.9s linear infinite; }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Light Blobs -->
+  <div class="bg-lights">
+    <div class="light-blob blob-1"></div>
+    <div class="light-blob blob-2"></div>
+    <div class="light-blob blob-3"></div>
+  </div>
+  <div class="bg-noise"></div>
+
+  <!-- FLOATING NAVBAR -->
+  <div class="topbar-wrapper">
+    <header class="topbar">
+      <a href="#" class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.888 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </div>
+        WhatsApp Engine
+      </a>
+
+      <nav class="nav-links">
+        <a href="#hero" class="nav-link active">Home</a>
+        <a href="#engine" class="nav-link">Connect</a>
+        <a href="#engine" class="nav-link">Files</a>
+        <a href="#engine" class="nav-link">Message</a>
+        <a href="#launch-section" class="nav-link">Launch</a>
+      </nav>
+
+      <div class="top-right">
+        <div class="conn-badge" id="cbadge">
+          <div class="dot" id="dot"></div>
+          <span id="clbl">Checking...</span>
+        </div>
+        <a href="#engine" class="btn-quickstart">Start Campaign</a>
+      </div>
+    </header>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <div class="page-container">
+
+    <!-- HERO SECTION -->
+    <section class="hero-section" id="hero">
+      <div class="hero-pill">
+        <div class="hero-pill-sparkle"></div>
+        100% Free · Direct Pairing · No Meta API Fees Required
+      </div>
+
+      <!-- HERO TITLE FIX: Clean Grammatical High-End Display Header -->
+      <h1 class="hero-title">
+        WE CREATE<br>
+        <span class="gradient-text">AWESOME CAMPAIGNS</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Automate high-converting WhatsApp outreach with direct pairing code, dynamic Excel recipient lists, and personalized rich-media messaging.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#engine" class="btn-hero-primary">
+          Launch Workspace
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+        </a>
+        <a href="#launch-section" class="btn-hero-secondary">
+          View Console Status
+        </a>
+      </div>
+
+      <!-- Quick Stats Grid -->
+      <div class="hero-stats-grid">
+        <div class="hero-stat-item">
+          <div class="hero-stat-val">100%</div>
+          <div class="hero-stat-lbl">Free Unlimited Reach</div>
+        </div>
+        <div class="hero-stat-item">
+          <div class="hero-stat-val">Instant</div>
+          <div class="hero-stat-lbl">Pairing Code or QR Scan</div>
+        </div>
+        <div class="hero-stat-item">
+          <div class="hero-stat-val">{{name}}</div>
+          <div class="hero-stat-lbl">Smart Dynamic Tags</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WORKSPACE / ENGINE SECTION -->
+    <section class="engine-section" id="engine">
+      
+      <div class="section-header">
+        <div class="section-tag">// Campaign Studio</div>
+        <h2 class="section-title">Setup & Dispatch Workflow</h2>
+        <p class="section-desc">Follow the steps below to connect your WhatsApp session, import target contacts, and draft your campaign.</p>
+      </div>
+
+      <!-- 3-COL CARDS GRID -->
+      <div class="cards-grid">
+
+        <!-- CARD 01: CONNECT -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-num">01</div>
+            <div>
+              <div class="card-title">Connect WhatsApp</div>
+              <div class="card-subtitle">Phone pairing code or QR scan</div>
+            </div>
+          </div>
+
+          <div class="mode-toggle">
+            <button class="mode-btn on" id="mPh" onclick="setMode('phone')">
+              <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+              Phone Code
+            </button>
+            <button class="mode-btn" id="mQr" onclick="setMode('qr')">
+              <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4z"/></svg>
+              Scan QR
+            </button>
+          </div>
+
+          <div id="sPh">
+            <label class="lbl" for="phin">Mobile Number (with country code)</label>
+            <div class="input-row">
+              <input type="text" id="phin" class="inp" placeholder="e.g. 917093359709">
+              <button class="btn btn-primary" id="btnC" onclick="doPhone()">
+                <svg viewBox="0 0 24 24"><path d="M11 15H6l7-14v8h5l-7 14v-8z"/></svg>
+                Get Code
+              </button>
+            </div>
+            <div class="pair-box" id="pbox">
+              <div class="pair-lbl">Pairing Code</div>
+              <div class="pair-code" id="pcode" onclick="copyCode()">——</div>
+              <div class="pair-hint" id="phint" onclick="copyCode()">👆 Click to copy</div>
+              <div class="pair-steps">
+                <b>📲 How to pair:</b>
+                <ol>
+                  <li>Open <b>WhatsApp Business</b></li>
+                  <li>Go to <b>Linked Devices → Link a Device</b></li>
+                  <li>Choose <b>"Link with phone number instead"</b></li>
+                  <li>Enter the 8-digit code above</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          <div id="sQr" style="display:none;">
+            <button class="btn btn-primary" id="btnQ" onclick="doQR()" style="width:100%;">
+              <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4z"/></svg>
+              Generate QR Code
+            </button>
+            <div class="qr-box" id="qbox">
+              <img id="qrI" src="" alt="QR Code">
+              <div class="qr-hint">Scan with WhatsApp → Linked Devices</div>
+              <div class="qr-timer" id="qtimer"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 02: UPLOAD FILES -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-num">02</div>
+            <div>
+              <div class="card-title">Upload Assets</div>
+              <div class="card-subtitle">Recipients spreadsheet & media image</div>
+            </div>
+          </div>
+
+          <label class="lbl">Recipient List (.xlsx / .xls)</label>
+          <div class="upload-zone" id="exZ">
+            <input type="file" id="exI" accept=".xlsx,.xls" onchange="upEx(event)">
+            <div class="upload-icon">
+              <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+            </div>
+            <div class="upload-title">Drop Excel File Here</div>
+            <div class="upload-sub">Supports .xlsx and .xls formats</div>
+          </div>
+          <div class="file-badge" id="exB">
+            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <span id="exN">recipients.xlsx</span>
+          </div>
+
+          <div class="sp8"></div>
+
+          <label class="lbl">Campaign Attachment Image</label>
+          
+          <!-- IMAGE DROP BOX WITH DIRECT EMBEDDED PREVIEW INSIDE -->
+          <div class="upload-zone" id="imZ">
+            <input type="file" id="imI" accept="image/*" onchange="upIm(event)">
+            
+            <!-- Default Upload View -->
+            <div class="upload-default" id="imDef">
+              <div class="upload-icon">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+              </div>
+              <div class="upload-title">Upload Image File</div>
+              <div class="upload-sub">Click or drag · JPG, PNG, WEBP</div>
+            </div>
+
+            <!-- Image Preview Overlay DIRECTLY INSIDE Drop Box -->
+            <div class="upload-preview-inside" id="ipw">
+              <img id="ipv" alt="Uploaded Image Preview">
+              <button type="button" class="img-remove-btn" title="Remove Image" onclick="rmIm(event)">
+                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="file-badge" id="imB">
+            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <span id="imN">campaign.jpg</span>
+          </div>
+        </div>
+
+        <!-- CARD 03: MESSAGE CONTENT -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-num">03</div>
+            <div>
+              <div class="card-title">Compose Message</div>
+              <div class="card-subtitle">Use <code style="background:rgba(139,92,246,0.2);padding:2px 6px;border-radius:4px;color:#c084fc;font-family:var(--font-mono);font-size:11px;">{{name}}</code> tag for personalization</div>
+            </div>
+          </div>
+
+          <label class="lbl" for="msgI">Message Template</label>
+          <textarea id="msgI" class="inp" placeholder="Hello {{name}},&#10;&#10;Excited to share our latest offer with you!&#10;&#10;Best regards,&#10;The Team" oninput="schedSave()"></textarea>
+          
+          <div class="saved-status" id="savedI">
+            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            Changes auto-saved
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CARD 04: LAUNCH & CONSOLE -->
+      <div class="launch-card" id="launch-section">
+        <div class="card-header" style="margin-bottom: 20px;">
+          <div class="card-num">04</div>
+          <div>
+            <div class="card-title">Launch Campaign Engine</div>
+            <div class="card-subtitle">Executes bulk dispatch with automatic delay anti-blocking</div>
+          </div>
+        </div>
+
+        <div class="stats-summary-grid">
+          <div class="stat-box">
+            <div class="stat-label">Contacts Sheet</div>
+            <div class="stat-val" id="stE">recipients.xlsx</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Media Attachment</div>
+            <div class="stat-val" id="stI">campaign.jpg</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">WhatsApp Status</div>
+            <div class="stat-val log-err" id="stC">Not connected</div>
+          </div>
+        </div>
+
+        <button class="btn-launch" id="btnL" onclick="doLaunch()" disabled>
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          Launch Bulk Campaign Now
+        </button>
+
+        <!-- LIVE LOG FEED -->
+        <div class="console-log" id="clog">
+          <div class="console-bar">
+            <div class="dot-red"></div>
+            <div class="dot-yellow"></div>
+            <div class="dot-green"></div>
+            <span class="console-label">LIVE EXECUTION TERMINAL</span>
+          </div>
+          <div class="console-body" id="cfeed"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-brand">
+        <div class="logo-icon" style="width:28px;height:28px;">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.888 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </div>
+        WhatsApp Campaign Engine
+      </div>
+      <div>Designed with Premium Aesthetic · Fast & Direct</div>
+    </footer>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- SCRIPT INTEGRATION -->
+  <script>
+    let ok = false, code = '', sT = null, qT = null, mode = 'phone';
+
+    const $ = id => document.getElementById(id);
+
+    function toast(m, t = '') {
+      const e = $('toast'); e.textContent = m; e.className = 'toast ' + t;
+      requestAnimationFrame(() => e.classList.add('on'));
+      setTimeout(() => e.classList.remove('on'), 3000);
+    }
+
+    function setMode(m) {
+      mode = m;
+      $('mPh').className = 'mode-btn' + (m === 'phone' ? ' on' : '');
+      $('mQr').className = 'mode-btn' + (m === 'qr' ? ' on' : '');
+      $('sPh').style.display = m === 'phone' ? 'block' : 'none';
+      $('sQr').style.display = m === 'qr' ? 'block' : 'none';
+    }
+
+    async function doPhone() {
+      const p = $('phin').value.trim();
+      if (!p) { toast('Enter mobile number!', 'err_'); return; }
+      const b = $('btnC'); b.disabled = true; b.innerHTML = '<span class="spin">⟳</span> ...';
+      try {
+        const r = await fetch('/api/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: p }) });
+        const d = await r.json();
+        if (d.code) showCode(d.code);
+        else { $('pbox').style.display = 'block'; $('pcode').textContent = '...'; }
+      } catch (e) { toast('Error: ' + e.message, 'err_'); }
+      finally { b.disabled = false; b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M11 15H6l7-14v8h5l-7 14v-8z"/></svg> Get Code'; }
+    }
+
+    function showCode(c) { code = c; $('pbox').style.display = 'block'; $('pcode').textContent = c; }
+
+    function copyCode() {
+      if (!code || code === '——') return;
+      navigator.clipboard.writeText(code).then(() => {
+        $('phint').textContent = '✅ Copied to Clipboard!'; toast('Code Copied!', 'ok_');
+        setTimeout(() => $('phint').textContent = '👆 Click to copy', 2000);
+      });
+    }
+
+    async function doQR() {
+      const b = $('btnQ'); b.disabled = true; b.innerHTML = '<span class="spin">⟳</span> Generating...';
+      try {
+        const r = await fetch('/api/connect-qr', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const d = await r.json();
+        if (d.qr) {
+          $('qbox').style.display = 'block'; $('qrI').src = d.qr;
+          let s = 30; const el = $('qtimer'); el.textContent = 'Expires in ' + s + 's';
+          clearInterval(qT);
+          qT = setInterval(() => { s--; if (s <= 0) { clearInterval(qT); el.textContent = '⚠️ Expired — Regenerate'; } else el.textContent = 'Expires in ' + s + 's — scan now!'; }, 1000);
+        } else toast('QR failed. Retry.', 'err_');
+      } catch (e) { toast('Error: ' + e.message, 'err_'); }
+      finally { b.disabled = false; b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4z"/></svg> Regenerate QR'; }
+    }
+
+    async function upEx(e) {
+      const f = e.target.files[0]; if (!f) return;
+      const fd = new FormData(); fd.append('file', f);
+      try {
+        const r = await fetch('/api/upload/excel', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.success) {
+          $('exN').textContent = f.name; $('exB').classList.add('on');
+          $('stE').textContent = f.name; $('exZ').style.borderColor = 'var(--grn)';
+          toast('Excel uploaded!', 'ok_');
+        }
+      } catch { toast('Upload failed', 'err_'); }
+    }
+
+    async function upIm(e) {
+      const f = e.target.files[0]; if (!f) return;
+      const fd = new FormData(); fd.append('file', f);
+      try {
+        const r = await fetch('/api/upload/image', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.success) {
+          $('imN').textContent = f.name; $('imB').classList.add('on');
+          $('stI').textContent = f.name; $('exZ').style.borderColor = 'var(--grn)';
+          $('ipv').src = URL.createObjectURL(f);
+          $('imDef').style.display = 'none';
+          $('ipw').style.display = 'block';
+          toast('Image uploaded!', 'ok_');
+        }
+      } catch { toast('Upload failed', 'err_'); }
+    }
+
+    async function rmIm(e) {
+      if (e) e.stopPropagation();
+      try {
+        await fetch('/api/delete-image', { method: 'DELETE' });
+        $('ipv').src = '';
+        $('ipw').style.display = 'none';
+        $('imDef').style.display = 'flex';
+        $('imB').classList.remove('on');
+        $('imI').value = '';
+        $('stI').textContent = 'Not set';
+        toast('Image removed', 'ok_');
+      } catch { toast('Error removing image', 'err_'); }
+    }
+
+    ['exZ', 'imZ'].forEach(id => {
+      const z = $(id);
+      z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag'); });
+      z.addEventListener('dragleave', () => z.classList.remove('drag'));
+      z.addEventListener('drop', e => {
+        e.preventDefault(); z.classList.remove('drag');
+        const inp = z.querySelector('input'); const dt = new DataTransfer();
+        dt.items.add(e.dataTransfer.files[0]); inp.files = dt.files;
+        inp.dispatchEvent(new Event('change'));
+      });
+    });
+
+    function schedSave() { clearTimeout(sT); sT = setTimeout(savMsg, 900); }
+    async function savMsg() {
+      const m = $('msgI').value;
+      try {
+        await fetch('/api/save-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: m }) });
+        const i = $('savedI'); i.classList.add('on'); setTimeout(() => i.classList.remove('on'), 2500);
+      } catch { }
+    }
+    async function loadMsg() { try { const r = await fetch('/api/get-message'); const d = await r.json(); if (d.message) $('msgI').value = d.message; } catch { } }
+    async function loadImg() {
+      try {
+        const r = await fetch('/api/preview-image'); const d = await r.json();
+        if (d.image) {
+          $('ipv').src = d.image;
+          $('imDef').style.display = 'none';
+          $('ipw').style.display = 'block';
+          $('imB').classList.add('on');
+        }
+      } catch { }
+    }
+
+    function doLaunch() {
+      if (!ok) { toast('Connect WhatsApp first!', 'err_'); return; }
+      savMsg().then(() => {
+        const b = $('btnL'), cl = $('clog'), feed = $('cfeed');
+        cl.style.display = 'block'; feed.innerHTML = '<div class="log-dim">🚀 Initializing campaign engine...</div>';
+        b.disabled = true; b.innerHTML = '⏳ Dispatching Messages...';
+        cl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const src = new EventSource('/api/stream-campaign');
+        src.onmessage = ev => {
+          const msg = JSON.parse(ev.data);
+          const addLine = (txt, cls) => {
+            txt.split('\n').forEach(l => {
+              if (!l.trim()) return;
+              const d = document.createElement('div'); d.className = cls || ''; d.textContent = l; feed.appendChild(d);
+            });
+            feed.parentElement.scrollTop = feed.parentElement.scrollHeight;
+          };
+          if (msg.type === 'log') addLine(msg.text, msg.text.includes('SENT') ? 'log-ok' : msg.text.includes('FAILED') ? 'log-err' : '');
+          else if (msg.type === 'error') addLine(msg.text, 'log-err');
+          else if (msg.type === 'finish') {
+            src.close(); b.disabled = false;
+            if (msg.exitCode === 0) {
+              b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> ✅ Campaign Finished! Send Again?';
+              addLine('🎉 All messages successfully dispatched!', 'log-ok'); toast('Campaign completed!', 'ok_');
+            } else {
+              b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Retry Campaign';
+              toast('Campaign stopped with errors', 'err_');
+            }
+          }
+        };
+        src.onerror = () => { src.close(); b.disabled = false; b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now'; };
+      });
+    }
+
+    async function poll() {
+      try {
+        const r = await fetch('/api/status'); const d = await r.json();
+        const badge = $('cbadge'), dot_ = $('dot'), lbl = $('clbl'), sc = $('stC'), bl = $('btnL');
+        if (d.connected) {
+          ok = true; dot_.className = 'dot on'; lbl.textContent = 'Connected · +' + d.phone; badge.className = 'conn-badge live';
+          sc.textContent = 'Connected ✓'; sc.className = 'stat-val log-ok'; bl.disabled = false;
+          $('pbox').style.display = 'none'; $('qbox').style.display = 'none';
+        } else {
+          ok = false; dot_.className = 'dot'; lbl.textContent = 'Not Connected'; badge.className = 'conn-badge';
+          sc.textContent = 'Not connected'; sc.className = 'stat-val log-err'; bl.disabled = true;
+          if (d.code && d.code !== code) showCode(d.code);
+        }
+      } catch { }
+    }
+
+    loadMsg(); loadImg(); poll(); setInterval(poll, 1500);
+  </script>
+</body>
+</html>
