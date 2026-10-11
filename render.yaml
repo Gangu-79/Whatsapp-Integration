@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: whatsapp-campaign-engine
+    env: node
+    plan: free
+    buildCommand: npm install && pip install -r requirements.txt
+    startCommand: node gateway.js
+    autoDeploy: true
+    envVars:
+      - key: SENDER_PHONE_NUMBER
+        sync: false
+      - key: MESSAGE_DELAY_SECONDS
+        value: "3.0"
+      - key: USE_CLAUDE
+        value: "false"

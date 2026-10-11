@@ -288,7 +288,8 @@ app.get('/api/stream-campaign', (req, res) => {
 
     res.write(`data: ${JSON.stringify({ type: 'log', text: 'Starting campaign dispatch process...' })}\n\n`);
 
-    const py = spawn('python', ['-u', 'send_campaign.py'], {
+    const pythonCmd = process.platform === 'win32' ? 'python' : (process.env.PYTHON_CMD || 'python3');
+    const py = spawn(pythonCmd, ['-u', 'send_campaign.py'], {
         cwd: __dirname,
         env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUNBUFFERED: '1' }
     });
@@ -400,8 +401,8 @@ app.delete('/api/delete-image', (req, res) => {
     }
 });
 
-const PORT = 8085;
+const PORT = process.env.PORT || 8085;
 app.listen(PORT, () => {
-    console.log(`[WhatsApp Gateway] Server running on http://localhost:${PORT}`);
+    console.log(`[WhatsApp Gateway] Server running on port ${PORT}`);
     connectToWhatsApp();
 });

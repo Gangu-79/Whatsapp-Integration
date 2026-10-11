@@ -269,7 +269,8 @@ def main():
     claude_model = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-latest").strip()
     use_claude_env = os.getenv("USE_CLAUDE", "true").strip().lower() == "true"
 
-    evolution_url = os.getenv("EVOLUTION_API_URL", "http://localhost:8085").rstrip("/")
+    port = os.getenv("PORT", "8085")
+    evolution_url = os.getenv("EVOLUTION_API_URL", f"http://localhost:{port}").rstrip("/")
     evolution_key = os.getenv("EVOLUTION_API_KEY", "my_secret_api_key_12345").strip()
     evolution_instance = os.getenv("EVOLUTION_INSTANCE_NAME", "campaign_instance").strip()
     delay_seconds = float(os.getenv("MESSAGE_DELAY_SECONDS", "2.0"))
