@@ -47,7 +47,7 @@ def clean_phone_number(raw_phone, default_country_code: str = "91") -> str:
 
 
 def load_recipients(excel_path: str):
-    """Load and validate recipient records from Excel (robust column matching)."""
+    """Load, validate, and deduplicate recipient records from Excel (robust column matching)."""
     if not os.path.exists(excel_path):
         raise FileNotFoundError(f"Excel file not found at: {excel_path}")
 
@@ -84,20 +84,33 @@ def load_recipients(excel_path: str):
 
     total_records = len(df)
     valid_records = []
+    seen_phones = set()
+    duplicate_count = 0
+    invalid_count = 0
 
     for idx, row in df.iterrows():
         name = str(row.get(name_col, "")).strip() if name_col and pd.notna(row.get(name_col)) else ""
         raw_phone = row.get(phone_col, "") if phone_col else ""
         phone = clean_phone_number(raw_phone)
 
-        if name and phone:
-            valid_records.append({
-                "row_idx": idx + 2,
-                "name": name,
-                "phone": phone,
-            })
+        # Phone validation: digits only, length between 10 and 15 digits
+        if not name or len(phone) < 10 or len(phone) > 15:
+            invalid_count += 1
+            continue
 
-    return total_records, valid_records
+        # Deduplication: ignore repeat contacts with the same phone
+        if phone in seen_phones:
+            duplicate_count += 1
+            continue
+
+        seen_phones.add(phone)
+        valid_records.append({
+            "row_idx": idx + 2,
+            "name": name,
+            "phone": phone,
+        })
+
+    return total_records, valid_records, duplicate_count, invalid_count
 
 
 def fallback_personalize(template: str, recipient: dict) -> str:
@@ -287,7 +300,25 @@ def main():
     parser.add_argument("--image", default="campaign.jpg", help="Path to campaign.jpg")
     parser.add_argument("--dry-run", action="store_true", help="Simulate message generation without sending")
     parser.add_argument("--test-numbers", help="Comma-separated list of test numbers to override .env")
+    parser.add_argument("--preview", action="store_true", help="Output recipient summary and preview as JSON")
     args = parser.parse_args()
+
+    # If preview mode requested, output JSON and exit immediately
+    if args.preview:
+        import json
+        try:
+            total_records, valid_records, duplicate_count, invalid_count = load_recipients(args.excel)
+            print(json.dumps({
+                "success": True,
+                "total": total_records,
+                "valid": len(valid_records),
+                "duplicates": duplicate_count,
+                "invalid": invalid_count,
+                "preview": valid_records[:5]
+            }))
+        except Exception as e:
+            print(json.dumps({"success": False, "error": str(e)}))
+        sys.exit(0)
 
     # Load environment variables
     load_dotenv(override=True)
@@ -319,7 +350,7 @@ def main():
 
     # 2. Load Excel recipients
     try:
-        total_records, valid_records = load_recipients(args.excel)
+        total_records, valid_records, duplicate_count, invalid_count = load_recipients(args.excel)
     except Exception as e:
         print(f"[Error] Failed to read Excel file: {e}", flush=True)
         sys.exit(1)
@@ -333,7 +364,11 @@ def main():
         test_count = 0
 
     print(f"Total Excel records: {total_records}", flush=True)
-    print(f"Valid records:       {len(valid_records)}", flush=True)
+    print(f"Valid recipients:    {len(valid_records)} (Unique contacts)", flush=True)
+    if duplicate_count > 0:
+        print(f"Duplicates removed:  {duplicate_count}", flush=True)
+    if invalid_count > 0:
+        print(f"Invalid skipped:     {invalid_count}", flush=True)
     if test_phone_set:
         print(f"Test recipients:     {test_count}", flush=True)
     else:

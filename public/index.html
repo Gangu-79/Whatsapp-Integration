@@ -1472,7 +1472,7 @@
             </div>
           </div>
 
-          <!-- Active Connected Number Display with Disconnect Button -->
+          <!-- Active Connected Number Display with Disconnect / Logout Button -->
           <div id="connInfo" style="display:none; margin-top:14px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:14px; padding:14px 16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
               <div>
@@ -1480,7 +1480,7 @@
                 <div id="activePhoneDisplay" style="font-size:16px; font-weight:800; color:#fff; font-family:var(--font-mono); margin-top:2px;">+91XXXXXXXXXX</div>
               </div>
               <button type="button" class="btn" onclick="doLogout()" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); color:#f43f5e; font-size:11.5px; padding:7px 14px; border-radius:8px;">
-                Disconnect
+                Disconnect / Logout
               </button>
             </div>
           </div>
@@ -1513,6 +1513,16 @@
             <button type="button" onclick="rmEx(event)" title="Remove Excel file" style="background:transparent; border:none; cursor:pointer; color:#f43f5e; display:flex; align-items:center; padding:2px 4px;">
               <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
+          </div>
+
+          <!-- Recipient List Preview Box -->
+          <div id="recPrevBox" style="display:none; margin-top:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span id="recSummaryText" style="font-size:12px; font-weight:700; color:var(--grn);">0 Recipients Loaded</span>
+              <span id="recDedupText" style="font-size:11px; color:var(--txt-muted);">0 duplicates removed</span>
+            </div>
+            <div id="recListPreview" style="font-size:11.5px; font-family:var(--font-mono); color:var(--txt-dim); max-height:100px; overflow-y:auto; line-height:1.6;">
+            </div>
           </div>
 
           <div class="sp8"></div>
@@ -1685,19 +1695,76 @@
       finally { b.disabled = false; b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4z"/></svg> Regenerate QR'; }
     }
 
+    let activeRecipientsCount = 0;
+    let activeSenderPhone = '';
+
+    async function fetchRecipientsPreview() {
+      try {
+        const r = await fetch('/api/recipients');
+        const d = await r.json();
+        const pBox = $('recPrevBox');
+        const sTxt = $('recSummaryText');
+        const dTxt = $('recDedupText');
+        const lPrev = $('recListPreview');
+        const stE = $('stE');
+
+        if (d.exists && d.success) {
+          activeRecipientsCount = d.valid;
+          if (d.valid > 0) {
+            pBox.style.display = 'block';
+            sTxt.textContent = `✓ ${d.valid} Unique Recipients Ready`;
+            sTxt.style.color = 'var(--grn)';
+            dTxt.textContent = `${d.duplicates || 0} duplicates removed, ${d.invalid || 0} invalid skipped`;
+            
+            let previewHtml = (d.preview || []).map(p => 
+              `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);">` +
+              `<span><b>${p.name}</b></span>` +
+              `<span style="color:var(--grn);">+${p.phone}</span>` +
+              `</div>`
+            ).join('');
+            if (d.valid > (d.preview || []).length) {
+              previewHtml += `<div style="padding-top:4px; font-size:10.5px; color:var(--txt-muted);">...and ${d.valid - d.preview.length} more contacts</div>`;
+            }
+            lPrev.innerHTML = previewHtml;
+
+            stE.textContent = `${d.valid} Recipients (Excel)`;
+            stE.style.color = 'var(--grn)';
+            if (ok) $('btnL').disabled = false;
+          } else {
+            pBox.style.display = 'block';
+            sTxt.textContent = `⚠️ 0 Valid Recipients Found`;
+            sTxt.style.color = '#f43f5e';
+            dTxt.textContent = `Check phone & name columns in spreadsheet`;
+            lPrev.innerHTML = `<div style="color:var(--txt-muted);">No valid 10-15 digit phone numbers found.</div>`;
+            stE.textContent = `0 Valid Recipients`;
+            stE.style.color = '#f43f5e';
+            $('btnL').disabled = true;
+          }
+        } else {
+          activeRecipientsCount = 0;
+          pBox.style.display = 'none';
+          lPrev.innerHTML = '';
+          stE.textContent = 'Not uploaded';
+          stE.style.color = 'var(--txt-muted)';
+        }
+      } catch (err) {
+        console.error('Error fetching recipients preview:', err);
+      }
+    }
+
     async function upEx(e) {
       const f = e.target.files[0]; if (!f) return;
       const fd = new FormData(); fd.append('file', f);
       try {
+        toast('Uploading and analyzing Excel...', '');
         const r = await fetch('/api/upload/excel', { method: 'POST', body: fd });
         const d = await r.json();
         if (d.success) {
           $('exN').textContent = f.name;
           $('exB').style.display = 'flex';
-          $('stE').textContent = f.name;
-          $('stE').style.color = 'var(--grn)';
           $('exZ').style.borderColor = 'var(--grn)';
-          toast('Excel uploaded: ' + f.name, 'ok_');
+          await fetchRecipientsPreview();
+          toast('Excel loaded: ' + f.name, 'ok_');
         }
       } catch { toast('Upload failed', 'err_'); }
     }
@@ -1712,6 +1779,10 @@
         $('exZ').style.borderColor = '';
         $('stE').textContent = 'Not uploaded';
         $('stE').style.color = 'var(--txt-muted)';
+        $('recPrevBox').style.display = 'none';
+        $('recListPreview').innerHTML = '';
+        activeRecipientsCount = 0;
+        $('btnL').disabled = true;
         toast('Excel sheet removed', 'ok_');
       } catch { toast('Error removing Excel', 'err_'); }
     }
@@ -1794,15 +1865,15 @@
         if (d.excelExists) {
           $('exN').textContent = 'recipients.xlsx';
           $('exB').style.display = 'flex';
-          $('stE').textContent = 'recipients.xlsx';
-          $('stE').style.color = 'var(--grn)';
           $('exZ').style.borderColor = 'var(--grn)';
+          await fetchRecipientsPreview();
         } else {
           $('exN').textContent = 'No file selected';
           $('exB').style.display = 'none';
           $('stE').textContent = 'Not uploaded';
           $('stE').style.color = 'var(--txt-muted)';
           $('exZ').style.borderColor = '';
+          $('recPrevBox').style.display = 'none';
         }
 
         if (d.imageExists) {
@@ -1816,11 +1887,21 @@
 
     function doLaunch() {
       if (!ok) { toast('Connect WhatsApp first!', 'err_'); return; }
-      if ($('stE').textContent === 'Not uploaded') {
-        toast('Please upload an Excel contact sheet (.xlsx) first!', 'err_');
+      if (activeRecipientsCount <= 0) {
+        toast('Please upload an Excel contact sheet (.xlsx) with valid recipients first!', 'err_');
         $('exZ').scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
+
+      // Confirmation before dispatching
+      const senderText = activeSenderPhone ? ('+' + activeSenderPhone) : 'Active WhatsApp Device';
+      const confirmPrompt = `Confirm Bulk Campaign Launch:\n\n` +
+        `• Connected Sender: ${senderText}\n` +
+        `• Target Recipients: ${activeRecipientsCount} verified contacts\n` +
+        `• Attachment: ${$('stI').textContent}\n\n` +
+        `Are you sure you want to start sending messages now?`;
+      if (!confirm(confirmPrompt)) return;
+
       savMsg().then(() => {
         const b = $('btnL'), cl = $('clog'), feed = $('cfeed');
         cl.style.display = 'block'; feed.innerHTML = '<div class="log-dim">🚀 Initializing campaign engine...</div>';
@@ -1854,7 +1935,7 @@
     }
 
     async function doLogout() {
-      if (!confirm('Are you sure you want to disconnect this WhatsApp number?')) return;
+      if (!confirm('Are you sure you want to disconnect and log out of WhatsApp? This will unlink the device session.')) return;
       try {
         toast('Disconnecting WhatsApp...', '');
         const r = await fetch('/api/logout', { method: 'POST' });
@@ -1862,6 +1943,7 @@
         if (d.success) {
           toast('Disconnected. Enter a new number to link.', 'ok_');
           ok = false;
+          activeSenderPhone = '';
           $('connInfo').style.display = 'none';
           $('sPh').style.display = mode === 'phone' ? 'block' : 'none';
           $('sQr').style.display = mode === 'qr' ? 'block' : 'none';
@@ -1877,16 +1959,39 @@
         const r = await fetch('/api/status'); const d = await r.json();
         const badge = $('cbadge'), dot_ = $('dot'), lbl = $('clbl'), sc = $('stC'), bl = $('btnL');
         if (d.connected) {
-          ok = true; dot_.className = 'dot on'; lbl.textContent = 'Connected · +' + d.phone; badge.className = 'conn-badge live';
-          sc.textContent = 'Connected ✓'; sc.className = 'stat-val log-ok'; bl.disabled = false;
-          $('pbox').style.display = 'none'; $('qbox').style.display = 'none';
+          ok = true; 
+          activeSenderPhone = d.phone;
+          dot_.className = 'dot on'; 
+          lbl.textContent = 'Connected · +' + d.phone; 
+          badge.className = 'conn-badge live';
+          sc.textContent = 'Connected ✓ (+' + d.phone + ')'; 
+          sc.className = 'stat-val log-ok'; 
+          if (activeRecipientsCount > 0) bl.disabled = false;
+          $('pbox').style.display = 'none'; 
+          $('qbox').style.display = 'none';
           $('connInfo').style.display = 'block';
           $('activePhoneDisplay').textContent = '+' + d.phone;
           $('sPh').style.display = 'none';
           $('sQr').style.display = 'none';
+        } else if (d.state === 'connecting') {
+          ok = false;
+          dot_.className = 'dot';
+          lbl.textContent = 'Restoring Session...';
+          badge.className = 'conn-badge';
+          sc.textContent = 'Reconnecting session...';
+          sc.className = 'stat-val';
+          bl.disabled = true;
+          $('pbox').style.display = 'none';
+          $('qbox').style.display = 'none';
         } else {
-          ok = false; dot_.className = 'dot'; lbl.textContent = 'Not Connected'; badge.className = 'conn-badge';
-          sc.textContent = 'Not connected'; sc.className = 'stat-val log-err'; bl.disabled = true;
+          ok = false; 
+          activeSenderPhone = '';
+          dot_.className = 'dot'; 
+          lbl.textContent = 'Not Connected'; 
+          badge.className = 'conn-badge';
+          sc.textContent = 'Not connected'; 
+          sc.className = 'stat-val log-err'; 
+          bl.disabled = true;
           $('connInfo').style.display = 'none';
           $('sPh').style.display = mode === 'phone' ? 'block' : 'none';
           $('sQr').style.display = mode === 'qr' ? 'block' : 'none';

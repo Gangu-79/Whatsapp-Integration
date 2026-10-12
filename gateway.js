@@ -1,5 +1,5 @@
 const express = require('express');
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
 const path = require('path');
@@ -102,7 +102,9 @@ async function connectToWhatsApp() {
         auth: state,
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false,
-        defaultQueryTimeoutMs: 60000
+        defaultQueryTimeoutMs: 60000,
+        browser: Browsers.ubuntu('Chrome'),
+        syncFullHistory: false
     });
 
     sock.ev.on('creds.update', async () => {
@@ -116,6 +118,10 @@ async function connectToWhatsApp() {
 
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
+
+        if (connection === 'connecting') {
+            connectionState = 'connecting';
+        }
 
         // Capture QR code if in QR mode
         if (qr && connectionMode === 'qr') {
@@ -155,8 +161,8 @@ async function connectToWhatsApp() {
                 pairingCodeRequested = false;
             }
 
-            // Reconnect if not replaced (Fast 500ms delay for 515 restartRequired)
-            if (statusCode !== DisconnectReason.connectionReplaced) {
+            // Reconnect if not intentionally logged out or replaced
+            if (statusCode !== DisconnectReason.connectionReplaced && !isLoggedOut) {
                 const delay = statusCode === DisconnectReason.restartRequired ? 500 : 2500;
                 reconnectTimer = setTimeout(() => connectToWhatsApp(), delay);
             }
@@ -214,14 +220,16 @@ app.get('/', (req, res) => {
 // API: Get current status & pairing code
 app.get('/api/status', (req, res) => {
     const isReallyConnected = connectionState === 'open' && !!(sock && sock.user && sock.user.id);
+    const isRegistered = !!(sock && sock.authState && sock.authState.creds && sock.authState.creds.registered);
     // ONLY report the real actively connected phone number from the live session
     const activePhone = isReallyConnected 
         ? sock.user.id.split(':')[0].split('@')[0].replace(/[^\d]/g, '') 
         : '';
 
     res.json({
-        state: isReallyConnected ? 'open' : 'close',
+        state: isReallyConnected ? 'open' : (isRegistered && connectionState === 'connecting' ? 'connecting' : 'close'),
         connected: isReallyConnected,
+        isRegistered: isRegistered,
         code: isReallyConnected ? null : currentPairingCode,
         phone: activePhone
     });
@@ -242,7 +250,7 @@ app.post('/api/logout', async (req, res) => {
         pairingCodeRequested = false;
         connectionState = 'close';
         await connectToWhatsApp();
-        res.json({ success: true, message: 'Disconnected successfully' });
+        res.json({ success: true, message: 'Disconnected and unlinked device successfully' });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -258,15 +266,28 @@ app.post('/api/connect', async (req, res) => {
         phone = '91' + phone; // Auto prepend India country code
     }
 
+    // If ALREADY actively connected to this exact number, reuse session!
+    if (connectionState === 'open' && sock && sock.user && sock.user.id) {
+        const currentPhone = sock.user.id.split(':')[0].split('@')[0].replace(/[^\d]/g, '');
+        if (currentPhone === phone) {
+            return res.json({
+                success: true,
+                phone: currentPhone,
+                alreadyConnected: true,
+                state: 'open'
+            });
+        }
+    }
+
     pairingPhone = phone;
     setEnv('SENDER_PHONE_NUMBER', phone);
     pairingCodeRequested = false;
     currentPairingCode = null;
     connectionState = 'close';
 
-    // Reset auth credentials for fresh clean pairing
+    // Reset auth credentials for fresh clean pairing with the new number
     await closeCurrentSocket();
-    try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
+    clearAuthDir();
     await connectToWhatsApp();
 
     // Poll for the pairing code up to 6 seconds
@@ -283,6 +304,31 @@ app.post('/api/connect', async (req, res) => {
             });
         }
     }, 500);
+});
+
+// API: Parse Excel recipients with phone validation, deduplication, and preview
+app.get('/api/recipients', (req, res) => {
+    const exPath = path.join(__dirname, 'recipients.xlsx');
+    if (!fs.existsSync(exPath)) {
+        return res.json({ exists: false, total: 0, valid: 0, duplicates: 0, invalid: 0, preview: [] });
+    }
+
+    const pythonCmd = process.platform === 'win32' ? 'python' : (process.env.PYTHON_CMD || 'python3');
+    const py = spawn(pythonCmd, ['-u', 'send_campaign.py', '--preview'], { cwd: __dirname });
+    let stdout = '';
+    let stderr = '';
+
+    py.stdout.on('data', chunk => stdout += chunk.toString());
+    py.stderr.on('data', chunk => stderr += chunk.toString());
+
+    py.on('close', code => {
+        try {
+            const data = JSON.parse(stdout.trim());
+            res.json({ exists: true, ...data });
+        } catch (e) {
+            res.status(500).json({ error: 'Failed to parse Excel file', details: stdout || stderr });
+        }
+    });
 });
 
 // API: Re-link / reset session explicitly
