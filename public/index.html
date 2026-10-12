@@ -1492,9 +1492,14 @@
             <div class="upload-title">Drop Excel File Here</div>
             <div class="upload-sub">Supports .xlsx and .xls formats</div>
           </div>
-          <div class="file-badge" id="exB">
-            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            <span id="exN">recipients.xlsx</span>
+          <div class="file-badge" id="exB" style="display:none; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <span id="exN">No file selected</span>
+            </div>
+            <button type="button" onclick="rmEx(event)" title="Remove Excel file" style="background:transparent; border:none; cursor:pointer; color:#f43f5e; display:flex; align-items:center; padding:2px 4px;">
+              <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
           </div>
 
           <div class="sp8"></div>
@@ -1511,7 +1516,7 @@
                 <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
               </div>
               <div class="upload-title">Upload Image File</div>
-              <div class="upload-sub">Click or drag · JPG, PNG, WEBP</div>
+              <div class="upload-sub">Click or drag · JPG, PNG, WEBP (Optional)</div>
             </div>
 
             <!-- Image Preview Overlay DIRECTLY INSIDE Drop Box -->
@@ -1523,9 +1528,9 @@
             </div>
           </div>
 
-          <div class="file-badge" id="imB">
+          <div class="file-badge" id="imB" style="display:none;">
             <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            <span id="imN">campaign.jpg</span>
+            <span id="imN">No image attached</span>
           </div>
         </div>
 
@@ -1563,11 +1568,11 @@
         <div class="stats-summary-grid">
           <div class="stat-box">
             <div class="stat-label">Contacts Sheet</div>
-            <div class="stat-val" id="stE">recipients.xlsx</div>
+            <div class="stat-val" id="stE" style="color:var(--txt-muted);">Not uploaded</div>
           </div>
           <div class="stat-box">
             <div class="stat-label">Media Attachment</div>
-            <div class="stat-val" id="stI">campaign.jpg</div>
+            <div class="stat-val" id="stI" style="color:var(--txt-muted);">None (Text only)</div>
           </div>
           <div class="stat-box">
             <div class="stat-label">WhatsApp Status</div>
@@ -1674,11 +1679,28 @@
         const r = await fetch('/api/upload/excel', { method: 'POST', body: fd });
         const d = await r.json();
         if (d.success) {
-          $('exN').textContent = f.name; $('exB').classList.add('on');
-          $('stE').textContent = f.name; $('exZ').style.borderColor = 'var(--grn)';
-          toast('Excel uploaded!', 'ok_');
+          $('exN').textContent = f.name;
+          $('exB').style.display = 'flex';
+          $('stE').textContent = f.name;
+          $('stE').style.color = 'var(--grn)';
+          $('exZ').style.borderColor = 'var(--grn)';
+          toast('Excel uploaded: ' + f.name, 'ok_');
         }
       } catch { toast('Upload failed', 'err_'); }
+    }
+
+    async function rmEx(e) {
+      if (e) e.stopPropagation();
+      try {
+        await fetch('/api/delete-excel', { method: 'DELETE' });
+        $('exN').textContent = 'No file selected';
+        $('exB').style.display = 'none';
+        $('exI').value = '';
+        $('exZ').style.borderColor = '';
+        $('stE').textContent = 'Not uploaded';
+        $('stE').style.color = 'var(--txt-muted)';
+        toast('Excel sheet removed', 'ok_');
+      } catch { toast('Error removing Excel', 'err_'); }
     }
 
     async function upIm(e) {
@@ -1688,8 +1710,11 @@
         const r = await fetch('/api/upload/image', { method: 'POST', body: fd });
         const d = await r.json();
         if (d.success) {
-          $('imN').textContent = f.name; $('imB').classList.add('on');
-          $('stI').textContent = f.name; $('exZ').style.borderColor = 'var(--grn)';
+          $('imN').textContent = f.name;
+          $('imB').style.display = 'flex';
+          $('stI').textContent = f.name;
+          $('stI').style.color = 'var(--grn)';
+          $('imZ').style.borderColor = 'var(--grn)';
           $('ipv').src = URL.createObjectURL(f);
           $('imDef').style.display = 'none';
           $('ipw').style.display = 'block';
@@ -1705,9 +1730,11 @@
         $('ipv').src = '';
         $('ipw').style.display = 'none';
         $('imDef').style.display = 'flex';
-        $('imB').classList.remove('on');
+        $('imB').style.display = 'none';
         $('imI').value = '';
-        $('stI').textContent = 'Not set';
+        $('imZ').style.borderColor = '';
+        $('stI').textContent = 'None (Text only)';
+        $('stI').style.color = 'var(--txt-muted)';
         toast('Image removed', 'ok_');
       } catch { toast('Error removing image', 'err_'); }
     }
@@ -1740,13 +1767,47 @@
           $('ipv').src = d.image;
           $('imDef').style.display = 'none';
           $('ipw').style.display = 'block';
-          $('imB').classList.add('on');
+          $('imB').style.display = 'flex';
+          $('stI').textContent = 'campaign.jpg';
+          $('stI').style.color = 'var(--grn)';
+        }
+      } catch { }
+    }
+
+    async function checkFilesStatus() {
+      try {
+        const r = await fetch('/api/files-status');
+        const d = await r.json();
+        if (d.excelExists) {
+          $('exN').textContent = 'recipients.xlsx';
+          $('exB').style.display = 'flex';
+          $('stE').textContent = 'recipients.xlsx';
+          $('stE').style.color = 'var(--grn)';
+          $('exZ').style.borderColor = 'var(--grn)';
+        } else {
+          $('exN').textContent = 'No file selected';
+          $('exB').style.display = 'none';
+          $('stE').textContent = 'Not uploaded';
+          $('stE').style.color = 'var(--txt-muted)';
+          $('exZ').style.borderColor = '';
+        }
+
+        if (d.imageExists) {
+          loadImg();
+        } else {
+          $('stI').textContent = 'None (Text only)';
+          $('stI').style.color = 'var(--txt-muted)';
         }
       } catch { }
     }
 
     function doLaunch() {
       if (!ok) { toast('Connect WhatsApp first!', 'err_'); return; }
+      if ($('stE').textContent === 'Not uploaded') {
+        toast('Please upload an Excel contact sheet (.xlsx) first!', 'err_');
+        $('exZ').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
       savMsg().then(() => {
         const b = $('btnL'), cl = $('clog'), feed = $('cfeed');
         cl.style.display = 'block'; feed.innerHTML = '<div class="log-dim">🚀 Initializing campaign engine...</div>';
@@ -1795,7 +1856,7 @@
       } catch { }
     }
 
-    loadMsg(); loadImg(); poll(); setInterval(poll, 1500);
+    loadMsg(); checkFilesStatus(); poll(); setInterval(poll, 1500);
   </script>
 </body>
 </html>

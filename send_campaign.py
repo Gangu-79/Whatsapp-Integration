@@ -253,6 +253,33 @@ def send_evolution_media_message(api_url: str, api_key: str, instance_name: str,
         return {"success": False, "error": str(e)}
 
 
+def send_evolution_text_message(api_url: str, api_key: str, instance_name: str, phone: str, text: str) -> dict:
+    """Send text message using Evolution API."""
+    url = f"{api_url}/message/sendText/{instance_name}"
+    headers = {
+        "apikey": api_key,
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "number": phone,
+        "text": text
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        res_json = response.json() if response.headers.get("content-type", "").startswith("application/json") else {}
+
+        if response.status_code in (200, 201):
+            key_id = res_json.get("key", {}).get("id") or "SENT_OK"
+            return {"success": True, "id": key_id}
+        else:
+            err = res_json.get("response", {}).get("message") or response.text
+            return {"success": False, "error": f"HTTP {response.status_code}: {err}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Evolution API + Claude Campaign Runner (Name & Phone)")
     parser.add_argument("--excel", default="recipients.xlsx", help="Path to recipients.xlsx")
@@ -331,11 +358,19 @@ def main():
     else:
         print("[Claude AI] Disabled or key not set. Using template variable substitution ({{name}}).", flush=True)
 
-    # 4. Prepare Image
-    if not os.path.exists(args.image):
-        print(f"[Error] Image file '{args.image}' not found!", flush=True)
-        sys.exit(1)
-    img_b64 = image_to_base64(args.image)
+    # 4. Prepare Image (optional)
+    has_image = os.path.exists(args.image)
+    if has_image:
+        try:
+            img_b64 = image_to_base64(args.image)
+            print(f"[Campaign Media] Attached image: '{args.image}'", flush=True)
+        except Exception as e:
+            print(f"[Warning] Failed to read image '{args.image}': {e}. Sending as text message.", flush=True)
+            has_image = False
+            img_b64 = None
+    else:
+        img_b64 = None
+        print("[Campaign Media] No image uploaded. Sending personalized text campaign.", flush=True)
 
     # 5. Check Evolution API connection (skip if dry-run)
     if not args.dry_run:
@@ -367,14 +402,24 @@ def main():
             print("Status: SENT (Dry Run Simulation)", flush=True)
             sent_count += 1
         else:
-            result = send_evolution_media_message(
-                api_url=evolution_url,
-                api_key=evolution_key,
-                instance_name=evolution_instance,
-                phone=phone,
-                image_b64=img_b64,
-                caption=personalized_msg
-            )
+            if has_image and img_b64:
+                result = send_evolution_media_message(
+                    api_url=evolution_url,
+                    api_key=evolution_key,
+                    instance_name=evolution_instance,
+                    phone=phone,
+                    image_b64=img_b64,
+                    caption=personalized_msg
+                )
+            else:
+                result = send_evolution_text_message(
+                    api_url=evolution_url,
+                    api_key=evolution_key,
+                    instance_name=evolution_instance,
+                    phone=phone,
+                    text=personalized_msg
+                )
+
             if result["success"]:
                 print(f"Status: SENT", flush=True)
                 sent_count += 1

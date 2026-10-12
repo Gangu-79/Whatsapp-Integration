@@ -354,6 +354,45 @@ app.post('/api/upload/excel', upload.single('file'), (req, res) => {
     res.json({ success: true, filename: req.file.originalname, saved: 'recipients.xlsx' });
 });
 
+// API: Delete Excel recipients file
+app.delete('/api/delete-excel', (req, res) => {
+    try {
+        const exPath = path.join(__dirname, 'recipients.xlsx');
+        if (fs.existsSync(exPath)) fs.unlinkSync(exPath);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// API: Check status of files
+app.get('/api/files-status', (req, res) => {
+    const exPath = path.join(__dirname, 'recipients.xlsx');
+    const imPath = path.join(__dirname, 'campaign.jpg');
+    res.json({
+        excelExists: fs.existsSync(exPath),
+        imageExists: fs.existsSync(imPath)
+    });
+});
+
+// API: Send text message when image is not attached
+app.post('/message/sendText/:instanceName', async (req, res) => {
+    const { number, text } = req.body;
+    if (connectionState !== 'open' || !sock || !sock.user) {
+        return res.status(400).json({ error: 'WhatsApp session is not active. Please re-link your device.' });
+    }
+
+    try {
+        const cleanNum = number.replace(/[^\d]/g, '');
+        const jid = `${cleanNum}@s.whatsapp.net`;
+        const sentMsg = await sock.sendMessage(jid, { text: text || '' });
+        res.json({ key: { id: sentMsg.key.id } });
+    } catch (err) {
+        console.error('[Error sending text message]:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // API: Upload campaign image
 app.post('/api/upload/image', upload.single('file'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
