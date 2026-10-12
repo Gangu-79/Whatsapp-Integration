@@ -61,9 +61,8 @@ function setEnv(key, value) {
     }
 }
 
-// Initial phone from .env
-let pairingPhone = getEnv('SENDER_PHONE_NUMBER') || '917093359709';
-pairingPhone = pairingPhone.replace(/[^\d]/g, '');
+// Active pairing phone (starts empty so only actively connected numbers are used)
+let pairingPhone = '';
 
 async function closeCurrentSocket() {
     if (reconnectTimer) {
@@ -166,7 +165,14 @@ async function connectToWhatsApp() {
             currentPairingCode = null;
             currentQR = null;
             pairingCodeRequested = false;
-            console.log(`[WhatsApp Gateway] [OK] WhatsApp Connected Successfully as ${sock?.user?.id || 'User'}!`);
+            const connectedNum = (sock?.user?.id) 
+                ? sock.user.id.split(':')[0].split('@')[0].replace(/[^\d]/g, '') 
+                : '';
+            pairingPhone = connectedNum;
+            if (connectedNum) {
+                setEnv('SENDER_PHONE_NUMBER', connectedNum);
+            }
+            console.log(`[WhatsApp Gateway] [OK] Active WhatsApp Connected: +${connectedNum || 'User'}`);
         }
     });
 }
@@ -207,14 +213,39 @@ app.get('/', (req, res) => {
 
 // API: Get current status & pairing code
 app.get('/api/status', (req, res) => {
-    // Verified connected ONLY if state is open AND sock.user exists
-    const isReallyConnected = connectionState === 'open' && !!(sock && sock.user);
+    const isReallyConnected = connectionState === 'open' && !!(sock && sock.user && sock.user.id);
+    // ONLY report the real actively connected phone number from the live session
+    const activePhone = isReallyConnected 
+        ? sock.user.id.split(':')[0].split('@')[0].replace(/[^\d]/g, '') 
+        : '';
+
     res.json({
         state: isReallyConnected ? 'open' : 'close',
         connected: isReallyConnected,
-        code: currentPairingCode,
-        phone: pairingPhone
+        code: isReallyConnected ? null : currentPairingCode,
+        phone: activePhone
     });
+});
+
+// API: Logout session / Disconnect WhatsApp number
+app.post('/api/logout', async (req, res) => {
+    try {
+        if (sock) {
+            try { await sock.logout(); } catch (e) {}
+        }
+        await closeCurrentSocket();
+        clearAuthDir();
+        pairingPhone = '';
+        setEnv('SENDER_PHONE_NUMBER', '');
+        currentPairingCode = null;
+        currentQR = null;
+        pairingCodeRequested = false;
+        connectionState = 'close';
+        await connectToWhatsApp();
+        res.json({ success: true, message: 'Disconnected successfully' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // API: User sets/changes mobile number and requests code

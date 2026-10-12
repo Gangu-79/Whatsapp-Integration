@@ -1438,7 +1438,7 @@
           <div id="sPh">
             <label class="lbl" for="phin">Mobile Number (with country code)</label>
             <div class="input-row">
-              <input type="text" id="phin" class="inp" placeholder="e.g. 917093359709">
+              <input type="text" id="phin" class="inp" placeholder="e.g. 919876543210">
               <button class="btn btn-primary" id="btnC" onclick="doPhone()">
                 <svg viewBox="0 0 24 24"><path d="M11 15H6l7-14v8h5l-7 14v-8z"/></svg>
                 Get Code
@@ -1469,6 +1469,19 @@
               <img id="qrI" src="" alt="QR Code">
               <div class="qr-hint">Scan with WhatsApp → Linked Devices</div>
               <div class="qr-timer" id="qtimer"></div>
+            </div>
+          </div>
+
+          <!-- Active Connected Number Display with Disconnect Button -->
+          <div id="connInfo" style="display:none; margin-top:14px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:14px; padding:14px 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <div>
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--grn); letter-spacing:0.8px;">Active Connected Number</div>
+                <div id="activePhoneDisplay" style="font-size:16px; font-weight:800; color:#fff; font-family:var(--font-mono); margin-top:2px;">+91XXXXXXXXXX</div>
+              </div>
+              <button type="button" class="btn" onclick="doLogout()" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); color:#f43f5e; font-size:11.5px; padding:7px 14px; border-radius:8px;">
+                Disconnect
+              </button>
             </div>
           </div>
         </div>
@@ -1840,6 +1853,25 @@
       });
     }
 
+    async function doLogout() {
+      if (!confirm('Are you sure you want to disconnect this WhatsApp number?')) return;
+      try {
+        toast('Disconnecting WhatsApp...', '');
+        const r = await fetch('/api/logout', { method: 'POST' });
+        const d = await r.json();
+        if (d.success) {
+          toast('Disconnected. Enter a new number to link.', 'ok_');
+          ok = false;
+          $('connInfo').style.display = 'none';
+          $('sPh').style.display = mode === 'phone' ? 'block' : 'none';
+          $('sQr').style.display = mode === 'qr' ? 'block' : 'none';
+          poll();
+        }
+      } catch {
+        toast('Error disconnecting', 'err_');
+      }
+    }
+
     async function poll() {
       try {
         const r = await fetch('/api/status'); const d = await r.json();
@@ -1848,9 +1880,16 @@
           ok = true; dot_.className = 'dot on'; lbl.textContent = 'Connected · +' + d.phone; badge.className = 'conn-badge live';
           sc.textContent = 'Connected ✓'; sc.className = 'stat-val log-ok'; bl.disabled = false;
           $('pbox').style.display = 'none'; $('qbox').style.display = 'none';
+          $('connInfo').style.display = 'block';
+          $('activePhoneDisplay').textContent = '+' + d.phone;
+          $('sPh').style.display = 'none';
+          $('sQr').style.display = 'none';
         } else {
           ok = false; dot_.className = 'dot'; lbl.textContent = 'Not Connected'; badge.className = 'conn-badge';
           sc.textContent = 'Not connected'; sc.className = 'stat-val log-err'; bl.disabled = true;
+          $('connInfo').style.display = 'none';
+          $('sPh').style.display = mode === 'phone' ? 'block' : 'none';
+          $('sQr').style.display = mode === 'qr' ? 'block' : 'none';
           if (d.code && d.code !== code) showCode(d.code);
         }
       } catch { }
