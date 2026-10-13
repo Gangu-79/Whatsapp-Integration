@@ -26,10 +26,16 @@ const uploadStorage = multer.diskStorage({
 const upload = multer({ storage: uploadStorage });
 
 const optOutFilePath = path.join(__dirname, 'optouts.json');
+const inboxFilePath = path.join(__dirname, 'inbox.json');
 
 // Ensure optouts.json exists
 if (!fs.existsSync(optOutFilePath)) {
   fs.writeFileSync(optOutFilePath, JSON.stringify({ opted_out_numbers: [], updated_at: new Date().toISOString() }, null, 2), 'utf8');
+}
+
+// Ensure inbox.json exists
+if (!fs.existsSync(inboxFilePath)) {
+  fs.writeFileSync(inboxFilePath, JSON.stringify({ messages: [] }, null, 2), 'utf8');
 }
 
 // Helper to read .env
@@ -209,13 +215,41 @@ app.post('/api/webhook', (req, res) => {
           }
         }
 
-        // 2. Process incoming messages for Opt-Out (STOP / UNSUBSCRIBE)
+        // 2. Process incoming messages (Save to Inbox & Handle Opt-Out)
         if (value.messages) {
+          const contacts = value.contacts || [];
+          const contactName = contacts[0]?.profile?.name || '';
+
           for (const msg of value.messages) {
             const from = msg.from;
-            const text = (msg.text?.body || '').trim().toUpperCase();
+            const rawText = msg.text?.body || msg.button?.text || msg.interactive?.button_reply?.title || '';
+            const textUpper = rawText.trim().toUpperCase();
+            const timestamp = msg.timestamp ? new Date(parseInt(msg.timestamp) * 1000).toISOString() : new Date().toISOString();
 
-            if (['STOP', 'UNSUBSCRIBE', 'CANCEL', 'OPTOUT'].includes(text)) {
+            // Save to inbox.json
+            try {
+              let inboxData = { messages: [] };
+              if (fs.existsSync(inboxFilePath)) {
+                inboxData = JSON.parse(fs.readFileSync(inboxFilePath, 'utf8'));
+              }
+              inboxData.messages.unshift({
+                id: msg.id || 'msg_' + Date.now(),
+                from,
+                name: contactName,
+                text: rawText,
+                timestamp,
+                type: msg.type || 'text'
+              });
+              if (inboxData.messages.length > 200) {
+                inboxData.messages = inboxData.messages.slice(0, 200);
+              }
+              fs.writeFileSync(inboxFilePath, JSON.stringify(inboxData, null, 2), 'utf8');
+            } catch (e) {
+              console.error('[Inbox Save Error]:', e.message);
+            }
+
+            // Check Opt-Out Keywords (STOP, UNSUBSCRIBE, CANCEL)
+            if (['STOP', 'UNSUBSCRIBE', 'CANCEL', 'OPTOUT'].includes(textUpper)) {
               console.log(`[Meta Webhook] Received Opt-Out keyword from +${from}. Adding to permanent exclusion list.`);
               try {
                 let optData = { opted_out_numbers: [] };
@@ -238,6 +272,57 @@ app.post('/api/webhook', (req, res) => {
     return res.status(200).send('EVENT_RECEIVED');
   }
   res.sendStatus(404);
+});
+
+// API: Get Inbox Messages (All incoming customer replies)
+app.get('/api/inbox', (req, res) => {
+  try {
+    let inboxData = { messages: [] };
+    if (fs.existsSync(inboxFilePath)) {
+      inboxData = JSON.parse(fs.readFileSync(inboxFilePath, 'utf8'));
+    }
+    res.json({ success: true, count: inboxData.messages.length, messages: inboxData.messages });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// API: Quick Reply to Candidate via Meta Cloud API (Free within 24h window)
+app.post('/api/inbox/reply', async (req, res) => {
+  const { to, message } = req.body;
+  const token = getEnv('WHATSAPP_TOKEN');
+  const phoneNumberId = getEnv('WHATSAPP_PHONE_NUMBER_ID');
+
+  if (!token || !phoneNumberId) {
+    return res.status(400).json({ error: 'Meta Cloud API not configured.' });
+  }
+  if (!to || !message) {
+    return res.status(400).json({ error: 'Recipient phone number and message are required.' });
+  }
+
+  try {
+    const cleanPhone = to.replace(/\D/g, '');
+    const metaUrl = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+    const payload = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: cleanPhone,
+      type: 'text',
+      text: { preview_url: false, body: message }
+    };
+
+    const response = await axios.post(metaUrl, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 15000
+    });
+
+    res.json({ success: true, messageId: response.data.messages?.[0]?.id });
+  } catch (e) {
+    res.status(500).json({ error: e.response?.data?.error?.message || e.message });
+  }
 });
 
 // ============================================================================
