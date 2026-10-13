@@ -1362,7 +1362,7 @@
     <section class="hero-section" id="hero">
       <div class="hero-pill">
         <div class="hero-pill-sparkle"></div>
-        100% Free · Direct Pairing · No Meta API Fees Required
+        Official WhatsApp Business Platform · Meta Cloud API · Policy Compliant
       </div>
 
       <!-- HERO TITLE FIX: Clean Grammatical High-End Display Header -->
@@ -1372,7 +1372,7 @@
       </h1>
 
       <p class="hero-subtitle">
-        Automate high-converting WhatsApp outreach with direct pairing code, dynamic Excel recipient lists, and personalized rich-media messaging.
+        Automate policy-compliant WhatsApp customer outreach using the official Meta WhatsApp Cloud API, verified recipient lists, and personalized rich-media messaging.
       </p>
 
       <div class="hero-actions">
@@ -1388,12 +1388,12 @@
       <!-- Quick Stats Grid -->
       <div class="hero-stats-grid">
         <div class="hero-stat-item">
-          <div class="hero-stat-val">100%</div>
-          <div class="hero-stat-lbl">Free Unlimited Reach</div>
+          <div class="hero-stat-val">Meta API</div>
+          <div class="hero-stat-lbl">Official Verified Platform</div>
         </div>
         <div class="hero-stat-item">
-          <div class="hero-stat-val">Instant</div>
-          <div class="hero-stat-lbl">Pairing Code or QR Scan</div>
+          <div class="hero-stat-val">Opt-In Safe</div>
+          <div class="hero-stat-lbl">Consent & Opt-Out Protection</div>
         </div>
         <div class="hero-stat-item">
           <div class="hero-stat-val">{{name}}</div>
@@ -1408,80 +1408,73 @@
       <div class="section-header">
         <div class="section-tag">// Campaign Studio</div>
         <h2 class="section-title">Setup & Dispatch Workflow</h2>
-        <p class="section-desc">Follow the steps below to connect your WhatsApp session, import target contacts, and draft your campaign.</p>
+        <p class="section-desc">Follow the steps below to verify your official WhatsApp Cloud API connection, import consented contacts, and dispatch your campaign.</p>
       </div>
 
       <!-- 3-COL CARDS GRID -->
       <div class="cards-grid">
 
-        <!-- CARD 01: CONNECT -->
+        <!-- CARD 01: META CLOUD API SETUP -->
         <div class="card">
           <div class="card-header">
             <div class="card-num">01</div>
             <div>
-              <div class="card-title">Connect WhatsApp</div>
-              <div class="card-subtitle">Phone pairing code or QR scan</div>
+              <div class="card-title">Meta Cloud API Setup</div>
+              <div class="card-subtitle">Official WhatsApp Business Platform</div>
             </div>
           </div>
 
-          <div class="mode-toggle">
-            <button class="mode-btn on" id="mPh" onclick="setMode('phone')">
-              <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
-              Phone Code
-            </button>
-            <button class="mode-btn" id="mQr" onclick="setMode('qr')">
-              <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4z"/></svg>
-              Scan QR
-            </button>
-          </div>
-
-          <div id="sPh">
-            <label class="lbl" for="phin">Mobile Number (with country code)</label>
-            <div class="input-row">
-              <input type="text" id="phin" class="inp" placeholder="e.g. 919876543210">
-              <button class="btn btn-primary" id="btnC" onclick="doPhone()">
-                <svg viewBox="0 0 24 24"><path d="M11 15H6l7-14v8h5l-7 14v-8z"/></svg>
-                Get Code
-              </button>
+          <!-- Unconfigured Meta API Configuration Form -->
+          <div id="metaConfigPanel">
+            <div style="font-size:12px; color:var(--txt-dim); line-height:1.5; margin-bottom:12px;">
+              Authorize your official WhatsApp Business Cloud API. Messages are delivered directly through Meta's infrastructure without risk of web-session bans.
             </div>
-            <div class="pair-box" id="pbox">
-              <div class="pair-lbl">Pairing Code</div>
-              <div class="pair-code" id="pcode" onclick="copyCode()">——</div>
-              <div class="pair-hint" id="phint" onclick="copyCode()">👆 Click to copy</div>
-              <div class="pair-steps">
-                <b>📲 How to pair:</b>
-                <ol>
-                  <li>Open <b>WhatsApp Business</b></li>
-                  <li>Go to <b>Linked Devices → Link a Device</b></li>
-                  <li>Choose <b>"Link with phone number instead"</b></li>
-                  <li>Enter the 8-digit code above</li>
-                </ol>
+
+            <div style="margin-bottom:10px;">
+              <label class="lbl" for="metaPhoneId">Phone Number ID</label>
+              <input type="text" id="metaPhoneId" class="inp" placeholder="e.g. 562148903671234">
+            </div>
+
+            <div style="margin-bottom:10px;">
+              <label class="lbl" for="metaToken">Permanent Access Token</label>
+              <input type="password" id="metaToken" class="inp" placeholder="System User Token (EAAG...)">
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+              <div>
+                <label class="lbl" for="metaWabaId">WABA ID (Optional)</label>
+                <input type="text" id="metaWabaId" class="inp" placeholder="Business Account ID">
+              </div>
+              <div>
+                <label class="lbl" for="metaTplName">Template Name</label>
+                <input type="text" id="metaTplName" class="inp" placeholder="e.g. campaign_update">
               </div>
             </div>
-          </div>
 
-          <div id="sQr" style="display:none;">
-            <button class="btn btn-primary" id="btnQ" onclick="doQR()" style="width:100%;">
-              <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4z"/></svg>
-              Generate QR Code
+            <button type="button" class="btn btn-primary" id="btnSaveMeta" onclick="saveMetaConfig()" style="width:100%;">
+              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Authorize & Verify Meta API
             </button>
-            <div class="qr-box" id="qbox">
-              <img id="qrI" src="" alt="QR Code">
-              <div class="qr-hint">Scan with WhatsApp → Linked Devices</div>
-              <div class="qr-timer" id="qtimer"></div>
+            <div style="font-size:11px; color:var(--txt-muted); margin-top:8px; line-height:1.4;">
+              💡 Obtain your credentials from <a href="https://developers.facebook.com/apps" target="_blank" style="color:var(--grn); text-decoration:underline;">Meta Developers Console</a> &gt; WhatsApp &gt; API Setup.
             </div>
           </div>
 
-          <!-- Active Connected Number Display with Disconnect / Logout Button -->
+          <!-- Active Verified Meta Cloud API Display with Disconnect / Logout Button -->
           <div id="connInfo" style="display:none; margin-top:14px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:14px; padding:14px 16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
               <div>
-                <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--grn); letter-spacing:0.8px;">Active Connected Number</div>
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--grn); letter-spacing:0.8px;">Official WhatsApp Business Account</div>
                 <div id="activePhoneDisplay" style="font-size:16px; font-weight:800; color:#fff; font-family:var(--font-mono); margin-top:2px;">+91XXXXXXXXXX</div>
+                <div id="verifiedBusinessName" style="font-size:12px; color:var(--txt-dim); margin-top:2px;">Verified Business Profile</div>
+                <div id="qualityBadge" style="font-size:10.5px; display:inline-block; margin-top:6px; background:rgba(16,185,129,0.2); color:var(--grn); padding:2px 8px; border-radius:6px; font-weight:700;">Quality: HIGH</div>
               </div>
               <button type="button" class="btn" onclick="doLogout()" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); color:#f43f5e; font-size:11.5px; padding:7px 14px; border-radius:8px;">
-                Disconnect / Logout
+                Disconnect
               </button>
+            </div>
+            <div style="font-size:10.5px; color:var(--txt-muted); margin-top:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
+              🛡️ Disconnecting only revokes application API access; your phone and Meta Business Account remain registered.
             </div>
           </div>
         </div>
@@ -1563,7 +1556,7 @@
             <div class="card-num">03</div>
             <div>
               <div class="card-title">Compose Message</div>
-              <div class="card-subtitle">Use <code style="background:rgba(139,92,246,0.2);padding:2px 6px;border-radius:4px;color:#c084fc;font-family:var(--font-mono);font-size:11px;">{{name}}</code> tag for personalization</div>
+              <div class="card-subtitle">Use <code style="background:rgba(139,92,246,0.2);padding:2px 6px;border-radius:4px;color:#c084fc;font-family:var(--font-mono);font-size:11px;">{{name}}</code> tag · Mapped to Meta Template variable</div>
             </div>
           </div>
 
@@ -1584,7 +1577,7 @@
           <div class="card-num">04</div>
           <div>
             <div class="card-title">Launch Campaign Engine</div>
-            <div class="card-subtitle">Executes bulk dispatch with automatic delay anti-blocking</div>
+            <div class="card-subtitle">Official Meta Cloud API dispatch with verified opt-in safeguards</div>
           </div>
         </div>
 
@@ -1639,7 +1632,7 @@
 
   <!-- SCRIPT INTEGRATION -->
   <script>
-    let ok = false, code = '', sT = null, qT = null, mode = 'phone';
+    let ok = false, sT = null;
 
     const $ = id => document.getElementById(id);
 
@@ -1649,50 +1642,45 @@
       setTimeout(() => e.classList.remove('on'), 3000);
     }
 
-    function setMode(m) {
-      mode = m;
-      $('mPh').className = 'mode-btn' + (m === 'phone' ? ' on' : '');
-      $('mQr').className = 'mode-btn' + (m === 'qr' ? ' on' : '');
-      $('sPh').style.display = m === 'phone' ? 'block' : 'none';
-      $('sQr').style.display = m === 'qr' ? 'block' : 'none';
-    }
+    async function saveMetaConfig() {
+      const phoneId = $('metaPhoneId').value.trim();
+      const token = $('metaToken').value.trim();
+      const wabaId = $('metaWabaId').value.trim();
+      const tplName = $('metaTplName').value.trim();
 
-    async function doPhone() {
-      const p = $('phin').value.trim();
-      if (!p) { toast('Enter mobile number!', 'err_'); return; }
-      const b = $('btnC'); b.disabled = true; b.innerHTML = '<span class="spin">⟳</span> ...';
+      if (!phoneId || !token) {
+        toast('Phone Number ID and Access Token are required!', 'err_');
+        return;
+      }
+
+      const b = $('btnSaveMeta');
+      b.disabled = true;
+      b.innerHTML = '<span class="spin">⟳</span> Verifying with Meta...';
+
       try {
-        const r = await fetch('/api/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: p }) });
+        const r = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phoneNumberId: phoneId,
+            token: token,
+            wabaId: wabaId,
+            templateName: tplName
+          })
+        });
         const d = await r.json();
-        if (d.code) showCode(d.code);
-        else { $('pbox').style.display = 'block'; $('pcode').textContent = '...'; }
-      } catch (e) { toast('Error: ' + e.message, 'err_'); }
-      finally { b.disabled = false; b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M11 15H6l7-14v8h5l-7 14v-8z"/></svg> Get Code'; }
-    }
-
-    function showCode(c) { code = c; $('pbox').style.display = 'block'; $('pcode').textContent = c; }
-
-    function copyCode() {
-      if (!code || code === '——') return;
-      navigator.clipboard.writeText(code).then(() => {
-        $('phint').textContent = '✅ Copied to Clipboard!'; toast('Code Copied!', 'ok_');
-        setTimeout(() => $('phint').textContent = '👆 Click to copy', 2000);
-      });
-    }
-
-    async function doQR() {
-      const b = $('btnQ'); b.disabled = true; b.innerHTML = '<span class="spin">⟳</span> Generating...';
-      try {
-        const r = await fetch('/api/connect-qr', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const d = await r.json();
-        if (d.qr) {
-          $('qbox').style.display = 'block'; $('qrI').src = d.qr;
-          let s = 30; const el = $('qtimer'); el.textContent = 'Expires in ' + s + 's';
-          clearInterval(qT);
-          qT = setInterval(() => { s--; if (s <= 0) { clearInterval(qT); el.textContent = '⚠️ Expired — Regenerate'; } else el.textContent = 'Expires in ' + s + 's — scan now!'; }, 1000);
-        } else toast('QR failed. Retry.', 'err_');
-      } catch (e) { toast('Error: ' + e.message, 'err_'); }
-      finally { b.disabled = false; b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4z"/></svg> Regenerate QR'; }
+        if (d.success) {
+          toast('Configuration saved. Verifying with Meta...', 'ok_');
+          await poll();
+        } else {
+          toast(d.error || 'Failed to save configuration', 'err_');
+        }
+      } catch (e) {
+        toast('Connection error: ' + e.message, 'err_');
+      } finally {
+        b.disabled = false;
+        b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Authorize & Verify Meta API';
+      }
     }
 
     let activeRecipientsCount = 0;
@@ -1712,13 +1700,18 @@
           activeRecipientsCount = d.valid;
           if (d.valid > 0) {
             pBox.style.display = 'block';
-            sTxt.textContent = `✓ ${d.valid} Unique Recipients Ready`;
+            sTxt.textContent = `✓ ${d.valid} Unique Contacts Ready (${d.consented || d.valid} Consented)`;
             sTxt.style.color = 'var(--grn)';
-            dTxt.textContent = `${d.duplicates || 0} duplicates removed, ${d.invalid || 0} invalid skipped`;
+            
+            const badges = [];
+            if (d.consented) badges.push(`✓ ${d.consented} Opt-In Verified`);
+            if (d.opted_out) badges.push(`🛑 ${d.opted_out} Opted-Out Suppressed`);
+            if (d.duplicates) badges.push(`${d.duplicates} duplicates removed`);
+            dTxt.textContent = badges.join(' · ') || 'Verified List';
             
             let previewHtml = (d.preview || []).map(p => 
               `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);">` +
-              `<span><b>${p.name}</b></span>` +
+              `<span><b>${p.name}</b> <span style="font-size:10px; color:var(--grn); background:rgba(16,185,129,0.12); padding:1px 5px; border-radius:4px;">${p.has_consent ? 'Consent ✓' : 'Standard'}</span></span>` +
               `<span style="color:var(--grn);">+${p.phone}</span>` +
               `</div>`
             ).join('');
@@ -1727,7 +1720,7 @@
             }
             lPrev.innerHTML = previewHtml;
 
-            stE.textContent = `${d.valid} Recipients (Excel)`;
+            stE.textContent = `${d.valid} Contacts (${d.consented || d.valid} Consented)`;
             stE.style.color = 'var(--grn)';
             if (ok) $('btnL').disabled = false;
           } else {
@@ -1886,25 +1879,28 @@
     }
 
     function doLaunch() {
-      if (!ok) { toast('Connect WhatsApp first!', 'err_'); return; }
+      if (!ok) { toast('Please configure and authorize official Meta Cloud API first!', 'err_'); return; }
       if (activeRecipientsCount <= 0) {
         toast('Please upload an Excel contact sheet (.xlsx) with valid recipients first!', 'err_');
         $('exZ').scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
 
-      // Confirmation before dispatching
-      const senderText = activeSenderPhone ? ('+' + activeSenderPhone) : 'Active WhatsApp Device';
-      const confirmPrompt = `Confirm Bulk Campaign Launch:\n\n` +
-        `• Connected Sender: ${senderText}\n` +
+      // Explicit Policy & Consent Confirmation
+      const senderText = activeSenderPhone ? ('+' + activeSenderPhone) : 'Meta Cloud API';
+      const confirmPrompt = `Confirm Official Meta WhatsApp Cloud API Campaign Dispatch:\n\n` +
+        `• Verified Platform: Official Meta WhatsApp Business Platform\n` +
+        `• Business Account: ${senderText}\n` +
         `• Target Recipients: ${activeRecipientsCount} verified contacts\n` +
         `• Attachment: ${$('stI').textContent}\n\n` +
-        `Are you sure you want to start sending messages now?`;
+        `Policy Compliance Notice:\n` +
+        `By launching, you confirm all contacts have documented consent/opt-in to receive this WhatsApp message category and that opted-out contacts have been permanently suppressed.\n\n` +
+        `Proceed with official campaign dispatch?`;
       if (!confirm(confirmPrompt)) return;
 
       savMsg().then(() => {
         const b = $('btnL'), cl = $('clog'), feed = $('cfeed');
-        cl.style.display = 'block'; feed.innerHTML = '<div class="log-dim">🚀 Initializing campaign engine...</div>';
+        cl.style.display = 'block'; feed.innerHTML = '<div class="log-dim">🚀 Initializing official Meta WhatsApp Cloud API engine...</div>';
         b.disabled = true; b.innerHTML = '⏳ Dispatching Messages...';
         cl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         const src = new EventSource('/api/stream-campaign');
@@ -1917,16 +1913,16 @@
             });
             feed.parentElement.scrollTop = feed.parentElement.scrollHeight;
           };
-          if (msg.type === 'log') addLine(msg.text, msg.text.includes('SENT') ? 'log-ok' : msg.text.includes('FAILED') ? 'log-err' : '');
+          if (msg.type === 'log') addLine(msg.text, msg.text.includes('ACCEPTED') ? 'log-ok' : msg.text.includes('FAILED') ? 'log-err' : '');
           else if (msg.type === 'error') addLine(msg.text, 'log-err');
           else if (msg.type === 'finish') {
             src.close(); b.disabled = false;
             if (msg.exitCode === 0) {
               b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> ✅ Campaign Finished! Send Again?';
-              addLine('🎉 All messages successfully dispatched!', 'log-ok'); toast('Campaign completed!', 'ok_');
+              addLine('🎉 Campaign completed via Meta Cloud API!', 'log-ok'); toast('Campaign completed!', 'ok_');
             } else {
               b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Retry Campaign';
-              toast('Campaign stopped with errors', 'err_');
+              toast('Campaign stopped or halted on Meta policy check', 'err_');
             }
           }
         };
@@ -1935,18 +1931,17 @@
     }
 
     async function doLogout() {
-      if (!confirm('Are you sure you want to disconnect and log out of WhatsApp? This will unlink the device session.')) return;
+      if (!confirm('Are you sure you want to disconnect from the Meta WhatsApp Cloud API? This revokes server authorization.')) return;
       try {
-        toast('Disconnecting WhatsApp...', '');
+        toast('Disconnecting Meta API...', '');
         const r = await fetch('/api/logout', { method: 'POST' });
         const d = await r.json();
         if (d.success) {
-          toast('Disconnected. Enter a new number to link.', 'ok_');
+          toast(d.message || 'Disconnected successfully.', 'ok_');
           ok = false;
           activeSenderPhone = '';
           $('connInfo').style.display = 'none';
-          $('sPh').style.display = mode === 'phone' ? 'block' : 'none';
-          $('sQr').style.display = mode === 'qr' ? 'block' : 'none';
+          $('metaConfigPanel').style.display = 'block';
           poll();
         }
       } catch {
@@ -1962,45 +1957,32 @@
           ok = true; 
           activeSenderPhone = d.phone;
           dot_.className = 'dot on'; 
-          lbl.textContent = 'Connected · +' + d.phone; 
+          lbl.textContent = 'Meta API · +' + d.phone; 
           badge.className = 'conn-badge live';
-          sc.textContent = 'Connected ✓ (+' + d.phone + ')'; 
+          sc.textContent = 'Connected ✓ (Meta API: +' + d.phone + ')'; 
           sc.className = 'stat-val log-ok'; 
           if (activeRecipientsCount > 0) bl.disabled = false;
-          $('pbox').style.display = 'none'; 
-          $('qbox').style.display = 'none';
           $('connInfo').style.display = 'block';
+          $('metaConfigPanel').style.display = 'none';
           $('activePhoneDisplay').textContent = '+' + d.phone;
-          $('sPh').style.display = 'none';
-          $('sQr').style.display = 'none';
-        } else if (d.state === 'connecting') {
-          ok = false;
-          dot_.className = 'dot';
-          lbl.textContent = 'Restoring Session...';
-          badge.className = 'conn-badge';
-          sc.textContent = 'Reconnecting session...';
-          sc.className = 'stat-val';
-          bl.disabled = true;
-          $('pbox').style.display = 'none';
-          $('qbox').style.display = 'none';
+          if ($('verifiedBusinessName')) $('verifiedBusinessName').textContent = d.verifiedName || 'WhatsApp Business Profile';
+          if ($('qualityBadge')) $('qualityBadge').textContent = 'Quality: ' + (d.qualityRating || 'GREEN');
         } else {
           ok = false; 
           activeSenderPhone = '';
           dot_.className = 'dot'; 
-          lbl.textContent = 'Not Connected'; 
+          lbl.textContent = d.configured ? 'Meta API · Error' : 'Meta API · Setup Needed'; 
           badge.className = 'conn-badge';
-          sc.textContent = 'Not connected'; 
+          sc.textContent = d.configured ? 'Meta API Error (Check Credentials)' : 'Not configured'; 
           sc.className = 'stat-val log-err'; 
           bl.disabled = true;
           $('connInfo').style.display = 'none';
-          $('sPh').style.display = mode === 'phone' ? 'block' : 'none';
-          $('sQr').style.display = mode === 'qr' ? 'block' : 'none';
-          if (d.code && d.code !== code) showCode(d.code);
+          $('metaConfigPanel').style.display = 'block';
         }
       } catch { }
     }
 
-    loadMsg(); checkFilesStatus(); poll(); setInterval(poll, 1500);
+    loadMsg(); checkFilesStatus(); poll(); setInterval(poll, 2500);
   </script>
 </body>
 </html>

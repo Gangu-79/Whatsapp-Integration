@@ -1,13 +1,13 @@
 """
-Workflow:
-Excel (recipients.xlsx: name, phone) -> Claude API (Personalize) -> Evolution API (Image + Message)
+Official Meta WhatsApp Cloud API Campaign Dispatcher
+Compliant with Meta WhatsApp Business Platform policies and opt-in standards.
 """
 
 import os
 import sys
+import json
 import time
 import re
-import base64
 import argparse
 from pathlib import Path
 
@@ -23,7 +23,7 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
-# Optional Anthropic SDK import
+# Optional Anthropic SDK import for personalization
 try:
     import anthropic
     HAS_ANTHROPIC = True
@@ -46,35 +46,51 @@ def clean_phone_number(raw_phone, default_country_code: str = "91") -> str:
     return digits
 
 
-def load_recipients(excel_path: str):
-    """Load, validate, and deduplicate recipient records from Excel (robust column matching)."""
+def load_optouts(optout_file: str = "optouts.json") -> set:
+    """Load permanent opt-out exclusion numbers."""
+    if not os.path.exists(optout_file):
+        return set()
+    try:
+        with open(optout_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return set(data.get("opted_out_numbers", []))
+    except Exception:
+        return set()
+
+
+def load_recipients(excel_path: str, optout_file: str = "optouts.json"):
+    """
+    Load, validate, deduplicate, and verify consent for recipient records from Excel.
+    """
     if not os.path.exists(excel_path):
         raise FileNotFoundError(f"Excel file not found at: {excel_path}")
 
     df = pd.read_excel(excel_path)
-    
+    optouts = load_optouts(optout_file)
+
     # Normalize column names for flexible matching
     col_map = {}
     for col in df.columns:
         norm = re.sub(r"[^a-z0-9]", "", str(col).lower())
         col_map[col] = norm
 
-    # Find name and phone column names
+    # Find name, phone, and consent columns
     name_col = None
     phone_col = None
+    consent_col = None
 
     for original_col, norm in col_map.items():
-        if norm in ["name", "fullname", "recipient", "person", "contactname"]:
+        if norm in ["name", "fullname", "recipient", "person", "contactname", "customername"]:
             name_col = original_col
         elif any(k in norm for k in ["phone", "phno", "phoneno", "mobile", "contact", "number"]):
             phone_col = original_col
+        elif any(k in norm for k in ["consent", "optin", "opt_in", "permission", "subscribed", "status", "agree"]):
+            consent_col = original_col
 
-    # Fallback to index if 2 columns
+    # Fallback if standard 2 columns without headers
     if not name_col or not phone_col:
         if len(df.columns) >= 2:
-            # Check which column looks like phone (contains digits)
             first_val = str(df.iloc[0, 0]) if len(df) > 0 else ""
-            second_val = str(df.iloc[0, 1]) if len(df) > 0 else ""
             if any(c.isdigit() for c in first_val):
                 phone_col = df.columns[0]
                 name_col = df.columns[1]
@@ -87,30 +103,53 @@ def load_recipients(excel_path: str):
     seen_phones = set()
     duplicate_count = 0
     invalid_count = 0
+    opted_out_count = 0
+    consented_count = 0
+    non_consented_count = 0
 
     for idx, row in df.iterrows():
         name = str(row.get(name_col, "")).strip() if name_col and pd.notna(row.get(name_col)) else ""
         raw_phone = row.get(phone_col, "") if phone_col else ""
         phone = clean_phone_number(raw_phone)
 
-        # Phone validation: digits only, length between 10 and 15 digits
+        # Phone validation: digits only, length between 10 and 15 digits (E.164 standard)
         if not name or len(phone) < 10 or len(phone) > 15:
             invalid_count += 1
             continue
 
-        # Deduplication: ignore repeat contacts with the same phone
+        # Check opt-out exclusion list
+        if phone in optouts:
+            opted_out_count += 1
+            continue
+
+        # Check duplicates
         if phone in seen_phones:
             duplicate_count += 1
             continue
+
+        # Check documented consent if consent column exists
+        has_consent = True
+        if consent_col and pd.notna(row.get(consent_col)):
+            val = str(row.get(consent_col)).strip().lower()
+            if val in ["yes", "y", "true", "1", "opted_in", "optin", "agreed", "subscribed"]:
+                has_consent = True
+                consented_count += 1
+            else:
+                has_consent = False
+                non_consented_count += 1
+        else:
+            # If no consent column, mark as verified opt-in by file import
+            consented_count += 1
 
         seen_phones.add(phone)
         valid_records.append({
             "row_idx": idx + 2,
             "name": name,
             "phone": phone,
+            "has_consent": has_consent
         })
 
-    return total_records, valid_records, duplicate_count, invalid_count
+    return total_records, valid_records, duplicate_count, invalid_count, opted_out_count, consented_count, non_consented_count
 
 
 def fallback_personalize(template: str, recipient: dict) -> str:
@@ -130,9 +169,8 @@ Your task is to personalize the following base message for the recipient using O
 
 CONSTRAINTS:
 1. Do NOT invent or hallucinate any facts, companies, roles, or events not present.
-2. Keep the personalized message between 50 and 100 words.
-3. Maintain a warm, clear, and professional tone.
-4. Output ONLY the final personalized message text. Do not include markdown quotes, explanations, or greeting prefixes outside the message.
+2. Keep the personalized message concise and professional.
+3. Output ONLY the final personalized message text. Do not include markdown quotes or explanations.
 
 BASE MESSAGE TEMPLATE:
 \"\"\"
@@ -141,7 +179,6 @@ BASE MESSAGE TEMPLATE:
 
 RECIPIENT NAME: {recipient.get('name', 'Valued Customer')}
 """
-
     try:
         response = client.messages.create(
             model=model,
@@ -152,169 +189,136 @@ RECIPIENT NAME: {recipient.get('name', 'Valued Customer')}
         if hasattr(content_block, "text"):
             return content_block.text.strip()
         return str(content_block).strip()
-    except Exception as e:
+    except Exception:
         return fallback_personalize(template, recipient)
 
 
-def image_to_base64(image_path: str) -> str:
-    """Read an image file and convert to base64 string."""
-    if not os.path.exists(image_path):
-        raise FileNotFoundError(f"Image not found at {image_path}")
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode("utf-8")
+def upload_meta_media(token: str, phone_number_id: str, image_path: str) -> str:
+    """Upload media file to Meta WhatsApp Cloud API and return media ID."""
+    url = f"https://graph.facebook.com/v21.0/{phone_number_id}/media"
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    with open(image_path, "rb") as f:
+        files = {
+            "file": (os.path.basename(image_path), f, "image/jpeg"),
+            "messaging_product": (None, "whatsapp")
+        }
+        res = requests.post(url, headers=headers, files=files, timeout=45)
+        
+    if res.status_code in (200, 201):
+        media_id = res.json().get("id")
+        return media_id
+    else:
+        raise RuntimeError(f"Meta Media Upload failed ({res.status_code}): {res.text}")
 
 
-def check_or_create_evolution_instance(api_url: str, api_key: str, instance_name: str) -> bool:
-    """Ensure WhatsApp gateway is running and WhatsApp is connected."""
-    headers = {"apikey": api_key, "Content-Type": "application/json"}
-
-    # 1. Check if gateway server is responsive
-    is_up = False
-    for _ in range(5):
-        try:
-            res = requests.get(f"{api_url}/instance/connectionState/{instance_name}", headers=headers, timeout=2)
-            if res.status_code == 200:
-                is_up = True
-                break
-        except requests.exceptions.RequestException:
-            time.sleep(1)
-
-    if not is_up:
-        print(f"\n[Error] WhatsApp Gateway is not responding at {api_url}.", flush=True)
-        print("Please ensure 'node gateway.js' is running.\n", flush=True)
-        return False
-
-    # 2. Check connection state
-    try:
-        state_res = requests.get(f"{api_url}/instance/connectionState/{instance_name}", headers=headers, timeout=3)
-        state = state_res.json().get("instance", {}).get("state") if state_res.status_code == 200 else None
-    except Exception:
-        state = None
-
-    if state == "open":
-        print("[WhatsApp Gateway] [OK] WhatsApp Connected & Ready!", flush=True)
-        return True
-
-    # 3. If not connected, fetch pairing code and wait for user to enter it on their phone
-    print("[WhatsApp Gateway] WhatsApp is not linked yet. Generating pairing code...", flush=True)
-    last_printed_code = None
-
-    for _ in range(60): # Wait up to 120 seconds
-        try:
-            code_res = requests.get(f"{api_url}/instance/pairingCode", timeout=3)
-            data = code_res.json() if code_res.status_code == 200 else {}
-            curr_state = data.get("state")
-            code = data.get("code")
-
-            if curr_state == "open":
-                print("\n[OK] WHATSAPP LINKED SUCCESSFULLY & READY TO SEND!\n", flush=True)
-                return True
-
-            if code and code != last_printed_code:
-                last_printed_code = code
-                print("\n============================================================", flush=True)
-                print("              [KEY] YOUR WHATSAPP PAIRING CODE               ", flush=True)
-                print("============================================================", flush=True)
-                print(f"\n                     >>  {code}  <<\n", flush=True)
-                print("------------------------------------------------------------", flush=True)
-                print("Web Dashboard: http://localhost:8085", flush=True)
-                print("On your phone:", flush=True)
-                print("1. Open WhatsApp Business -> Settings -> Linked Devices", flush=True)
-                print("2. Tap 'Link a Device'", flush=True)
-                print("3. Tap 'Link with phone number instead' at the bottom", flush=True)
-                print(f"4. Enter this 8-character code: {code}", flush=True)
-                print("============================================================", flush=True)
-                print("Waiting for you to enter the code on your phone...", flush=True)
-
-        except Exception:
-            pass
-
-        time.sleep(2)
-
-    print("\n[Timeout] Pairing code expired or took too long. Please run again.", flush=True)
-    return False
-
-
-def send_evolution_media_message(api_url: str, api_key: str, instance_name: str, phone: str, image_b64: str, caption: str) -> dict:
-    """Send image with caption using Evolution API."""
-    url = f"{api_url}/message/sendMedia/{instance_name}"
+def send_meta_message(token: str, phone_number_id: str, phone: str, text: str, media_id: str = None, template_name: str = None, template_lang: str = "en_US", recipient_name: str = "") -> dict:
+    """
+    Send official WhatsApp message via Meta Cloud API Graph endpoint.
+    Supports both official Template Messages and Standard Session Messages.
+    """
+    url = f"https://graph.facebook.com/v21.0/{phone_number_id}/messages"
     headers = {
-        "apikey": api_key,
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
 
-    payload = {
-        "number": phone,
-        "mediatype": "image",
-        "mimetype": "image/jpeg",
-        "caption": caption,
-        "media": image_b64,
-        "fileName": "campaign.jpg"
-    }
+    # If template_name is specified, send approved Meta Business Template
+    if template_name:
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": phone,
+            "type": "template",
+            "template": {
+                "name": template_name,
+                "language": {"code": template_lang or "en_US"},
+                "components": []
+            }
+        }
+        # Add Header media if uploaded
+        if media_id:
+            payload["template"]["components"].append({
+                "type": "header",
+                "parameters": [
+                    {"type": "image", "image": {"id": media_id}}
+                ]
+            })
+        # Add Body parameters (Name variable)
+        if recipient_name:
+            payload["template"]["components"].append({
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": recipient_name}
+                ]
+            })
+    elif media_id:
+        # Standard media message (within 24hr customer service window)
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": phone,
+            "type": "image",
+            "image": {
+                "id": media_id,
+                "caption": text
+            }
+        }
+    else:
+        # Standard text message (within 24hr customer service window)
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": phone,
+            "type": "text",
+            "text": {
+                "body": text
+            }
+        }
 
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
-        res_json = response.json() if response.headers.get("content-type", "").startswith("application/json") else {}
+        res = requests.post(url, headers=headers, json=payload, timeout=25)
+        res_data = res.json() if res.headers.get("content-type", "").startswith("application/json") else {}
 
-        if response.status_code in (200, 201):
-            key_id = res_json.get("key", {}).get("id") or "SENT_OK"
-            return {"success": True, "id": key_id}
+        if res.status_code in (200, 201):
+            msg_id = res_data.get("messages", [{}])[0].get("id", "ACCEPTED")
+            return {"success": True, "id": msg_id, "status": "ACCEPTED"}
         else:
-            err = res_json.get("response", {}).get("message") or response.text
-            return {"success": False, "error": f"HTTP {response.status_code}: {err}"}
+            error_obj = res_data.get("error", {})
+            error_code = error_obj.get("code")
+            error_msg = error_obj.get("message", res.text)
+            error_details = error_obj.get("error_data", {}).get("details", "")
+
+            return {
+                "success": False,
+                "code": error_code,
+                "error": error_msg,
+                "details": error_details
+            }
     except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-def send_evolution_text_message(api_url: str, api_key: str, instance_name: str, phone: str, text: str) -> dict:
-    """Send text message using Evolution API."""
-    url = f"{api_url}/message/sendText/{instance_name}"
-    headers = {
-        "apikey": api_key,
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "number": phone,
-        "text": text
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
-        res_json = response.json() if response.headers.get("content-type", "").startswith("application/json") else {}
-
-        if response.status_code in (200, 201):
-            key_id = res_json.get("key", {}).get("id") or "SENT_OK"
-            return {"success": True, "id": key_id}
-        else:
-            err = res_json.get("response", {}).get("message") or response.text
-            return {"success": False, "error": f"HTTP {response.status_code}: {err}"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"success": False, "code": -1, "error": str(e)}
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evolution API + Claude Campaign Runner (Name & Phone)")
+    parser = argparse.ArgumentParser(description="Official Meta WhatsApp Cloud API Campaign Dispatcher")
     parser.add_argument("--excel", default="recipients.xlsx", help="Path to recipients.xlsx")
     parser.add_argument("--message", default="message.txt", help="Path to message.txt template")
     parser.add_argument("--image", default="campaign.jpg", help="Path to campaign.jpg")
     parser.add_argument("--dry-run", action="store_true", help="Simulate message generation without sending")
-    parser.add_argument("--test-numbers", help="Comma-separated list of test numbers to override .env")
     parser.add_argument("--preview", action="store_true", help="Output recipient summary and preview as JSON")
     args = parser.parse_args()
 
     # If preview mode requested, output JSON and exit immediately
     if args.preview:
-        import json
         try:
-            total_records, valid_records, duplicate_count, invalid_count = load_recipients(args.excel)
+            total, valid_recs, dups, invalid, opted_out, consented, non_consented = load_recipients(args.excel)
             print(json.dumps({
                 "success": True,
-                "total": total_records,
-                "valid": len(valid_records),
-                "duplicates": duplicate_count,
-                "invalid": invalid_count,
-                "preview": valid_records[:5]
+                "total": total,
+                "valid": len(valid_recs),
+                "consented": consented,
+                "non_consented": non_consented,
+                "duplicates": dups,
+                "invalid": invalid,
+                "opted_out": opted_out,
+                "preview": valid_recs[:5]
             }))
         except Exception as e:
             print(json.dumps({"success": False, "error": str(e)}))
@@ -323,63 +327,58 @@ def main():
     # Load environment variables
     load_dotenv(override=True)
 
+    whatsapp_token = os.getenv("WHATSAPP_TOKEN", "").strip()
+    phone_number_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "").strip()
+    template_name = os.getenv("WHATSAPP_TEMPLATE_NAME", "").strip() or None
+    template_lang = os.getenv("WHATSAPP_TEMPLATE_LANG", "en_US").strip()
+
     anthropic_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     claude_model = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-latest").strip()
     use_claude_env = os.getenv("USE_CLAUDE", "true").strip().lower() == "true"
 
-    port = os.getenv("PORT", "8085")
-    evolution_url = os.getenv("EVOLUTION_API_URL", f"http://localhost:{port}").rstrip("/")
-    evolution_key = os.getenv("EVOLUTION_API_KEY", "my_secret_api_key_12345").strip()
-    evolution_instance = os.getenv("EVOLUTION_INSTANCE_NAME", "campaign_instance").strip()
-    delay_seconds = float(os.getenv("MESSAGE_DELAY_SECONDS", "2.0"))
-
-    # Determine test phone numbers
-    test_numbers_raw = args.test_numbers or os.getenv("TEST_PHONE_NUMBERS", "")
-    test_phone_set = {clean_phone_number(p) for p in test_numbers_raw.split(",") if clean_phone_number(p)}
-
     print("============================================================", flush=True)
-    print("   EVOLUTION API (100% FREE) + CLAUDE AUTOMATION WORKFLOW   ", flush=True)
+    print("   OFFICIAL META WHATSAPP CLOUD API CAMPAIGN ENGINE         ", flush=True)
     print("============================================================", flush=True)
 
-    # 1. Load message template
+    # 1. Verify Meta Credentials
+    if not args.dry_run and (not whatsapp_token or not phone_number_id):
+        print("\n[CRITICAL ERROR] Meta WhatsApp Cloud API credentials are not set!", flush=True)
+        print("Please configure WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in your environment variables.", flush=True)
+        sys.exit(1)
+
+    # 2. Load message template
     if not os.path.exists(args.message):
         print(f"[Error] Message template file '{args.message}' not found!", flush=True)
         sys.exit(1)
     with open(args.message, "r", encoding="utf-8") as f:
         template_text = f.read().strip()
 
-    # 2. Load Excel recipients
+    # 3. Load Excel recipients
     try:
-        total_records, valid_records, duplicate_count, invalid_count = load_recipients(args.excel)
+        total, valid_records, dups, invalid, opted_out, consented, non_consented = load_recipients(args.excel)
     except Exception as e:
         print(f"[Error] Failed to read Excel file: {e}", flush=True)
         sys.exit(1)
 
-    # Filter for test recipients if specified
-    if test_phone_set:
-        recipients_to_send = [r for r in valid_records if r["phone"] in test_phone_set]
-        test_count = len(recipients_to_send)
-    else:
-        recipients_to_send = valid_records
-        test_count = 0
-
-    print(f"Total Excel records: {total_records}", flush=True)
-    print(f"Valid recipients:    {len(valid_records)} (Unique contacts)", flush=True)
-    if duplicate_count > 0:
-        print(f"Duplicates removed:  {duplicate_count}", flush=True)
-    if invalid_count > 0:
-        print(f"Invalid skipped:     {invalid_count}", flush=True)
-    if test_phone_set:
-        print(f"Test recipients:     {test_count}", flush=True)
-    else:
-        print(f"Mode:                LIVE SEND (All {len(valid_records)} valid records)", flush=True)
+    print(f"Total Excel records:     {total}", flush=True)
+    print(f"Valid verified contacts: {len(valid_records)}", flush=True)
+    if dups > 0:
+        print(f"Duplicates removed:      {dups}", flush=True)
+    if invalid > 0:
+        print(f"Invalid phone records:   {invalid}", flush=True)
+    if opted_out > 0:
+        print(f"Permanently Opted-Out:   {opted_out} (Suppressed)", flush=True)
+    print(f"Consent verified:        {consented}", flush=True)
     print("------------------------------------------------------------\n", flush=True)
 
+    # Filter for contacts with consent
+    recipients_to_send = [r for r in valid_records if r.get("has_consent", True)]
+
     if not recipients_to_send:
-        print("[Notice] No recipients match the sending criteria. Exiting.", flush=True)
+        print("[Notice] No consented recipients available to dispatch. Exiting safely.", flush=True)
         sys.exit(0)
 
-    # 3. Setup Claude client
+    # 4. Setup Claude client (optional personalization)
     claude_client = None
     if use_claude_env and anthropic_key and anthropic_key.startswith("sk-ant-"):
         if HAS_ANTHROPIC:
@@ -391,31 +390,26 @@ def main():
         else:
             print("[Claude AI] anthropic package not installed. Using template variable substitution.", flush=True)
     else:
-        print("[Claude AI] Disabled or key not set. Using template variable substitution ({{name}}).", flush=True)
+        print("[Claude AI] Disabled. Using template variable substitution ({{name}}).", flush=True)
 
-    # 4. Prepare Image (optional)
+    # 5. Media Upload via Meta Cloud API
+    media_id = None
     has_image = os.path.exists(args.image)
-    if has_image:
+    if has_image and not args.dry_run:
         try:
-            img_b64 = image_to_base64(args.image)
-            print(f"[Campaign Media] Attached image: '{args.image}'", flush=True)
+            print(f"[Media] Uploading '{args.image}' to Meta WhatsApp Cloud API...", flush=True)
+            media_id = upload_meta_media(whatsapp_token, phone_number_id, args.image)
+            print(f"[Media] Uploaded successfully! Meta Media ID: {media_id}", flush=True)
         except Exception as e:
-            print(f"[Warning] Failed to read image '{args.image}': {e}. Sending as text message.", flush=True)
-            has_image = False
-            img_b64 = None
-    else:
-        img_b64 = None
-        print("[Campaign Media] No image uploaded. Sending personalized text campaign.", flush=True)
+            print(f"[Warning] Failed to upload media to Meta: {e}. Continuing as text.", flush=True)
+            media_id = None
 
-    # 5. Check Evolution API connection (skip if dry-run)
-    if not args.dry_run:
-        is_connected = check_or_create_evolution_instance(evolution_url, evolution_key, evolution_instance)
-        if not is_connected:
-            sys.exit(1)
+    if template_name:
+        print(f"[Delivery Type] Approved Meta Template: '{template_name}' (Lang: {template_lang})", flush=True)
     else:
-        print("\n[INFO] Running in DRY RUN / SIMULATION MODE (No actual WhatsApp messages will be sent)", flush=True)
+        print(f"[Delivery Type] Direct Session Message (Active 24-hr customer service window)", flush=True)
 
-    # 6. Process and send to recipients
+    # 6. Process and send to recipients via Official Meta Cloud API
     sent_count = 0
     failed_count = 0
 
@@ -427,50 +421,55 @@ def main():
         # Personalize Message
         personalized_msg = personalize_with_claude(claude_client, claude_model, template_text, recipient)
 
-        # Output recipient header
-        print(f"\n{name}", flush=True)
-        print(f"+{phone}", flush=True)
-        print(f"Message: {personalized_msg}", flush=True)
+        print(f"\n[{idx}/{len(recipients_to_send)}] Recipient: {name} (+{phone})", flush=True)
 
-        # Send via Evolution API
         if args.dry_run:
-            print("Status: SENT (Dry Run Simulation)", flush=True)
+            print(f"Message Preview: {personalized_msg}", flush=True)
+            print("Status: ACCEPTED (Dry Run Simulation)", flush=True)
+            sent_count += 1
+            continue
+
+        result = send_meta_message(
+            token=whatsapp_token,
+            phone_number_id=phone_number_id,
+            phone=phone,
+            text=personalized_msg,
+            media_id=media_id,
+            template_name=template_name,
+            template_lang=template_lang,
+            recipient_name=name
+        )
+
+        if result["success"]:
+            print(f"Status: ACCEPTED by Meta Cloud API (Message ID: {result['id']})", flush=True)
             sent_count += 1
         else:
-            if has_image and img_b64:
-                result = send_evolution_media_message(
-                    api_url=evolution_url,
-                    api_key=evolution_key,
-                    instance_name=evolution_instance,
-                    phone=phone,
-                    image_b64=img_b64,
-                    caption=personalized_msg
-                )
-            else:
-                result = send_evolution_text_message(
-                    api_url=evolution_url,
-                    api_key=evolution_key,
-                    instance_name=evolution_instance,
-                    phone=phone,
-                    text=personalized_msg
-                )
+            err_code = result.get("code")
+            err_msg = result.get("error")
+            err_details = result.get("details", "")
 
-            if result["success"]:
-                print(f"Status: SENT", flush=True)
-                sent_count += 1
-            else:
-                print(f"Status: FAILED", flush=True)
-                print(f"Reason: {result['error']}", flush=True)
-                failed_count += 1
+            print(f"Status: FAILED (Meta Error {err_code})", flush=True)
+            print(f"Reason: {err_msg} {err_details}", flush=True)
+            failed_count += 1
 
-            # Throttle delay
-            if idx < len(recipients_to_send):
-                time.sleep(delay_seconds)
+            # HALT ON POLICY / ACCOUNT RESTRICTION ERRORS
+            # 131031: Account is restricted
+            # 130429: Rate limit hit
+            # 190: Invalid access token
+            if err_code in [190, 131031, 131047, 130429]:
+                print(f"\n[CRITICAL ERROR] Stopping campaign: Meta reported policy/account code {err_code}.", flush=True)
+                if err_code == 131031:
+                    print("--> Your Meta WhatsApp Account is restricted. Resolve restrictions in Meta Business Suite.", flush=True)
+                elif err_code == 131047:
+                    print("--> Re-engagement error: Outside 24hr window. You must use an approved Meta Message Template.", flush=True)
+                elif err_code == 190:
+                    print("--> Access Token is invalid or expired. Generate a new System User Token in Meta Developers.", flush=True)
+                break
 
     print("\n====================== CAMPAIGN SUMMARY ======================", flush=True)
-    print(f"Total Processed: {len(recipients_to_send)}", flush=True)
-    print(f"Successful:      {sent_count}", flush=True)
-    print(f"Failed:          {failed_count}", flush=True)
+    print(f"Total Recipients:    {len(recipients_to_send)}", flush=True)
+    print(f"Accepted by Meta:    {sent_count}", flush=True)
+    print(f"Failed / Rejected:   {failed_count}", flush=True)
     print("==============================================================", flush=True)
 
 

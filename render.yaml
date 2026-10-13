@@ -7,9 +7,15 @@ services:
     startCommand: node gateway.js
     autoDeploy: true
     envVars:
-      - key: SENDER_PHONE_NUMBER
+      - key: WHATSAPP_TOKEN
         sync: false
-      - key: MESSAGE_DELAY_SECONDS
-        value: "3.0"
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_BUSINESS_ACCOUNT_ID
+        sync: false
+      - key: WHATSAPP_TEMPLATE_NAME
+        value: "campaign_update"
+      - key: WEBHOOK_VERIFY_TOKEN
+        value: "whatsapp_campaign_verify_token_123"
       - key: USE_CLAUDE
         value: "false"

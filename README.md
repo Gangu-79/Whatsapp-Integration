@@ -1,197 +1,198 @@
-# WhatsApp Campaign Engine
-> **Enterprise-Grade Bulk Messaging Platform with Dynamic Web Studio, Multi-Device WhatsApp Pairing & Cloud Deployment**
+# Official Meta WhatsApp Cloud API Campaign Engine
+> **Enterprise Bulk Messaging Platform powered by the Official Meta WhatsApp Business Platform, Opt-In Safeguards, and Dynamic Personalization**
 
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Whatsapp--Integration-blue?logo=github)](https://github.com/Gangu-79/Whatsapp-Integration)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![Python Version](https://img.shields.io/badge/python-%3E%3D3.10-blue.svg)](https://python.org/)
 
-A 100% free, automated outreach engine that allows you to broadcast personalized marketing campaigns (rich media image + dynamic personalized caption) directly through your existing **WhatsApp Business** or **Personal WhatsApp** account.
+An official, policy-compliant WhatsApp Campaign Studio that broadcasts marketing and transactional campaigns through the **Official Meta WhatsApp Cloud API (Graph API)**. Built to permanently eliminate account bans, device restriction warnings, and unapproved web socket automations.
 
 ---
 
-## ✨ Key Features
+## 🚨 Why Unofficial Automation Leads to Account Restrictions
 
-- **🚀 100% Free Forever:** Zero Meta API fees, zero per-conversation charges, and no third-party subscription fees.
-- **📱 100% Fully Responsive UI:** Flawlessly formatted across desktop monitors, laptops, tablets, and mobile smartphones.
-- **🎨 Ultra-Premium Web Studio:** Modern glassmorphic interface accessible at `http://localhost:8085` or via cloud deployment.
-- **📲 Dual Pairing Methods:** Link WhatsApp instantly via **8-digit Phone Pairing Code** or **QR Code scan**.
-- **📁 Drag-and-Drop Asset Upload:** Upload Excel contact sheets (`.xlsx`, `.xls`) and campaign images (`.jpg`, `.png`, `.webp`) directly from the browser with an embedded preview and one-click remove.
-- **✍️ Dynamic Message Composer:** Real-time auto-saving message template editor supporting `{{name}}` variable personalization.
-- **📊 Live Streaming Terminal:** Real-time execution logs streamed directly into the browser via Server-Sent Events (SSE).
-- **🛡️ Built-in Anti-Spam Throttling:** Automatic configurable delay intervals between messages to keep your WhatsApp account safe from bans.
-- **🤖 Optional Claude AI Personalization:** Automatically crafts customized variations per contact to maximize engagement.
-- **☁️ Cloud-Ready:** Pre-configured with `render.yaml` for 1-click deployment on Render.com and `vercel.json` for Vercel.
+If you attempted to send bulk messages through personal numbers or linked WhatsApp Web sessions (using libraries like Baileys or browser scripts), WhatsApp's automated abuse detection detects:
+1. **Unregistered Bulk Traffic**: High outgoing message frequency on a standard consumer or WhatsApp Business app account.
+2. **Missing Opt-In Verification**: Sending to users who do not have you saved in their contacts triggers spam reports.
+3. **Automated Linked Sessions**: WhatsApp monitors linked device traffic for automated socket scripts. Arbitrary pauses (2–3 seconds) do **not** bypass spam detection.
+
+**The Solution:** Use Meta's **Official WhatsApp Business Platform (Cloud API)**. Messages sent through the official API are authorized by Meta, never risk device bans, deliver at high speed, and comply with international telecommunication standards.
 
 ---
 
-## 🏗️ System Architecture
+## ✨ Features
+
+- **🛡️ Official Meta Cloud API:** 100% policy-compliant server-side Graph API integration. No pairing codes, no QR codes, no device bans.
+- **📱 Responsive Glassmorphic Studio:** Modern dark-theme web interface accessible at `http://localhost:8085` or via Render.
+- **📁 Excel Contact Processor:** 
+  - Robust column detection (`Name`, `Phone`, `Consent`).
+  - Automatic international E.164 phone normalization.
+  - Automatic duplicate contact detection.
+  - **Opt-In / Consent Verification**: Validates recipient consent before dispatch.
+  - **Permanent Opt-Out Suppression (`optouts.json`)**: Automatically excludes opted-out contacts.
+- **📋 Meta Message Template Support:** Supports approved Business Templates for outreach outside the 24-hour service window.
+- **🖼️ Rich Media Attachment:** Uploads campaign imagery directly to Meta's Media API.
+- **✍️ Personalized Messaging:** Replaces dynamic tags (e.g., `{{name}}`) or uses Anthropic Claude AI.
+- **🔔 Live Delivery & Webhook Support:**
+  - `GET /api/webhook`: Webhook subscription verification.
+  - `POST /api/webhook`: Real-time delivery receipts (`sent`, `delivered`, `read`) and automatic opt-out keyword handling (`STOP`, `UNSUBSCRIBE`).
+- **🛑 Failsafe Quality Controls:** Automatically halts execution if Meta reports account restrictions, invalid tokens, or template mismatches.
+
+---
+
+## 🏗️ Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                 WEB STUDIO (http://localhost:8085)          │
-│   [01 Connect]      [02 Assets]     [03 Compose]  [04 Launch]│
+│   [01 Meta Setup]   [02 Assets]     [03 Compose]  [04 Launch]│
 └──────────────────────────────┬──────────────────────────────┘
                                │
-            ┌──────────────────┴──────────────────┐
-            ▼                                     ▼
-┌───────────────────────────┐         ┌───────────────────────────┐
-│   Node.js Gateway Server  │         │     send_campaign.py      │
-│   (Baileys Multi-Device)  │ ◀────── │  (Excel parser & dispatch)│
-└───────────┬───────────────┘         └───────────────────────────┘
-            │
-            ▼
-┌───────────────────────────┐
-│  WhatsApp Network Servers │
-│  (Delivered to Contacts)  │
-└───────────────────────────┘
+             ┌─────────────────┴─────────────────┐
+             ▼                                   ▼
+┌───────────────────────────┐       ┌───────────────────────────┐
+│   Node.js Gateway Server  │       │     send_campaign.py      │
+│   (Express & Meta Config) │ ◀──── │  (Excel & Meta Graph API) │
+└────────────┬──────────────┘       └─────────────┬─────────────┘
+             │                                    │
+             │ Webhooks & Auth                    │ Official Outbound API
+             ▼                                    ▼
+┌───────────────────────────────────────────────────────────────┐
+│                META WHATSAPP CLOUD API (Graph v21.0)           │
+│         https://graph.facebook.com/v21.0/{PHONE_ID}/messages   │
+└──────────────────────────────┬────────────────────────────────┘
+                               │
+                               ▼
+┌───────────────────────────────────────────────────────────────┐
+│                    VERIFIED CUSTOMER DEVICES                  │
+└───────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📂 Project Structure
+## 🔑 Meta WhatsApp Cloud API Setup Guide
 
-```
-.
-├── public/
-│   └── index.html          # Responsive Web Studio UI (HTML5, CSS3, Vanilla JS)
-├── gateway.js              # Express & Baileys WhatsApp Gateway (Port 8085 / Cloud PORT)
-├── send_campaign.py        # Python dispatch engine (Excel, Claude AI, Throttle)
-├── recipients.xlsx         # Contacts spreadsheet (Columns: Name, Phone No)
-├── campaign.jpg            # Campaign image attachment
-├── message.txt             # Saved message copy template
-├── requirements.txt        # Python dependencies
-├── package.json            # Node.js dependencies
-├── render.yaml             # Render.com blueprint configuration
-├── vercel.json             # Vercel deployment configuration
-├── .gitignore              # Git ignore rules (auth credentials, node_modules)
-├── .env.example            # Environment variables template
-└── README.md               # Documentation
-```
+Follow these beginner-friendly steps to obtain your official Meta credentials:
+
+### Step 1: Create a Meta Developer App
+1. Go to [developers.facebook.com](https://developers.facebook.com/) and log in with your Facebook/Meta account.
+2. Click **My Apps** > **Create App**.
+3. Select **Other** > **Next**, then choose **Business** as the app type.
+4. Name your app (e.g. `WhatsApp Campaign Engine`) and link your Meta Business Account.
+
+### Step 2: Set Up WhatsApp Product
+1. On your App Dashboard, find **WhatsApp** and click **Set up**.
+2. Go to **WhatsApp** > **API Setup** in the left menu.
+3. You will see:
+   - **Temporary Access Token** (valid for 24 hours for testing)
+   - **Phone Number ID** (e.g. `104829104812345`)
+   - **WhatsApp Business Account ID** (WABA ID)
+   - **Test Phone Number** provided by Meta to send test messages to your personal number.
+
+### Step 3: Create a Permanent System User Token
+1. Open [Meta Business Suite](https://business.facebook.com/settings).
+2. Go to **Business Settings** > **Users** > **System Users**.
+3. Click **Add**, name the user (e.g. `whatsapp-gateway`), and select the role **Admin**.
+4. Click **Generate New Token**, select your WhatsApp App, and enable permissions:
+   - `whatsapp_business_messaging`
+   - `whatsapp_business_management`
+5. Copy the generated permanent token (starts with `EAAG...`).
+
+### Step 4: Create an Approved Message Template
+WhatsApp requires an approved message template for business-initiated conversations outside the 24-hour service window:
+1. In Meta WhatsApp Manager, navigate to **Account Tools** > **Message Templates**.
+2. Click **Create Template**.
+3. Choose Category: **Marketing** or **Utility**.
+4. Name: `campaign_update` (matching `WHATSAPP_TEMPLATE_NAME`).
+5. Body: `Hello {{1}}, excited to share our latest offer with you!`
+6. Submit for review (approval usually takes under 5 minutes).
 
 ---
 
-## ⚡ Quick Start Guide
+## ⚡ Local Installation & Quick Start
 
 ### 1. Prerequisites
-- **Node.js**: v18.x or higher installed ([Download](https://nodejs.org/))
-- **Python**: 3.10 or higher installed ([Download](https://python.org/))
-- **WhatsApp**: Installed and active on your mobile phone
+- **Node.js**: v18.x or v20+ ([Download Node.js](https://nodejs.org/))
+- **Python**: 3.10 or higher ([Download Python](https://python.org/))
 
-### 2. Installation
-Open your terminal in the project directory and run:
-
+### 2. Install Dependencies
 ```bash
-# 1. Install Node.js dependencies
+# Install Node.js packages
 npm install
 
-# 2. Install Python dependencies
+# Install Python packages
 pip install -r requirements.txt
 ```
 
-### 3. Launch the Web Studio Locally
-Start the WhatsApp Gateway Server:
+### 3. Configure Environment Variables
+Copy `.env.example` to `.env` and fill in your Meta Cloud API details:
+```ini
+WHATSAPP_TOKEN=EAAG...your_permanent_access_token_here
+WHATSAPP_PHONE_NUMBER_ID=104829104812345
+WHATSAPP_BUSINESS_ACCOUNT_ID=109283019283
+WHATSAPP_TEMPLATE_NAME=campaign_update
+WHATSAPP_TEMPLATE_LANG=en_US
+WEBHOOK_VERIFY_TOKEN=whatsapp_campaign_verify_token_123
+```
 
+### 4. Start the Application
 ```bash
 node gateway.js
 ```
-
-Open your browser and navigate to:
+Open your browser at:
 👉 **`http://localhost:8085`**
 
 ---
 
-## 📱 How to Use the Web Studio
+## 📋 Excel Contact File Format (.xlsx / .xls)
 
-### Step 01: Connect WhatsApp
-Choose your preferred linking method:
-- **Phone Code:** Enter your phone number with country code (e.g., `919876543210`) and click **Get Code**. Enter the 8-digit code in WhatsApp under **Settings → Linked Devices → Link a Device → Link with phone number instead**.
-- **Scan QR:** Click **Generate QR Code** and scan it using your WhatsApp scanner.
+Your spreadsheet should contain standard contact columns. The engine automatically detects flexible header names:
 
-### Step 02: Upload Assets
-- **Contacts Sheet:** Drag and drop your `recipients.xlsx` file. Ensure it contains columns named `Name` and `Phone No`.
-- **Campaign Image:** Drag and drop your promotional image. The preview appears directly inside the drop zone with a delete button (`✕`) for easy swaps.
+| Name | Phone | Consent |
+| :--- | :--- | :--- |
+| Alice Smith | +91 98765 43210 | Yes |
+| Bob Jones | 919876543211 | Yes |
+| Charlie Brown | 919876543212 | Yes |
 
-### Step 03: Compose Message
-Type your announcement message. Use `{{name}}` anywhere in the text to automatically replace it with each recipient's actual name from your spreadsheet. All edits are automatically saved in real time.
-
-### Step 04: Launch Campaign
-Click **Launch Bulk Campaign Now**. The live terminal below will stream individual delivery status in real-time until all contacts are reached.
+- **Name Column**: `Name`, `Full Name`, `Recipient`, `Contact Name`
+- **Phone Column**: `Phone`, `Mobile`, `Number`, `PhNo`
+- **Consent Column (Recommended)**: `Consent`, `OptIn`, `Subscribed`, `Permission`
+  - Values: `Yes`, `True`, `1`, `Agreed`, `Opted_In`
 
 ---
 
-## ⚙️ Configuration (`.env`)
+## 🛑 Opt-Out Handling & Webhooks
 
-To customize advanced settings, copy `.env.example` to `.env`:
+### 1. Automatic Opt-Out Keyword Detection
+When users reply with:
+`STOP`, `UNSUBSCRIBE`, `CANCEL`, or `OPTOUT`
+The webhook automatically records their phone number in `optouts.json` and suppresses them permanently from all future campaigns.
 
-```env
-# ==========================================
-# 1. WHATSAPP SENDER CONFIGURATION
-# ==========================================
-SENDER_PHONE_NUMBER=919876543210
-
-# ==========================================
-# 2. LOCAL GATEWAY CONFIGURATION
-# ==========================================
-EVOLUTION_API_URL=http://localhost:8085
-EVOLUTION_API_KEY=my_secret_api_key_12345
-EVOLUTION_INSTANCE_NAME=campaign_instance
-
-# ==========================================
-# 3. CAMPAIGN THROTTLING & TESTING
-# ==========================================
-# Comma-separated test numbers (leave empty for full campaign)
-TEST_PHONE_NUMBERS=
-
-# Delay between messages in seconds (recommended: 2.5 to 5.0)
-MESSAGE_DELAY_SECONDS=3.0
-
-# ==========================================
-# 4. OPTIONAL CLAUDE AI PERSONALIZATION
-# ==========================================
-USE_CLAUDE=false
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-CLAUDE_MODEL=claude-3-5-sonnet-latest
-```
+### 2. Configuring Webhook in Meta
+1. In Meta Developers Console, go to **WhatsApp** > **Configuration**.
+2. Under **Webhook**, click **Edit**.
+3. **Callback URL**: `https://your-app-domain.onrender.com/api/webhook`
+4. **Verify Token**: `whatsapp_campaign_verify_token_123` (matching `WEBHOOK_VERIFY_TOKEN`).
+5. Click **Verify and Save**.
+6. Subscribe to **messages**.
 
 ---
 
-## 🛡️ Anti-Spam & Deliverability Best Practices
+## ☁️ Deploying to Render
 
-| Audience Type | Recommended Daily Volume | Throttling Delay |
-|---|---|---|
-| **Existing Customers / Active Leads** | 300 – 600 messages / day | `2.0` – `3.0` seconds |
-| **Mixed Contact Lists** | 200 – 400 messages / day | `3.0` – `5.0` seconds |
-| **New / Cold Contacts** | 50 – 150 messages / day | `5.0` – `8.0` seconds |
-
-1. **Always Keep Throttling Enabled:** Keep `MESSAGE_DELAY_SECONDS` at `2.5` or higher to prevent automated traffic blocks.
-2. **Include an Opt-Out Line:** Adding `"Reply STOP to unsubscribe"` dramatically reduces the likelihood of users clicking "Report Spam".
-3. **Warm Up New Numbers:** If using a newly registered WhatsApp number, start with 20–30 messages per day and gradually increase volume over two weeks.
-
----
-
-## 🌐 Cloud Deployment Guide
-
-### Deploying to Render.com (Recommended Free 24/7 Hosting)
-Because WhatsApp Baileys requires a persistent WebSocket server:
-1. Fork or push this repository to **GitHub**: `https://github.com/Gangu-79/Whatsapp-Integration`
-2. Go to **[Render.com](https://render.com)** and create a **New Web Service**.
-3. Connect your repository.
-4. Set:
-   - **Environment:** `Node`
-   - **Build Command:** `npm install && pip install -r requirements.txt`
-   - **Start Command:** `node gateway.js`
-   - **Instance Type:** `Free`
-5. Click **Deploy Web Service** to get a live public URL.
-
-### Deploying Frontend to Vercel
-1. A `vercel.json` file is already included in this repository.
-2. Run:
+1. Commit and push your code to GitHub:
    ```bash
-   npx vercel --prod
+   git add .
+   git commit -m "Official Meta WhatsApp Cloud API integration"
+   git push origin main
    ```
-
----
-
-## 📄 License
-This project is licensed under the MIT License.
+2. In your [Render Dashboard](https://dashboard.render.com/), open your Web Service.
+3. In **Environment**, configure the following environment variables:
+   - `WHATSAPP_TOKEN`: Your Meta Permanent Access Token
+   - `WHATSAPP_PHONE_NUMBER_ID`: Your Meta Phone Number ID
+   - `WHATSAPP_BUSINESS_ACCOUNT_ID`: Your WABA ID
+   - `WHATSAPP_TEMPLATE_NAME`: `campaign_update` (or your approved template name)
+   - `WEBHOOK_VERIFY_TOKEN`: `whatsapp_campaign_verify_token_123`
+4. Trigger **Manual Deploy** > **Deploy latest commit**.
+5. Once live, access your secure WhatsApp Campaign Studio.
