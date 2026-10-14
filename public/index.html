@@ -1351,6 +1351,10 @@
           <div class="dot" id="dot"></div>
           <span id="clbl">Checking...</span>
         </div>
+        <button id="topbarDisconnectBtn" onclick="doLogout()" style="display:none; background:rgba(244,63,94,0.18); border:1px solid rgba(244,63,94,0.45); color:#f43f5e; font-size:12px; font-weight:700; padding:7px 15px; border-radius:100px; cursor:pointer; align-items:center; gap:6px; transition:all 0.2s;" title="Disconnect WhatsApp Account">
+          <svg style="width:12px;height:12px;fill:currentColor;" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+          Disconnect
+        </button>
         <a href="#engine" class="btn-quickstart">Start Campaign</a>
       </div>
     </header>
@@ -1461,21 +1465,30 @@
             </div>
           </div>
 
-          <!-- Active Verified Meta Cloud API Display with Disconnect / Logout Button -->
-          <div id="connInfo" style="display:none; margin-top:14px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:14px; padding:14px 16px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-              <div>
-                <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--grn); letter-spacing:0.8px;">Official WhatsApp Business Account</div>
-                <div id="activePhoneDisplay" style="font-size:16px; font-weight:800; color:#fff; font-family:var(--font-mono); margin-top:2px;">+91XXXXXXXXXX</div>
-                <div id="verifiedBusinessName" style="font-size:12px; color:var(--txt-dim); margin-top:2px;">Verified Business Profile</div>
-                <div id="qualityBadge" style="font-size:10.5px; display:inline-block; margin-top:6px; background:rgba(16,185,129,0.2); color:var(--grn); padding:2px 8px; border-radius:6px; font-weight:700;">Quality: HIGH</div>
+          <!-- Active Verified Meta Cloud API Display with Prominent Disconnect Button -->
+          <div id="connInfo" style="display:none; margin-top:14px; background:rgba(16,185,129,0.06); border:1.5px solid rgba(16,185,129,0.35); border-radius:18px; padding:18px 20px; box-shadow:0 8px 24px rgba(16,185,129,0.12);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981; box-shadow:0 0 10px #10b981;"></span>
+                <span style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:var(--grn); letter-spacing:1px;">Active WhatsApp Account</span>
               </div>
-              <button type="button" class="btn" onclick="doLogout()" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); color:#f43f5e; font-size:11.5px; padding:7px 14px; border-radius:8px;">
-                Disconnect
-              </button>
+              <span id="qualityBadge" style="font-size:11px; background:rgba(16,185,129,0.2); color:var(--grn); padding:3px 10px; border-radius:100px; font-weight:800;">Quality: HIGH</span>
             </div>
-            <div style="font-size:10.5px; color:var(--txt-muted); margin-top:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
-              🛡️ Disconnecting only revokes application API access; your phone and Meta Business Account remain registered.
+
+            <div style="margin-bottom:14px;">
+              <div id="activePhoneDisplay" style="font-size:24px; font-weight:900; color:#fff; font-family:var(--font-mono); letter-spacing:0.5px;">+91XXXXXXXXXX</div>
+              <div id="verifiedBusinessName" style="font-size:13px; color:var(--txt-secondary); margin-top:3px; font-weight:600;">Verified Business Profile</div>
+            </div>
+
+            <!-- PROMINENT DISCONNECT ACTION BUTTON -->
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08);">
+              <button type="button" class="btn" onclick="doLogout()" style="width:100%; background:linear-gradient(135deg, rgba(244,63,94,0.25), rgba(225,29,72,0.4)); border:1.5px solid rgba(244,63,94,0.6); color:#ffffff; font-size:13.5px; font-weight:800; padding:13px 18px; border-radius:12px; display:flex; align-items:center; justify-content:center; gap:9px; cursor:pointer; transition:all 0.25s; box-shadow:0 4px 14px rgba(244,63,94,0.3);">
+                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                🔴 DISCONNECT / LOG OUT THIS NUMBER
+              </button>
+              <div style="font-size:11px; color:var(--txt-muted); text-align:center; margin-top:8px;">
+                Click here anytime to log out, switch numbers, or reconfigure credentials.
+              </div>
             </div>
           </div>
         </div>
@@ -1637,6 +1650,27 @@
 
     const $ = id => document.getElementById(id);
 
+    // ─── USER SESSION ISOLATION (Private per browser/device) ───
+    function getSessionId() {
+      let sid = localStorage.getItem('wa_session_id');
+      if (!sid) {
+        sid = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem('wa_session_id', sid);
+      }
+      return sid;
+    }
+
+    async function apiFetch(url, options = {}) {
+      options.headers = options.headers || {};
+      const sid = getSessionId();
+      if (options.headers instanceof Headers) {
+        options.headers.set('X-Session-ID', sid);
+      } else {
+        options.headers['X-Session-ID'] = sid;
+      }
+      return fetch(url, options);
+    }
+
     function toast(m, t = '') {
       const e = $('toast'); e.textContent = m; e.className = 'toast ' + t;
       requestAnimationFrame(() => e.classList.add('on'));
@@ -1659,7 +1693,7 @@
       b.innerHTML = '<span class="spin">⟳</span> Verifying with Meta...';
 
       try {
-        const r = await fetch('/api/config', {
+        const r = await apiFetch('/api/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1671,7 +1705,7 @@
         });
         const d = await r.json();
         if (d.success) {
-          toast('Configuration saved. Verifying with Meta...', 'ok_');
+          toast('Configuration saved to your private session. Verifying with Meta...', 'ok_');
           await poll();
         } else {
           toast(d.error || 'Failed to save configuration', 'err_');
@@ -1689,7 +1723,7 @@
 
     async function fetchRecipientsPreview() {
       try {
-        const r = await fetch('/api/recipients');
+        const r = await apiFetch('/api/recipients');
         const d = await r.json();
         const pBox = $('recPrevBox');
         const sTxt = $('recSummaryText');
@@ -1751,7 +1785,7 @@
       const fd = new FormData(); fd.append('file', f);
       try {
         toast('Uploading and analyzing Excel...', '');
-        const r = await fetch('/api/upload/excel', { method: 'POST', body: fd });
+        const r = await apiFetch('/api/upload/excel', { method: 'POST', body: fd });
         const d = await r.json();
         if (d.success) {
           $('exN').textContent = f.name;
@@ -1766,7 +1800,7 @@
     async function rmEx(e) {
       if (e) e.stopPropagation();
       try {
-        await fetch('/api/delete-excel', { method: 'DELETE' });
+        await apiFetch('/api/delete-excel', { method: 'DELETE' });
         $('exN').textContent = 'No file selected';
         $('exB').style.display = 'none';
         $('exI').value = '';
@@ -1785,7 +1819,7 @@
       const f = e.target.files[0]; if (!f) return;
       const fd = new FormData(); fd.append('file', f);
       try {
-        const r = await fetch('/api/upload/image', { method: 'POST', body: fd });
+        const r = await apiFetch('/api/upload/image', { method: 'POST', body: fd });
         const d = await r.json();
         if (d.success) {
           $('imN').textContent = f.name;
@@ -1804,7 +1838,7 @@
     async function rmIm(e) {
       if (e) e.stopPropagation();
       try {
-        await fetch('/api/delete-image', { method: 'DELETE' });
+        await apiFetch('/api/delete-image', { method: 'DELETE' });
         $('ipv').src = '';
         $('ipw').style.display = 'none';
         $('imDef').style.display = 'flex';
@@ -1833,14 +1867,14 @@
     async function savMsg() {
       const m = $('msgI').value;
       try {
-        await fetch('/api/save-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: m }) });
+        await apiFetch('/api/save-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: m }) });
         const i = $('savedI'); i.classList.add('on'); setTimeout(() => i.classList.remove('on'), 2500);
       } catch { }
     }
-    async function loadMsg() { try { const r = await fetch('/api/get-message'); const d = await r.json(); if (d.message) $('msgI').value = d.message; } catch { } }
+    async function loadMsg() { try { const r = await apiFetch('/api/get-message'); const d = await r.json(); if (d.message) $('msgI').value = d.message; } catch { } }
     async function loadImg() {
       try {
-        const r = await fetch('/api/preview-image'); const d = await r.json();
+        const r = await apiFetch('/api/preview-image'); const d = await r.json();
         if (d.image) {
           $('ipv').src = d.image;
           $('imDef').style.display = 'none';
@@ -1854,7 +1888,7 @@
 
     async function checkFilesStatus() {
       try {
-        const r = await fetch('/api/files-status');
+        const r = await apiFetch('/api/files-status');
         const d = await r.json();
         if (d.excelExists) {
           $('exN').textContent = 'recipients.xlsx';
@@ -1904,7 +1938,8 @@
         cl.style.display = 'block'; feed.innerHTML = '<div class="log-dim">🚀 Initializing official Meta WhatsApp Cloud API engine...</div>';
         b.disabled = true; b.innerHTML = '⏳ Dispatching Messages...';
         cl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        const src = new EventSource('/api/stream-campaign');
+        const streamUrl = '/api/stream-campaign?sessionId=' + encodeURIComponent(getSessionId());
+        const src = new EventSource(streamUrl);
         src.onmessage = ev => {
           const msg = JSON.parse(ev.data);
           const addLine = (txt, cls) => {
@@ -1932,28 +1967,31 @@
     }
 
     async function doLogout() {
-      if (!confirm('Are you sure you want to disconnect from the Meta WhatsApp Cloud API? This revokes server authorization.')) return;
+      if (!confirm('Are you sure you want to disconnect from this WhatsApp account? You can reconnect or switch to another phone number anytime.')) return;
       try {
         toast('Disconnecting Meta API...', '');
-        const r = await fetch('/api/logout', { method: 'POST' });
+        const r = await apiFetch('/api/logout', { method: 'POST' });
         const d = await r.json();
-        if (d.success) {
-          toast(d.message || 'Disconnected successfully.', 'ok_');
-          ok = false;
-          activeSenderPhone = '';
-          $('connInfo').style.display = 'none';
-          $('metaConfigPanel').style.display = 'block';
-          poll();
-        }
-      } catch {
-        toast('Error disconnecting', 'err_');
+        toast(d.message || 'Disconnected successfully.', 'ok_');
+        ok = false;
+        activeSenderPhone = '';
+        $('connInfo').style.display = 'none';
+        $('metaConfigPanel').style.display = 'block';
+        if ($('topbarDisconnectBtn')) $('topbarDisconnectBtn').style.display = 'none';
+        $('metaPhoneId').value = '';
+        $('metaToken').value = '';
+        poll();
+        checkFilesStatus();
+      } catch (err) {
+        toast('Error disconnecting: ' + err.message, 'err_');
       }
     }
 
     async function poll() {
       try {
-        const r = await fetch('/api/status'); const d = await r.json();
+        const r = await apiFetch('/api/status'); const d = await r.json();
         const badge = $('cbadge'), dot_ = $('dot'), lbl = $('clbl'), sc = $('stC'), bl = $('btnL');
+        const tbDisc = $('topbarDisconnectBtn');
         if (d.connected) {
           ok = true; 
           activeSenderPhone = d.phone;
@@ -1968,6 +2006,7 @@
           $('activePhoneDisplay').textContent = '+' + d.phone;
           if ($('verifiedBusinessName')) $('verifiedBusinessName').textContent = d.verifiedName || 'WhatsApp Business Profile';
           if ($('qualityBadge')) $('qualityBadge').textContent = 'Quality: ' + (d.qualityRating || 'GREEN');
+          if (tbDisc) tbDisc.style.display = 'inline-flex';
         } else {
           ok = false; 
           activeSenderPhone = '';
@@ -1979,6 +2018,7 @@
           bl.disabled = true;
           $('connInfo').style.display = 'none';
           $('metaConfigPanel').style.display = 'block';
+          if (tbDisc) tbDisc.style.display = 'none';
         }
       } catch { }
     }
@@ -1986,7 +2026,7 @@
     // ─── INBOX & REAL-TIME REPLIES ───
     async function fetchInbox() {
       try {
-        const res = await fetch('/api/inbox');
+        const res = await apiFetch('/api/inbox');
         const data = await res.json();
         const badge = $('inboxBadge');
         const count = data.messages ? data.messages.length : 0;
@@ -2054,7 +2094,7 @@
       const text = inp.value.trim();
       try {
         toast('Sending reply...', 'ok_');
-        const res = await fetch('/api/inbox/reply', {
+        const res = await apiFetch('/api/inbox/reply', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ to: phone, message: text })

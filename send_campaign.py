@@ -301,6 +301,11 @@ def main():
     parser.add_argument("--excel", default="recipients.xlsx", help="Path to recipients.xlsx")
     parser.add_argument("--message", default="message.txt", help="Path to message.txt template")
     parser.add_argument("--image", default="campaign.jpg", help="Path to campaign.jpg")
+    parser.add_argument("--token", default="", help="Meta WhatsApp Cloud API Access Token")
+    parser.add_argument("--phone-id", default="", help="Meta WhatsApp Phone Number ID")
+    parser.add_argument("--template", default="", help="Meta Approved Template Name")
+    parser.add_argument("--template-lang", default="en_US", help="Meta Template Language")
+    parser.add_argument("--optouts", default="optouts.json", help="Path to optouts.json exclusion file")
     parser.add_argument("--dry-run", action="store_true", help="Simulate message generation without sending")
     parser.add_argument("--preview", action="store_true", help="Output recipient summary and preview as JSON")
     args = parser.parse_args()
@@ -308,7 +313,7 @@ def main():
     # If preview mode requested, output JSON and exit immediately
     if args.preview:
         try:
-            total, valid_recs, dups, invalid, opted_out, consented, non_consented = load_recipients(args.excel)
+            total, valid_recs, dups, invalid, opted_out, consented, non_consented = load_recipients(args.excel, args.optouts)
             print(json.dumps({
                 "success": True,
                 "total": total,
@@ -327,10 +332,10 @@ def main():
     # Load environment variables
     load_dotenv(override=True)
 
-    whatsapp_token = os.getenv("WHATSAPP_TOKEN", "").strip()
-    phone_number_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "").strip()
-    template_name = os.getenv("WHATSAPP_TEMPLATE_NAME", "").strip() or None
-    template_lang = os.getenv("WHATSAPP_TEMPLATE_LANG", "en_US").strip()
+    whatsapp_token = (args.token or os.getenv("WHATSAPP_TOKEN", "")).strip()
+    phone_number_id = (args.phone_id or os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")).strip()
+    template_name = (args.template or os.getenv("WHATSAPP_TEMPLATE_NAME", "")).strip() or None
+    template_lang = (args.template_lang or os.getenv("WHATSAPP_TEMPLATE_LANG", "en_US")).strip()
 
     anthropic_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     claude_model = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-latest").strip()

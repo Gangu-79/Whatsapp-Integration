@@ -14,9 +14,70 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Multer storage: Excel -> recipients.xlsx, image -> campaign.jpg
+// Base Sessions Directory for user privacy and multi-user isolation
+const sessionsBaseDir = path.join(__dirname, 'sessions');
+if (!fs.existsSync(sessionsBaseDir)) fs.mkdirSync(sessionsBaseDir, { recursive: true });
+
+function getSessionId(req) {
+  const h = req.headers['x-session-id'] || req.query.sessionId || req.body?.sessionId;
+  if (h && typeof h === 'string') {
+    const cleaned = h.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+    if (cleaned) return cleaned;
+  }
+  return 'default';
+}
+
+function getSessionDir(req) {
+  const sid = getSessionId(req);
+  const dir = path.join(sessionsBaseDir, sid);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function getSessionConfig(req) {
+  const dir = getSessionDir(req);
+  const cfgPath = path.join(dir, 'config.json');
+  if (fs.existsSync(cfgPath)) {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+      if (cfg && (cfg.token || cfg.phoneNumberId)) return cfg;
+    } catch (e) {}
+  }
+  // If no session config found and sessionId is default, check process.env as fallback
+  if (getSessionId(req) === 'default' && process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
+    return {
+      token: process.env.WHATSAPP_TOKEN,
+      phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
+      wabaId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '',
+      templateName: process.env.WHATSAPP_TEMPLATE_NAME || 'campaign_update'
+    };
+  }
+  return null;
+}
+
+function saveSessionConfig(req, data) {
+  const dir = getSessionDir(req);
+  const cfgPath = path.join(dir, 'config.json');
+  let current = {};
+  if (fs.existsSync(cfgPath)) {
+    try { current = JSON.parse(fs.readFileSync(cfgPath, 'utf8')); } catch (e) {}
+  }
+  const updated = { ...current, ...data };
+  fs.writeFileSync(cfgPath, JSON.stringify(updated, null, 2), 'utf8');
+  return updated;
+}
+
+function clearSessionConfig(req) {
+  const dir = getSessionDir(req);
+  const cfgPath = path.join(dir, 'config.json');
+  if (fs.existsSync(cfgPath)) {
+    try { fs.unlinkSync(cfgPath); } catch (e) {}
+  }
+}
+
+// Multer storage: Saves files directly inside the caller's private session folder
 const uploadStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, __dirname),
+  destination: (req, file, cb) => cb(null, getSessionDir(req)),
   filename: (req, file, cb) => {
     if (req.path.includes('excel')) cb(null, 'recipients.xlsx');
     else if (req.path.includes('image')) cb(null, 'campaign.jpg');
@@ -33,44 +94,9 @@ if (!fs.existsSync(optOutFilePath)) {
   fs.writeFileSync(optOutFilePath, JSON.stringify({ opted_out_numbers: [], updated_at: new Date().toISOString() }, null, 2), 'utf8');
 }
 
-// Ensure inbox.json exists
+// Ensure global inbox.json exists
 if (!fs.existsSync(inboxFilePath)) {
   fs.writeFileSync(inboxFilePath, JSON.stringify({ messages: [] }, null, 2), 'utf8');
-}
-
-// Helper to read .env
-function getEnv(key) {
-  try {
-    const envPath = path.join(__dirname, '.env');
-    if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, 'utf8');
-      for (const line of envContent.split('\n')) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith(key + '=')) {
-          return trimmed.substring(key.length + 1).trim();
-        }
-      }
-    }
-  } catch (e) {}
-  return process.env[key] || '';
-}
-
-// Helper to update keys in .env safely
-function setEnv(key, value) {
-  try {
-    const envPath = path.join(__dirname, '.env');
-    let content = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
-    const regex = new RegExp(`^${key}=.*$`, 'm');
-    if (regex.test(content)) {
-      content = content.replace(regex, `${key}=${value}`);
-    } else {
-      content += `\n${key}=${value}`;
-    }
-    fs.writeFileSync(envPath, content, 'utf8');
-    process.env[key] = value;
-  } catch (e) {
-    console.error('Failed to update .env:', e.message);
-  }
 }
 
 // Serve Frontend UI
@@ -83,14 +109,11 @@ app.get('/', (req, res) => {
 // OFFICIAL META WHATSAPP CLOUD API ENDPOINTS
 // ============================================================================
 
-// API: Get Meta Cloud API Connection & Business Profile Status
+// API: Get Meta Cloud API Connection & Business Profile Status (Session Isolated)
 app.get('/api/status', async (req, res) => {
-  const token = getEnv('WHATSAPP_TOKEN');
-  const phoneNumberId = getEnv('WHATSAPP_PHONE_NUMBER_ID');
-  const wabaId = getEnv('WHATSAPP_BUSINESS_ACCOUNT_ID');
-  const templateName = getEnv('WHATSAPP_TEMPLATE_NAME') || 'campaign_update';
+  const cfg = getSessionConfig(req);
 
-  if (!token || !phoneNumberId) {
+  if (!cfg || !cfg.token || !cfg.phoneNumberId) {
     return res.json({
       connected: false,
       configured: false,
@@ -102,6 +125,8 @@ app.get('/api/status', async (req, res) => {
       message: 'Meta Cloud API credentials not configured.'
     });
   }
+
+  const { token, phoneNumberId, wabaId, templateName } = cfg;
 
   try {
     // Query Meta Graph API for the registered phone number status
@@ -126,8 +151,8 @@ app.get('/api/status', async (req, res) => {
       qualityRating: data.quality_rating || 'GREEN',
       codeStatus: data.code_verification_status || 'VERIFIED',
       phoneNumberId: phoneNumberId,
-      wabaId: wabaId,
-      templateName: templateName
+      wabaId: wabaId || '',
+      templateName: templateName || 'campaign_update'
     });
   } catch (err) {
     const errorMsg = err.response?.data?.error?.message || err.message;
@@ -144,35 +169,35 @@ app.get('/api/status', async (req, res) => {
   }
 });
 
-// API: Save/Update Meta Cloud API credentials securely on server
+// API: Save/Update Meta Cloud API credentials in private session
 app.post('/api/config', async (req, res) => {
   const { token, phoneNumberId, wabaId, templateName } = req.body;
+  const toSave = {};
 
   if (token && typeof token === 'string' && token.trim()) {
-    setEnv('WHATSAPP_TOKEN', token.trim());
+    toSave.token = token.trim();
   }
   if (phoneNumberId && typeof phoneNumberId === 'string' && phoneNumberId.trim()) {
-    setEnv('WHATSAPP_PHONE_NUMBER_ID', phoneNumberId.trim());
+    toSave.phoneNumberId = phoneNumberId.trim();
   }
   if (wabaId && typeof wabaId === 'string') {
-    setEnv('WHATSAPP_BUSINESS_ACCOUNT_ID', wabaId.trim());
+    toSave.wabaId = wabaId.trim();
   }
   if (templateName && typeof templateName === 'string') {
-    setEnv('WHATSAPP_TEMPLATE_NAME', templateName.trim());
+    toSave.templateName = templateName.trim();
   }
 
-  res.json({ success: true, message: 'Configuration updated successfully.' });
+  saveSessionConfig(req, toSave);
+  res.json({ success: true, message: 'Configuration saved to your private session.' });
 });
 
-// API: Disconnect / Clear Meta Credentials
+// API: Disconnect / Clear Meta Credentials for current user
 app.post('/api/logout', (req, res) => {
   try {
-    setEnv('WHATSAPP_TOKEN', '');
-    setEnv('WHATSAPP_PHONE_NUMBER_ID', '');
-    setEnv('WHATSAPP_BUSINESS_ACCOUNT_ID', '');
+    clearSessionConfig(req);
     res.json({
       success: true,
-      message: 'Disconnected from WhatsApp Cloud API. Note: Your phone number and Meta Business Account remain registered on Meta.'
+      message: 'Disconnected successfully! Your private session has been reset.'
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -215,37 +240,61 @@ app.post('/api/webhook', (req, res) => {
           }
         }
 
-        // 2. Process incoming messages (Save to Inbox & Handle Opt-Out)
+        // 2. Process incoming messages (Save to Session Inbox & Handle Opt-Out)
         if (value.messages) {
           const contacts = value.contacts || [];
           const contactName = contacts[0]?.profile?.name || '';
+          const targetPhoneId = value.metadata?.phone_number_id || '';
 
           for (const msg of value.messages) {
             const from = msg.from;
             const rawText = msg.text?.body || msg.button?.text || msg.interactive?.button_reply?.title || '';
             const textUpper = rawText.trim().toUpperCase();
             const timestamp = msg.timestamp ? new Date(parseInt(msg.timestamp) * 1000).toISOString() : new Date().toISOString();
+            const msgObj = {
+              id: msg.id || 'msg_' + Date.now(),
+              from,
+              name: contactName,
+              text: rawText,
+              timestamp,
+              type: msg.type || 'text',
+              targetPhoneId
+            };
 
-            // Save to inbox.json
+            // Save to global inbox
             try {
               let inboxData = { messages: [] };
               if (fs.existsSync(inboxFilePath)) {
                 inboxData = JSON.parse(fs.readFileSync(inboxFilePath, 'utf8'));
               }
-              inboxData.messages.unshift({
-                id: msg.id || 'msg_' + Date.now(),
-                from,
-                name: contactName,
-                text: rawText,
-                timestamp,
-                type: msg.type || 'text'
-              });
-              if (inboxData.messages.length > 200) {
-                inboxData.messages = inboxData.messages.slice(0, 200);
-              }
+              inboxData.messages.unshift(msgObj);
+              if (inboxData.messages.length > 200) inboxData.messages = inboxData.messages.slice(0, 200);
               fs.writeFileSync(inboxFilePath, JSON.stringify(inboxData, null, 2), 'utf8');
+            } catch (e) {}
+
+            // Save to matching session inboxes
+            try {
+              if (fs.existsSync(sessionsBaseDir)) {
+                const sessionIds = fs.readdirSync(sessionsBaseDir);
+                for (const sid of sessionIds) {
+                  const sCfgPath = path.join(sessionsBaseDir, sid, 'config.json');
+                  if (fs.existsSync(sCfgPath)) {
+                    try {
+                      const scfg = JSON.parse(fs.readFileSync(sCfgPath, 'utf8'));
+                      if (!targetPhoneId || scfg.phoneNumberId === targetPhoneId) {
+                        const sInboxPath = path.join(sessionsBaseDir, sid, 'inbox.json');
+                        let sInbox = { messages: [] };
+                        if (fs.existsSync(sInboxPath)) sInbox = JSON.parse(fs.readFileSync(sInboxPath, 'utf8'));
+                        sInbox.messages.unshift(msgObj);
+                        if (sInbox.messages.length > 200) sInbox.messages = sInbox.messages.slice(0, 200);
+                        fs.writeFileSync(sInboxPath, JSON.stringify(sInbox, null, 2), 'utf8');
+                      }
+                    } catch (e) {}
+                  }
+                }
+              }
             } catch (e) {
-              console.error('[Inbox Save Error]:', e.message);
+              console.error('[Session Inbox Error]:', e.message);
             }
 
             // Check Opt-Out Keywords (STOP, UNSUBSCRIBE, CANCEL)
@@ -274,12 +323,19 @@ app.post('/api/webhook', (req, res) => {
   res.sendStatus(404);
 });
 
-// API: Get Inbox Messages (All incoming customer replies)
+// API: Get Inbox Messages for caller's private session
 app.get('/api/inbox', (req, res) => {
   try {
+    const sInboxPath = path.join(getSessionDir(req), 'inbox.json');
     let inboxData = { messages: [] };
-    if (fs.existsSync(inboxFilePath)) {
-      inboxData = JSON.parse(fs.readFileSync(inboxFilePath, 'utf8'));
+    if (fs.existsSync(sInboxPath)) {
+      inboxData = JSON.parse(fs.readFileSync(sInboxPath, 'utf8'));
+    } else if (fs.existsSync(inboxFilePath)) {
+      const cfg = getSessionConfig(req);
+      const globalData = JSON.parse(fs.readFileSync(inboxFilePath, 'utf8'));
+      if (cfg?.phoneNumberId) {
+        inboxData = { messages: (globalData.messages || []).filter(m => !m.targetPhoneId || m.targetPhoneId === cfg.phoneNumberId) };
+      }
     }
     res.json({ success: true, count: inboxData.messages.length, messages: inboxData.messages });
   } catch (e) {
@@ -287,14 +343,13 @@ app.get('/api/inbox', (req, res) => {
   }
 });
 
-// API: Quick Reply to Candidate via Meta Cloud API (Free within 24h window)
+// API: Quick Reply to Candidate via Meta Cloud API using caller's private credentials
 app.post('/api/inbox/reply', async (req, res) => {
   const { to, message } = req.body;
-  const token = getEnv('WHATSAPP_TOKEN');
-  const phoneNumberId = getEnv('WHATSAPP_PHONE_NUMBER_ID');
+  const cfg = getSessionConfig(req);
 
-  if (!token || !phoneNumberId) {
-    return res.status(400).json({ error: 'Meta Cloud API not configured.' });
+  if (!cfg || !cfg.token || !cfg.phoneNumberId) {
+    return res.status(400).json({ error: 'Meta Cloud API not configured in this session.' });
   }
   if (!to || !message) {
     return res.status(400).json({ error: 'Recipient phone number and message are required.' });
@@ -302,7 +357,7 @@ app.post('/api/inbox/reply', async (req, res) => {
 
   try {
     const cleanPhone = to.replace(/\D/g, '');
-    const metaUrl = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+    const metaUrl = `https://graph.facebook.com/v21.0/${cfg.phoneNumberId}/messages`;
     const payload = {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',
@@ -313,7 +368,7 @@ app.post('/api/inbox/reply', async (req, res) => {
 
     const response = await axios.post(metaUrl, payload, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${cfg.token}`,
         'Content-Type': 'application/json'
       },
       timeout: 15000
@@ -326,19 +381,19 @@ app.post('/api/inbox/reply', async (req, res) => {
 });
 
 // ============================================================================
-// EXCEL & CAMPAIGN DISPATCH ENDPOINTS
+// EXCEL & CAMPAIGN DISPATCH ENDPOINTS (Private Per-Session Isolation)
 // ============================================================================
 
-// API: Upload Excel recipients file
+// API: Upload Excel recipients file for current session
 app.post('/api/upload/excel', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
   res.json({ success: true, filename: req.file.originalname, saved: 'recipients.xlsx' });
 });
 
-// API: Delete Excel recipients file
+// API: Delete Excel recipients file for current session
 app.delete('/api/delete-excel', (req, res) => {
   try {
-    const exPath = path.join(__dirname, 'recipients.xlsx');
+    const exPath = path.join(getSessionDir(req), 'recipients.xlsx');
     if (fs.existsSync(exPath)) fs.unlinkSync(exPath);
     res.json({ success: true });
   } catch (e) {
@@ -346,16 +401,16 @@ app.delete('/api/delete-excel', (req, res) => {
   }
 });
 
-// API: Upload campaign image
+// API: Upload campaign image for current session
 app.post('/api/upload/image', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
   res.json({ success: true, filename: req.file.originalname, saved: 'campaign.jpg' });
 });
 
-// API: Delete campaign image
+// API: Delete campaign image for current session
 app.delete('/api/delete-image', (req, res) => {
   try {
-    const imgPath = path.join(__dirname, 'campaign.jpg');
+    const imgPath = path.join(getSessionDir(req), 'campaign.jpg');
     if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
     res.json({ success: true });
   } catch (e) {
@@ -363,10 +418,11 @@ app.delete('/api/delete-image', (req, res) => {
   }
 });
 
-// API: Check status of files & opt-outs
+// API: Check status of files for current session
 app.get('/api/files-status', (req, res) => {
-  const exPath = path.join(__dirname, 'recipients.xlsx');
-  const imPath = path.join(__dirname, 'campaign.jpg');
+  const dir = getSessionDir(req);
+  const exPath = path.join(dir, 'recipients.xlsx');
+  const imPath = path.join(dir, 'campaign.jpg');
   let optOutCount = 0;
   try {
     if (fs.existsSync(optOutFilePath)) {
@@ -382,15 +438,15 @@ app.get('/api/files-status', (req, res) => {
   });
 });
 
-// API: Parse Excel recipients with Consent Verification, Deduplication, and Preview
+// API: Parse Excel recipients with Consent Verification & Preview for current session
 app.get('/api/recipients', (req, res) => {
-  const exPath = path.join(__dirname, 'recipients.xlsx');
+  const exPath = path.join(getSessionDir(req), 'recipients.xlsx');
   if (!fs.existsSync(exPath)) {
     return res.json({ exists: false, total: 0, valid: 0, consented: 0, non_consented: 0, duplicates: 0, invalid: 0, opted_out: 0, preview: [] });
   }
 
   const pythonCmd = process.platform === 'win32' ? 'python' : (process.env.PYTHON_CMD || 'python3');
-  const py = spawn(pythonCmd, ['-u', 'send_campaign.py', '--preview'], { cwd: __dirname });
+  const py = spawn(pythonCmd, ['-u', 'send_campaign.py', '--excel', exPath, '--optouts', optOutFilePath, '--preview'], { cwd: __dirname });
   let stdout = '';
   let stderr = '';
 
@@ -407,28 +463,31 @@ app.get('/api/recipients', (req, res) => {
   });
 });
 
-// API: Save message text
+// API: Save message text for current session
 app.post('/api/save-message', (req, res) => {
   const { message } = req.body;
   if (typeof message !== 'string') return res.status(400).json({ error: 'Invalid message.' });
-  fs.writeFileSync(path.join(__dirname, 'message.txt'), message, 'utf8');
+  fs.writeFileSync(path.join(getSessionDir(req), 'message.txt'), message, 'utf8');
   res.json({ success: true });
 });
 
-// API: Get current message text
+// API: Get current message text for current session
 app.get('/api/get-message', (req, res) => {
   try {
-    const msg = fs.readFileSync(path.join(__dirname, 'message.txt'), 'utf8');
-    res.json({ message: msg });
+    const msgPath = path.join(getSessionDir(req), 'message.txt');
+    if (fs.existsSync(msgPath)) {
+      return res.json({ message: fs.readFileSync(msgPath, 'utf8') });
+    }
+    res.json({ message: 'Hello {{name}},\nThank you for choosing our service!' });
   } catch (e) {
     res.json({ message: 'Hello {{name}},\nThank you for choosing our service!' });
   }
 });
 
-// API: Get campaign image as base64 for preview
+// API: Get campaign image as base64 for preview for current session
 app.get('/api/preview-image', (req, res) => {
   try {
-    const imgPath = path.join(__dirname, 'campaign.jpg');
+    const imgPath = path.join(getSessionDir(req), 'campaign.jpg');
     if (!fs.existsSync(imgPath)) return res.json({ image: null });
     const data = fs.readFileSync(imgPath);
     res.json({ image: 'data:image/jpeg;base64,' + data.toString('base64') });
@@ -437,19 +496,32 @@ app.get('/api/preview-image', (req, res) => {
   }
 });
 
-// API: Streaming Campaign Dispatcher via Official Meta Cloud API (Server-Sent Events)
+// API: Streaming Campaign Dispatcher via Official Meta Cloud API (Session Isolated)
 app.get('/api/stream-campaign', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  const token = getEnv('WHATSAPP_TOKEN');
-  const phoneNumberId = getEnv('WHATSAPP_PHONE_NUMBER_ID');
+  const cfg = getSessionConfig(req);
 
-  if (!token || !phoneNumberId) {
+  if (!cfg || !cfg.token || !cfg.phoneNumberId) {
     res.write(`data: ${JSON.stringify({
       type: 'error',
-      text: '[Configuration Error] Meta WhatsApp Cloud API credentials missing! Please configure WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID in Card 01 or Render environment variables.'
+      text: '[Configuration Error] Meta WhatsApp Cloud API credentials missing! Please configure Phone Number ID and Permanent Access Token in Card 01.'
+    })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: 'finish', exitCode: 1 })}\n\n`);
+    return res.end();
+  }
+
+  const sDir = getSessionDir(req);
+  const exPath = path.join(sDir, 'recipients.xlsx');
+  const msgPath = path.join(sDir, 'message.txt');
+  const imgPath = path.join(sDir, 'campaign.jpg');
+
+  if (!fs.existsSync(exPath)) {
+    res.write(`data: ${JSON.stringify({
+      type: 'error',
+      text: '[Excel Error] No recipients.xlsx file found. Please upload your Excel list in Card 02 before launching.'
     })}\n\n`);
     res.write(`data: ${JSON.stringify({ type: 'finish', exitCode: 1 })}\n\n`);
     return res.end();
@@ -458,7 +530,18 @@ app.get('/api/stream-campaign', (req, res) => {
   res.write(`data: ${JSON.stringify({ type: 'log', text: 'Connecting to Official Meta WhatsApp Cloud API...' })}\n\n`);
 
   const pythonCmd = process.platform === 'win32' ? 'python' : (process.env.PYTHON_CMD || 'python3');
-  const py = spawn(pythonCmd, ['-u', 'send_campaign.py'], {
+  const pyArgs = [
+    '-u', 'send_campaign.py',
+    '--excel', exPath,
+    '--message', fs.existsSync(msgPath) ? msgPath : path.join(__dirname, 'message.txt'),
+    '--image', fs.existsSync(imgPath) ? imgPath : 'campaign.jpg',
+    '--token', cfg.token,
+    '--phone-id', cfg.phoneNumberId,
+    '--template', cfg.templateName || '',
+    '--optouts', optOutFilePath
+  ];
+
+  const py = spawn(pythonCmd, pyArgs, {
     cwd: __dirname,
     env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUNBUFFERED: '1' }
   });
