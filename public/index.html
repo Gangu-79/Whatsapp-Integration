@@ -383,6 +383,64 @@
       to { transform: scale(1); opacity: 1; }
     }
 
+    /* Mobile Bottom Navigation Bar */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: rgba(13, 11, 26, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 9990;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+      box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.6);
+    }
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--txt-secondary);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 700;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 12px;
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    .mobile-nav-item svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+    .mobile-nav-item:hover, .mobile-nav-item.active-accent {
+      color: #c084fc;
+    }
+    .mobile-nav-badge {
+      position: absolute;
+      top: -3px;
+      right: 2px;
+      background: #10b981;
+      color: #fff;
+      font-size: 9.5px;
+      font-weight: 800;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     /* ─── PAGE LAYOUT ─── */
     .page-container {
       position: relative;
@@ -1263,7 +1321,14 @@
       .nav-links {
         display: none;
       }
+      .mobile-bottom-nav {
+        display: flex;
+      }
+      body {
+        padding-bottom: 74px;
+      }
       .mobile-fab-inbox {
+        bottom: 82px;
         display: inline-flex;
       }
       .hero-stats-grid {
@@ -2142,19 +2207,29 @@
     }
 
     async function doLogout() {
-      if (!confirm('Are you sure you want to disconnect from this WhatsApp account? You can reconnect or switch to another phone number anytime.')) return;
+      if (!confirm('Are you sure you want to disconnect from this WhatsApp account? This will log out your session and clear your temporary credentials on this device.')) return;
       try {
-        toast('Disconnecting Meta API...', '');
+        toast('Disconnecting WhatsApp account...', '');
         const r = await apiFetch('/api/logout', { method: 'POST' });
         const d = await r.json();
+        localStorage.removeItem('wa_session_id');
         toast(d.message || 'Disconnected successfully.', 'ok_');
         ok = false;
         activeSenderPhone = '';
         $('connInfo').style.display = 'none';
         $('metaConfigPanel').style.display = 'block';
         if ($('topbarDisconnectBtn')) $('topbarDisconnectBtn').style.display = 'none';
+        if ($('bottomNavDisconnect')) $('bottomNavDisconnect').style.display = 'none';
         $('metaPhoneId').value = '';
         $('metaToken').value = '';
+        if ($('metaWabaId')) $('metaWabaId').value = '';
+        if ($('metaTplName')) $('metaTplName').value = '';
+        $('exB').style.display = 'none';
+        $('imB').style.display = 'none';
+        activeRecipientsCount = 0;
+        $('stV').textContent = '0';
+        $('stI').textContent = 'None';
+        fetchInbox();
         poll();
         checkFilesStatus();
       } catch (err) {
@@ -2167,6 +2242,7 @@
         const r = await apiFetch('/api/status'); const d = await r.json();
         const badge = $('cbadge'), dot_ = $('dot'), lbl = $('clbl'), sc = $('stC'), bl = $('btnL');
         const tbDisc = $('topbarDisconnectBtn');
+        const bNavDisc = $('bottomNavDisconnect');
         if (d.connected) {
           ok = true; 
           activeSenderPhone = d.phone;
@@ -2182,6 +2258,7 @@
           if ($('verifiedBusinessName')) $('verifiedBusinessName').textContent = d.verifiedName || 'WhatsApp Business Profile';
           if ($('qualityBadge')) $('qualityBadge').textContent = 'Quality: ' + (d.qualityRating || 'GREEN');
           if (tbDisc) tbDisc.style.display = 'inline-flex';
+          if (bNavDisc) bNavDisc.style.display = 'flex';
         } else {
           ok = false; 
           activeSenderPhone = '';
@@ -2194,11 +2271,12 @@
           $('connInfo').style.display = 'none';
           $('metaConfigPanel').style.display = 'block';
           if (tbDisc) tbDisc.style.display = 'none';
+          if (bNavDisc) bNavDisc.style.display = 'none';
         }
       } catch { }
     }
 
-    // ─── INBOX & REAL-TIME REPLIES ───
+    // ─── INBOX & REAL-TIME REPLIES (Conversation Threaded) ───
     async function fetchInbox() {
       try {
         const res = await apiFetch('/api/inbox');
@@ -2206,12 +2284,12 @@
         const count = data.messages ? data.messages.length : 0;
 
         // Update all badges across desktop and mobile UI
-        const badgeIds = ['inboxBadge', 'topbarInboxBadge', 'mobileFabBadge', 'heroInboxBadge'];
+        const badgeIds = ['inboxBadge', 'topbarInboxBadge', 'mobileFabBadge', 'bottomNavBadge', 'heroInboxBadge'];
         badgeIds.forEach(id => {
           const el = $(id);
           if (el) {
             el.textContent = count;
-            el.style.display = count > 0 ? (id === 'mobileFabBadge' ? 'flex' : 'inline-block') : 'none';
+            el.style.display = count > 0 ? (id === 'mobileFabBadge' || id === 'bottomNavBadge' ? 'flex' : 'inline-block') : 'none';
           }
         });
         const secBadge = $('sectionInboxBadge');
@@ -2225,37 +2303,91 @@
         if (!data.messages || data.messages.length === 0) {
           list.innerHTML = `
             <div style="text-align:center;padding:48px 20px;color:var(--txt-muted);">
-              <div style="font-size:36px;margin-bottom:12px;">📬</div>
-              <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;">No Incoming Replies Yet</div>
-              <div style="font-size:13px;max-width:380px;margin:0 auto;line-height:1.5;">When candidates respond to your campaign messages, their replies and questions will appear here instantly in real time!</div>
+              <div style="font-size:38px;margin-bottom:12px;">📬</div>
+              <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">No Incoming Replies Yet</div>
+              <div style="font-size:13px;max-width:380px;margin:0 auto;line-height:1.5;">When candidates respond to your campaign messages, their incoming replies and questions will appear here instantly in real time!</div>
             </div>`;
           return;
         }
 
-        list.innerHTML = data.messages.map(m => {
-          const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date(m.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
-          const safePhone = m.from.replace(/\D/g, '');
+        // Group into conversation threads by contact phone
+        const threads = {};
+        data.messages.forEach(m => {
+          const phone = (m.direction === 'outgoing' ? m.to : m.from || '').replace(/\D/g, '');
+          if (!phone) return;
+          if (!threads[phone]) {
+            threads[phone] = {
+              phone,
+              name: m.name && m.name !== 'You' ? m.name : '',
+              messages: []
+            };
+          }
+          threads[phone].messages.push(m);
+          if (m.name && m.name !== 'You' && !threads[phone].name) {
+            threads[phone].name = m.name;
+          }
+        });
+
+        list.innerHTML = Object.values(threads).map(thread => {
+          const safePhone = thread.phone;
+          const contactName = thread.name || ('Candidate (+' + safePhone + ')');
+          const latestMsg = thread.messages[0] || {};
+          const latestTime = new Date(latestMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date(latestMsg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+          // Render message bubbles in chronological order (oldest to newest)
+          const chronological = [...thread.messages].reverse();
+          const bubblesHtml = chronological.map(m => {
+            const isOut = m.direction === 'outgoing';
+            const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (isOut) {
+              return `
+                <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+                  <div style="background:linear-gradient(135deg,rgba(139,92,246,0.35),rgba(6,182,212,0.3));border:1px solid rgba(139,92,246,0.45);border-radius:14px 14px 2px 14px;padding:9px 13px;max-width:85%;color:#fff;word-break:break-word;">
+                    <div style="font-size:13.5px;line-height:1.4;">${m.text}</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,0.65);text-align:right;margin-top:3px;">You · ${time} ✓✓</div>
+                  </div>
+                </div>`;
+            } else {
+              return `
+                <div style="display:flex;justify-content:flex-start;margin-bottom:8px;">
+                  <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:14px 14px 14px 2px;padding:9px 13px;max-width:85%;color:#e2e8f0;word-break:break-word;">
+                    <div style="font-size:13.5px;line-height:1.4;">${m.text || '<span style="color:var(--txt-muted);font-style:italic;">[Media/Response]</span>'}</div>
+                    <div style="font-size:10px;color:var(--txt-muted);margin-top:3px;">${time}</div>
+                  </div>
+                </div>`;
+            }
+          }).join('');
+
           return `
-            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px;margin-bottom:12px;transition:border-color 0.2s;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap;">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:16px;margin-bottom:14px;transition:all 0.2s;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06);gap:8px;flex-wrap:wrap;">
                 <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                  <div style="width:34px;height:34px;min-width:34px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#3b82f6);display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;">
-                    ${(m.name || m.from || 'U').charAt(0).toUpperCase()}
+                  <div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#3b82f6);display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;">
+                    ${contactName.charAt(0).toUpperCase()}
                   </div>
                   <div style="min-width:0;">
-                    <div style="font-size:14px;font-weight:700;color:#fff;word-break:break-word;">${m.name ? m.name + ' ' : ''}<span style="color:var(--txt-secondary);font-size:12.5px;font-weight:500;">(+${safePhone})</span></div>
-                    <div style="font-size:11px;color:var(--txt-muted);">${time}</div>
+                    <div style="font-size:14.5px;font-weight:700;color:#fff;word-break:break-word;">${contactName}</div>
+                    <div style="font-size:11.5px;color:var(--txt-secondary);font-family:var(--font-mono);">+${safePhone} · <span style="color:var(--txt-muted);">${latestTime}</span></div>
                   </div>
                 </div>
-                <button onclick="toggleReplyBox('${safePhone}')" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:#c084fc;padding:6px 14px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">Reply</button>
+                <button onclick="toggleReplyBox('${safePhone}')" style="background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.4);color:#c084fc;padding:6px 14px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">
+                  💬 Chat / Reply
+                </button>
               </div>
-              <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.18);border-radius:12px;padding:12px 14px;color:#e2e8f0;font-size:13.5px;line-height:1.5;word-break:break-word;">
-                ${m.text || '<span style="color:var(--txt-muted);font-style:italic;">[Media or Interactive Response]</span>'}
+
+              <!-- Message History Bubble Thread -->
+              <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.04);border-radius:14px;padding:12px 14px;max-height:260px;overflow-y:auto;display:flex;flex-direction:column;">
+                ${bubblesHtml}
               </div>
-              <div id="replyBox_${safePhone}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+
+              <!-- Fast Reply Form -->
+              <div id="replyBox_${safePhone}" style="display:none;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                  <input type="text" id="replyInp_${safePhone}" placeholder="Type reply message..." style="flex:1;min-width:200px;background:#06050b;border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:9px 12px;color:#fff;font-size:13px;outline:none;" />
-                  <button onclick="sendQuickReply('${safePhone}')" style="background:linear-gradient(135deg,#8b5cf6,#06b6d4);border:none;color:#fff;padding:9px 18px;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">Send</button>
+                  <input type="text" id="replyInp_${safePhone}" onkeydown="if(event.key==='Enter') sendQuickReply('${safePhone}')" placeholder="Type WhatsApp reply to +${safePhone}..." style="flex:1;min-width:200px;background:#06050b;border:1px solid rgba(255,255,255,0.18);border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;outline:none;" />
+                  <button onclick="sendQuickReply('${safePhone}')" style="background:linear-gradient(135deg,#8b5cf6,#06b6d4);border:none;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;gap:6px;">
+                    <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#fff;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    Send
+                  </button>
                 </div>
               </div>
             </div>`;
@@ -2275,7 +2407,7 @@
       if (!inp || !inp.value.trim()) return toast('Please enter a reply message', 'err_');
       const text = inp.value.trim();
       try {
-        toast('Sending reply...', 'ok_');
+        toast('Sending reply via Meta API...', 'ok_');
         const res = await apiFetch('/api/inbox/reply', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2285,7 +2417,7 @@
         if (data.success) {
           toast('Reply sent successfully! ✓', 'ok_');
           inp.value = '';
-          toggleReplyBox(phone);
+          fetchInbox();
         } else {
           toast(data.error || 'Failed to send reply', 'err_');
         }
@@ -2364,5 +2496,32 @@
     </div>
     <span>Live Inbox</span>
   </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR (Screens <= 860px) -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <a href="#hero" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="#engine" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+      <span>Connect</span>
+    </a>
+    <a href="javascript:void(0)" onclick="openInbox()" class="mobile-nav-item active-accent">
+      <div style="position:relative;display:inline-block;">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+        <span id="bottomNavBadge" class="mobile-nav-badge" style="display:none;">0</span>
+      </div>
+      <span>Inbox</span>
+    </a>
+    <a href="#launch-section" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      <span>Launch</span>
+    </a>
+    <a href="javascript:void(0)" id="bottomNavDisconnect" onclick="doLogout()" class="mobile-nav-item" style="display:none;color:#f43f5e;">
+      <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+      <span>Logout</span>
+    </a>
+  </nav>
 </body>
 </html>

@@ -22,9 +22,10 @@ function getSessionId(req) {
   const h = req.headers['x-session-id'] || req.query.sessionId || req.body?.sessionId;
   if (h && typeof h === 'string') {
     const cleaned = h.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
-    if (cleaned) return cleaned;
+    if (cleaned && cleaned.length >= 8) return cleaned;
   }
-  return 'default';
+  // If invalid or missing, generate an isolated ephemeral guest ID
+  return 'sess_anon_' + Date.now().toString(36);
 }
 
 function getSessionDir(req) {
@@ -35,22 +36,15 @@ function getSessionDir(req) {
 }
 
 function getSessionConfig(req) {
+  const sid = getSessionId(req);
+  if (sid.startsWith('sess_anon_')) return null; // Fresh unauthenticated visitor
   const dir = getSessionDir(req);
   const cfgPath = path.join(dir, 'config.json');
   if (fs.existsSync(cfgPath)) {
     try {
       const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
-      if (cfg && (cfg.token || cfg.phoneNumberId)) return cfg;
+      if (cfg && cfg.token && cfg.phoneNumberId) return cfg;
     } catch (e) {}
-  }
-  // If no session config found and sessionId is default, check process.env as fallback
-  if (getSessionId(req) === 'default' && process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
-    return {
-      token: process.env.WHATSAPP_TOKEN,
-      phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
-      wabaId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '',
-      templateName: process.env.WHATSAPP_TEMPLATE_NAME || 'campaign_update'
-    };
   }
   return null;
 }
@@ -68,12 +62,18 @@ function saveSessionConfig(req, data) {
 }
 
 function clearSessionConfig(req) {
-  const dir = getSessionDir(req);
-  const cfgPath = path.join(dir, 'config.json');
-  if (fs.existsSync(cfgPath)) {
-    try { fs.unlinkSync(cfgPath); } catch (e) {}
+  const sid = getSessionId(req);
+  if (!sid || sid.startsWith('sess_anon_')) return;
+  const dir = path.join(sessionsBaseDir, sid);
+  try {
+    if (fs.existsSync(dir)) {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  } catch (e) {
+    console.error('[Session Reset Error]:', e.message);
   }
 }
+
 
 // Multer storage: Saves files directly inside the caller's private session folder
 const uploadStorage = multer.diskStorage({
@@ -323,21 +323,21 @@ app.post('/api/webhook', (req, res) => {
   res.sendStatus(404);
 });
 
-// API: Get Inbox Messages for caller's private session
+// API: Get Inbox Messages for caller's private session (Strictly isolated)
 app.get('/api/inbox', (req, res) => {
   try {
+    const cfg = getSessionConfig(req);
+    if (!cfg) {
+      return res.json({ success: true, count: 0, messages: [], unconfigured: true });
+    }
     const sInboxPath = path.join(getSessionDir(req), 'inbox.json');
     let inboxData = { messages: [] };
     if (fs.existsSync(sInboxPath)) {
-      inboxData = JSON.parse(fs.readFileSync(sInboxPath, 'utf8'));
-    } else if (fs.existsSync(inboxFilePath)) {
-      const cfg = getSessionConfig(req);
-      const globalData = JSON.parse(fs.readFileSync(inboxFilePath, 'utf8'));
-      if (cfg?.phoneNumberId) {
-        inboxData = { messages: (globalData.messages || []).filter(m => !m.targetPhoneId || m.targetPhoneId === cfg.phoneNumberId) };
-      }
+      try {
+        inboxData = JSON.parse(fs.readFileSync(sInboxPath, 'utf8'));
+      } catch (err) {}
     }
-    res.json({ success: true, count: inboxData.messages.length, messages: inboxData.messages });
+    res.json({ success: true, count: (inboxData.messages || []).length, messages: inboxData.messages || [] });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -349,10 +349,10 @@ app.post('/api/inbox/reply', async (req, res) => {
   const cfg = getSessionConfig(req);
 
   if (!cfg || !cfg.token || !cfg.phoneNumberId) {
-    return res.status(400).json({ error: 'Meta Cloud API not configured in this session.' });
+    return res.status(401).json({ error: 'Meta Cloud API not configured in this session. Please connect your credentials.' });
   }
-  if (!to || !message) {
-    return res.status(400).json({ error: 'Recipient phone number and message are required.' });
+  if (!to || !message || !message.trim()) {
+    return res.status(400).json({ error: 'Recipient phone number and reply message are required.' });
   }
 
   try {
@@ -363,7 +363,7 @@ app.post('/api/inbox/reply', async (req, res) => {
       recipient_type: 'individual',
       to: cleanPhone,
       type: 'text',
-      text: { preview_url: false, body: message }
+      text: { preview_url: false, body: message.trim() }
     };
 
     const response = await axios.post(metaUrl, payload, {
@@ -374,9 +374,38 @@ app.post('/api/inbox/reply', async (req, res) => {
       timeout: 15000
     });
 
-    res.json({ success: true, messageId: response.data.messages?.[0]?.id });
+    const sentMsgId = response.data.messages?.[0]?.id || 'reply_' + Date.now();
+
+    // Persist outgoing reply into caller's private session inbox for full conversation history
+    try {
+      const sInboxPath = path.join(getSessionDir(req), 'inbox.json');
+      let sInbox = { messages: [] };
+      if (fs.existsSync(sInboxPath)) {
+        try { sInbox = JSON.parse(fs.readFileSync(sInboxPath, 'utf8')); } catch (e) {}
+      }
+      sInbox.messages = sInbox.messages || [];
+      sInbox.messages.unshift({
+        id: sentMsgId,
+        from: cfg.phoneNumberId,
+        to: cleanPhone,
+        direction: 'outgoing',
+        name: 'You',
+        text: message.trim(),
+        timestamp: new Date().toISOString(),
+        type: 'text',
+        targetPhoneId: cfg.phoneNumberId
+      });
+      if (sInbox.messages.length > 250) sInbox.messages = sInbox.messages.slice(0, 250);
+      fs.writeFileSync(sInboxPath, JSON.stringify(sInbox, null, 2), 'utf8');
+    } catch (saveErr) {
+      console.error('[Save Outgoing Reply Warning]:', saveErr.message);
+    }
+
+    res.json({ success: true, messageId: sentMsgId });
   } catch (e) {
-    res.status(500).json({ error: e.response?.data?.error?.message || e.message });
+    const errText = e.response?.data?.error?.message || e.message;
+    console.error('[Meta Reply API Error]:', errText);
+    res.status(500).json({ error: errText });
   }
 });
 
