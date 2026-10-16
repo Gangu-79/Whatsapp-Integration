@@ -1274,9 +1274,6 @@
         width: 16px;
         height: 16px;
       }
-      .backup-grid {
-        grid-template-columns: 1fr !important;
-      }
       .meta-two-col-grid {
         grid-template-columns: 1fr !important;
       }
@@ -2741,47 +2738,6 @@
       }
     }
 
-    // ─── DATABASE BACKUP RESTORE (Requirement 7) ───
-    async function restoreBackupFile() {
-      const fileInp = $('backupFileInput');
-      const file = fileInp?.files?.[0];
-      if (!file) {
-        toast('Please choose a .json backup file first!', 'err_');
-        return;
-      }
-
-      if (!confirm(`Restore database from '${file.name}'? Existing messages and settings will be recovered.`)) {
-        return;
-      }
-
-      const btn = $('btnRestoreBackup');
-      btn.disabled = true;
-      btn.textContent = 'Restoring database...';
-
-      const fd = new FormData();
-      fd.append('backupFile', file);
-
-      try {
-        const r = await apiFetch('/api/backup/restore', {
-          method: 'POST',
-          body: fd
-        });
-        const d = await r.json();
-        if (d.success) {
-          toast(d.message || 'Database restored successfully!', 'ok_');
-          fileInp.value = '';
-          await poll();
-          await fetchInbox();
-        } else {
-          toast(d.error || 'Failed to restore backup', 'err_');
-        }
-      } catch (e) {
-        toast('Restore error: ' + e.message, 'err_');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Restore Database';
-      }
-    }
 
     async function saveMetaConfig() {
       const phoneId = $('metaPhoneId').value.trim();
