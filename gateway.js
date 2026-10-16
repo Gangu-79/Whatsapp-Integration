@@ -1,6 +1,8 @@
 /**
- * WhatsApp Campaign Engine - Official Meta Cloud API Gateway
+ * WhatsApp Campaign Engine - Enterprise Meta Cloud API Gateway
  * Policy-Compliant, Official Meta WhatsApp Business Platform Integration
+ * Supports Single & Bulk Excel Messaging, PDF/Image Attachments,
+ * 2-Way Persistent Inbox, Rate-Limiting, Delivery Reports, and Meta Webhooks.
  */
 
 const express = require('express');
@@ -10,22 +12,47 @@ const path = require('path');
 const { spawn } = require('child_process');
 const multer = require('multer');
 
+// Persistent Database & Meta Cloud API Modules
+const db = require('./db');
+const metaApi = require('./meta_api');
+
+// Lightweight local .env parser (without external dotenv dependency)
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  try {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    for (const line of envContent.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx !== -1) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        const val = trimmed.slice(eqIdx + 1).trim();
+        if (process.env[key] === undefined && val) {
+          process.env[key] = val;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Env Warning] Could not parse .env:', e.message);
+  }
+}
+
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Base Sessions Directory for user privacy and multi-user isolation
+// Base Sessions Directory for user file uploads
 const sessionsBaseDir = path.join(__dirname, 'sessions');
 if (!fs.existsSync(sessionsBaseDir)) fs.mkdirSync(sessionsBaseDir, { recursive: true });
 
 function getSessionId(req) {
-  const h = req.headers['x-session-id'] || req.query.sessionId || req.body?.sessionId;
+  const h = req.headers['x-session-id'] || req.query?.sessionId || req.body?.sessionId;
   if (h && typeof h === 'string') {
     const cleaned = h.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
     if (cleaned && cleaned.length >= 8) return cleaned;
   }
-  // If invalid or missing, generate an isolated ephemeral guest ID
-  return 'sess_anon_' + Date.now().toString(36);
+  return 'sess_default';
 }
 
 function getSessionDir(req) {
@@ -35,69 +62,70 @@ function getSessionDir(req) {
   return dir;
 }
 
-function getSessionConfig(req) {
+/**
+ * Robust Multi-Tier Configuration Resolver:
+ * Resolves credentials in priority:
+ * 1. Database Session (Per-session / user settings)
+ * 2. SQLite Global Settings (Stored permanently across restarts)
+ * 3. Disk Session File (sessions/<sid>/config.json)
+ * 4. Process Environment Variables (Render / System .env)
+ */
+async function getEffectiveConfig(req) {
   const sid = getSessionId(req);
-  if (sid.startsWith('sess_anon_')) return null; // Fresh unauthenticated visitor
-  const dir = getSessionDir(req);
-  const cfgPath = path.join(dir, 'config.json');
-  if (fs.existsSync(cfgPath)) {
-    try {
-      const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
-      if (cfg && cfg.token && cfg.phoneNumberId) return cfg;
-    } catch (e) {}
-  }
-  return null;
-}
 
-function saveSessionConfig(req, data) {
-  const dir = getSessionDir(req);
-  const cfgPath = path.join(dir, 'config.json');
-  let current = {};
-  if (fs.existsSync(cfgPath)) {
-    try { current = JSON.parse(fs.readFileSync(cfgPath, 'utf8')); } catch (e) {}
-  }
-  const updated = { ...current, ...data };
-  fs.writeFileSync(cfgPath, JSON.stringify(updated, null, 2), 'utf8');
-  return updated;
-}
-
-function clearSessionConfig(req) {
-  const sid = getSessionId(req);
-  if (!sid || sid.startsWith('sess_anon_')) return;
-  const dir = path.join(sessionsBaseDir, sid);
+  // 1. Session Database
+  let sessionRow = null;
   try {
-    if (fs.existsSync(dir)) {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  } catch (e) {
-    console.error('[Session Reset Error]:', e.message);
+    sessionRow = await db.getSession(sid);
+  } catch (e) {}
+
+  // 2. Global SQLite Settings
+  let globalToken = null, globalPhoneId = null, globalWabaId = null, globalTemplate = null, globalLang = null;
+  try {
+    globalToken = await db.getSetting('WHATSAPP_TOKEN');
+    globalPhoneId = await db.getSetting('WHATSAPP_PHONE_NUMBER_ID');
+    globalWabaId = await db.getSetting('WHATSAPP_BUSINESS_ACCOUNT_ID');
+    globalTemplate = await db.getSetting('WHATSAPP_TEMPLATE_NAME');
+    globalLang = await db.getSetting('WHATSAPP_TEMPLATE_LANG');
+  } catch (e) {}
+
+  // 3. Disk session config
+  let diskCfg = {};
+  const cfgPath = path.join(getSessionDir(req), 'config.json');
+  if (fs.existsSync(cfgPath)) {
+    try { diskCfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8')) || {}; } catch (e) {}
   }
+
+  const token = (sessionRow?.token || diskCfg?.token || globalToken || process.env.WHATSAPP_TOKEN || '').trim();
+  const phoneNumberId = (sessionRow?.phone_number_id || diskCfg?.phoneNumberId || globalPhoneId || process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
+  const wabaId = (sessionRow?.waba_id || diskCfg?.wabaId || globalWabaId || process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '').trim();
+  const templateName = (sessionRow?.template_name || diskCfg?.templateName || globalTemplate || process.env.WHATSAPP_TEMPLATE_NAME || 'campaign_update').trim();
+  const templateLang = (sessionRow?.template_lang || diskCfg?.templateLang || globalLang || process.env.WHATSAPP_TEMPLATE_LANG || 'en_US').trim();
+
+  return { token, phoneNumberId, wabaId, templateName, templateLang };
 }
 
-
-// Multer storage: Saves files directly inside the caller's private session folder
+// Multer Storage: Handles Excel, Images (JPG, PNG), and Documents (PDF)
 const uploadStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, getSessionDir(req)),
   filename: (req, file, cb) => {
-    if (req.path.includes('excel')) cb(null, 'recipients.xlsx');
-    else if (req.path.includes('image')) cb(null, 'campaign.jpg');
-    else cb(null, file.originalname);
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (req.path.includes('excel')) {
+      cb(null, 'recipients.xlsx');
+    } else if (ext === '.pdf') {
+      cb(null, 'campaign_media.pdf');
+    } else if (ext === '.png') {
+      cb(null, 'campaign_media.png');
+    } else {
+      cb(null, 'campaign_media.jpg');
+    }
   }
 });
-const upload = multer({ storage: uploadStorage });
 
-const optOutFilePath = path.join(__dirname, 'optouts.json');
-const inboxFilePath = path.join(__dirname, 'inbox.json');
-
-// Ensure optouts.json exists
-if (!fs.existsSync(optOutFilePath)) {
-  fs.writeFileSync(optOutFilePath, JSON.stringify({ opted_out_numbers: [], updated_at: new Date().toISOString() }, null, 2), 'utf8');
-}
-
-// Ensure global inbox.json exists
-if (!fs.existsSync(inboxFilePath)) {
-  fs.writeFileSync(inboxFilePath, JSON.stringify({ messages: [] }, null, 2), 'utf8');
-}
+const upload = multer({
+  storage: uploadStorage,
+  limits: { fileSize: 25 * 1024 * 1024 } // 25MB limit (Meta document limit is 100MB, image is 5MB)
+});
 
 // Serve Frontend UI
 app.use(express.static(path.join(__dirname, 'public')));
@@ -106,320 +134,282 @@ app.get('/', (req, res) => {
 });
 
 // ============================================================================
-// OFFICIAL META WHATSAPP CLOUD API ENDPOINTS
+// 1. META CLOUD API CONNECTION & STATUS
 // ============================================================================
 
-// API: Get Meta Cloud API Connection & Business Profile Status (Session Isolated)
+// API: Check Meta Cloud API Connection & Business Profile Status
 app.get('/api/status', async (req, res) => {
-  const cfg = getSessionConfig(req);
+  try {
+    const cfg = await getEffectiveConfig(req);
 
-  if (!cfg || !cfg.token || !cfg.phoneNumberId) {
-    return res.json({
+    if (!cfg.token || !cfg.phoneNumberId) {
+      return res.json({
+        connected: false,
+        configured: false,
+        state: 'unconfigured',
+        provider: 'Meta WhatsApp Cloud API',
+        phone: '',
+        verifiedName: '',
+        qualityRating: 'UNKNOWN',
+        message: 'Meta Cloud API credentials not configured. Please enter your Permanent Access Token and Phone Number ID.'
+      });
+    }
+
+    // Live verification with Meta Graph API
+    const verifyResult = await metaApi.verifyCredentials(cfg.token, cfg.phoneNumberId);
+
+    if (verifyResult.valid) {
+      // Save profile info to DB
+      const sid = getSessionId(req);
+      db.saveSession(sid, {
+        token: cfg.token,
+        phone_number_id: cfg.phoneNumberId,
+        waba_id: cfg.wabaId,
+        template_name: cfg.templateName,
+        template_lang: cfg.templateLang,
+        verified_name: verifyResult.verifiedName,
+        display_phone: verifyResult.displayPhone,
+        quality_rating: verifyResult.qualityRating,
+        status: 'connected'
+      }).catch(() => {});
+
+      return res.json({
+        connected: true,
+        configured: true,
+        state: 'open',
+        provider: 'Meta WhatsApp Cloud API',
+        phone: verifyResult.displayPhone || verifyResult.phone,
+        displayPhone: verifyResult.displayPhone,
+        verifiedName: verifyResult.verifiedName,
+        qualityRating: verifyResult.qualityRating,
+        codeStatus: verifyResult.codeStatus,
+        phoneNumberId: cfg.phoneNumberId,
+        wabaId: cfg.wabaId,
+        templateName: cfg.templateName,
+        templateLang: cfg.templateLang
+      });
+    } else {
+      // Return clear, detailed error diagnosis
+      return res.json({
+        connected: false,
+        configured: true,
+        state: 'error',
+        provider: 'Meta WhatsApp Cloud API',
+        phone: '',
+        error: verifyResult.error,
+        code: verifyResult.code,
+        subcode: verifyResult.subcode,
+        advice: verifyResult.advice,
+        message: `Meta API Error (${verifyResult.code}): ${verifyResult.error}`
+      });
+    }
+  } catch (err) {
+    console.error('[Status Check Error]:', err.message);
+    res.status(500).json({
       connected: false,
       configured: false,
-      state: 'unconfigured',
-      provider: 'Meta WhatsApp Cloud API',
-      phone: '',
-      verifiedName: '',
-      qualityRating: 'UNKNOWN',
-      message: 'Meta Cloud API credentials not configured.'
-    });
-  }
-
-  const { token, phoneNumberId, wabaId, templateName } = cfg;
-
-  try {
-    // Query Meta Graph API for the registered phone number status
-    const graphUrl = `https://graph.facebook.com/v21.0/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,status`;
-    const response = await axios.get(graphUrl, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      timeout: 8000
-    });
-
-    const data = response.data;
-    const phone = (data.display_phone_number || '').replace(/[^\d]/g, '');
-
-    res.json({
-      connected: true,
-      configured: true,
-      state: 'open',
-      provider: 'Meta WhatsApp Cloud API',
-      phone: phone || data.display_phone_number || phoneNumberId,
-      verifiedName: data.verified_name || 'Verified WhatsApp Business',
-      qualityRating: data.quality_rating || 'GREEN',
-      codeStatus: data.code_verification_status || 'VERIFIED',
-      phoneNumberId: phoneNumberId,
-      wabaId: wabaId || '',
-      templateName: templateName || 'campaign_update'
-    });
-  } catch (err) {
-    const errorMsg = err.response?.data?.error?.message || err.message;
-    console.error('[Meta API Status Error]:', errorMsg);
-    res.json({
-      connected: false,
-      configured: true,
-      state: 'error',
-      provider: 'Meta WhatsApp Cloud API',
-      phone: '',
-      error: errorMsg,
-      message: 'Failed to verify Meta Cloud API token or Phone Number ID.'
+      error: err.message,
+      message: 'Failed to verify Meta Cloud API status.'
     });
   }
 });
 
-// API: Save/Update Meta Cloud API credentials in private session
+// API: Save/Update Meta Cloud API credentials permanently in SQLite and session
 app.post('/api/config', async (req, res) => {
-  const { token, phoneNumberId, wabaId, templateName } = req.body;
-  const toSave = {};
-
-  if (token && typeof token === 'string' && token.trim()) {
-    toSave.token = token.trim();
-  }
-  if (phoneNumberId && typeof phoneNumberId === 'string' && phoneNumberId.trim()) {
-    toSave.phoneNumberId = phoneNumberId.trim();
-  }
-  if (wabaId && typeof wabaId === 'string') {
-    toSave.wabaId = wabaId.trim();
-  }
-  if (templateName && typeof templateName === 'string') {
-    toSave.templateName = templateName.trim();
-  }
-
-  saveSessionConfig(req, toSave);
-  res.json({ success: true, message: 'Configuration saved to your private session.' });
-});
-
-// API: Disconnect / Clear Meta Credentials for current user
-app.post('/api/logout', (req, res) => {
   try {
-    clearSessionConfig(req);
+    const { token, phoneNumberId, wabaId, templateName, templateLang } = req.body;
+    const sid = getSessionId(req);
+
+    const dataToSave = {};
+    if (token && typeof token === 'string' && token.trim()) {
+      dataToSave.token = token.trim();
+      await db.setSetting('WHATSAPP_TOKEN', token.trim());
+    }
+    if (phoneNumberId && typeof phoneNumberId === 'string' && phoneNumberId.trim()) {
+      dataToSave.phone_number_id = phoneNumberId.trim();
+      await db.setSetting('WHATSAPP_PHONE_NUMBER_ID', phoneNumberId.trim());
+    }
+    if (wabaId && typeof wabaId === 'string') {
+      dataToSave.waba_id = wabaId.trim();
+      await db.setSetting('WHATSAPP_BUSINESS_ACCOUNT_ID', wabaId.trim());
+    }
+    if (templateName && typeof templateName === 'string') {
+      dataToSave.template_name = templateName.trim();
+      await db.setSetting('WHATSAPP_TEMPLATE_NAME', templateName.trim());
+    }
+    if (templateLang && typeof templateLang === 'string') {
+      dataToSave.template_lang = templateLang.trim();
+      await db.setSetting('WHATSAPP_TEMPLATE_LANG', templateLang.trim());
+    }
+
+    // Save to persistent database
+    await db.saveSession(sid, dataToSave);
+
+    // Also write to disk config.json for backwards compatibility
+    const sDir = getSessionDir(req);
+    const cfgPath = path.join(sDir, 'config.json');
+    let current = {};
+    if (fs.existsSync(cfgPath)) {
+      try { current = JSON.parse(fs.readFileSync(cfgPath, 'utf8')); } catch (e) {}
+    }
+    fs.writeFileSync(cfgPath, JSON.stringify({ ...current, ...dataToSave }, null, 2), 'utf8');
+
+    // Run verification
+    const effective = await getEffectiveConfig(req);
+    const verify = await metaApi.verifyCredentials(effective.token, effective.phoneNumberId);
+
     res.json({
       success: true,
-      message: 'Disconnected successfully! Your private session has been reset.'
+      verified: verify.valid,
+      details: verify,
+      message: verify.valid
+        ? 'Meta Cloud API connected successfully!'
+        : `Credentials saved, but Meta verification returned: ${verify.error}`
     });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: Logout Web Session
+// Requirement 5: Web logout must NOT disconnect WhatsApp Business account credentials.
+app.post('/api/logout', async (req, res) => {
+  try {
+    const sid = getSessionId(req);
+    // Mark session as inactive in DB, but keep credentials safely stored
+    if (sid && sid !== 'sess_default') {
+      await db.run('UPDATE sessions SET status = "logged_out" WHERE session_id = ?', [sid]).catch(() => {});
+    }
+    res.json({
+      success: true,
+      message: 'Logged out of web application. Your WhatsApp Business connection remains active for incoming messages.'
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
 // ============================================================================
-// META WEBHOOKS (Delivery Receipts & Opt-Out Handling)
+// 2. SINGLE DIRECT MESSAGING (Requirement 1 & 6)
 // ============================================================================
 
-// Webhook Verification (Meta Hub Challenge)
-app.get('/api/webhook', (req, res) => {
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
-  const expectedToken = getEnv('WEBHOOK_VERIFY_TOKEN') || 'whatsapp_campaign_verify_token_123';
-
-  if (mode === 'subscribe' && token === expectedToken) {
-    console.log('[Meta Webhook] Successfully verified webhook subscription challenge.');
-    return res.status(200).send(challenge);
-  }
-  res.status(403).send('Forbidden');
-});
-
-// Webhook Listener (Delivery Status & STOP/UNSUBSCRIBE Messages)
-app.post('/api/webhook', (req, res) => {
-  const body = req.body;
-
-  if (body.object === 'whatsapp_business_account') {
-    const entries = body.entry || [];
-    for (const entry of entries) {
-      const changes = entry.changes || [];
-      for (const change of changes) {
-        const value = change.value || {};
-
-        // 1. Process delivery statuses (sent, delivered, read, failed)
-        if (value.statuses) {
-          for (const status of value.statuses) {
-            console.log(`[Meta Webhook] Status: ${status.status} | Recipient: ${status.recipient_id} | Msg ID: ${status.id}`);
-          }
-        }
-
-        // 2. Process incoming messages (Save to Session Inbox & Handle Opt-Out)
-        if (value.messages) {
-          const contacts = value.contacts || [];
-          const contactName = contacts[0]?.profile?.name || '';
-          const targetPhoneId = value.metadata?.phone_number_id || '';
-
-          for (const msg of value.messages) {
-            const from = msg.from;
-            const rawText = msg.text?.body || msg.button?.text || msg.interactive?.button_reply?.title || '';
-            const textUpper = rawText.trim().toUpperCase();
-            const timestamp = msg.timestamp ? new Date(parseInt(msg.timestamp) * 1000).toISOString() : new Date().toISOString();
-            const msgObj = {
-              id: msg.id || 'msg_' + Date.now(),
-              from,
-              name: contactName,
-              text: rawText,
-              timestamp,
-              type: msg.type || 'text',
-              targetPhoneId
-            };
-
-            // Save to global inbox
-            try {
-              let inboxData = { messages: [] };
-              if (fs.existsSync(inboxFilePath)) {
-                inboxData = JSON.parse(fs.readFileSync(inboxFilePath, 'utf8'));
-              }
-              inboxData.messages.unshift(msgObj);
-              if (inboxData.messages.length > 200) inboxData.messages = inboxData.messages.slice(0, 200);
-              fs.writeFileSync(inboxFilePath, JSON.stringify(inboxData, null, 2), 'utf8');
-            } catch (e) {}
-
-            // Save to matching session inboxes
-            try {
-              if (fs.existsSync(sessionsBaseDir)) {
-                const sessionIds = fs.readdirSync(sessionsBaseDir);
-                for (const sid of sessionIds) {
-                  const sCfgPath = path.join(sessionsBaseDir, sid, 'config.json');
-                  if (fs.existsSync(sCfgPath)) {
-                    try {
-                      const scfg = JSON.parse(fs.readFileSync(sCfgPath, 'utf8'));
-                      if (!targetPhoneId || scfg.phoneNumberId === targetPhoneId) {
-                        const sInboxPath = path.join(sessionsBaseDir, sid, 'inbox.json');
-                        let sInbox = { messages: [] };
-                        if (fs.existsSync(sInboxPath)) sInbox = JSON.parse(fs.readFileSync(sInboxPath, 'utf8'));
-                        sInbox.messages.unshift(msgObj);
-                        if (sInbox.messages.length > 200) sInbox.messages = sInbox.messages.slice(0, 200);
-                        fs.writeFileSync(sInboxPath, JSON.stringify(sInbox, null, 2), 'utf8');
-                      }
-                    } catch (e) {}
-                  }
-                }
-              }
-            } catch (e) {
-              console.error('[Session Inbox Error]:', e.message);
-            }
-
-            // Check Opt-Out Keywords (STOP, UNSUBSCRIBE, CANCEL)
-            if (['STOP', 'UNSUBSCRIBE', 'CANCEL', 'OPTOUT'].includes(textUpper)) {
-              console.log(`[Meta Webhook] Received Opt-Out keyword from +${from}. Adding to permanent exclusion list.`);
-              try {
-                let optData = { opted_out_numbers: [] };
-                if (fs.existsSync(optOutFilePath)) {
-                  optData = JSON.parse(fs.readFileSync(optOutFilePath, 'utf8'));
-                }
-                if (!optData.opted_out_numbers.includes(from)) {
-                  optData.opted_out_numbers.push(from);
-                  optData.updated_at = new Date().toISOString();
-                  fs.writeFileSync(optOutFilePath, JSON.stringify(optData, null, 2), 'utf8');
-                }
-              } catch (e) {
-                console.error('[Opt-Out Error]:', e.message);
-              }
-            }
-          }
-        }
-      }
-    }
-    return res.status(200).send('EVENT_RECEIVED');
-  }
-  res.sendStatus(404);
-});
-
-// API: Get Inbox Messages for caller's private session (Strictly isolated)
-app.get('/api/inbox', (req, res) => {
+// API: Send Single Message to one recipient (supports text, PDF, JPG, PNG)
+app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
   try {
-    const cfg = getSessionConfig(req);
-    if (!cfg) {
-      return res.json({ success: true, count: 0, messages: [], unconfigured: true });
-    }
-    const sInboxPath = path.join(getSessionDir(req), 'inbox.json');
-    let inboxData = { messages: [] };
-    if (fs.existsSync(sInboxPath)) {
-      try {
-        inboxData = JSON.parse(fs.readFileSync(sInboxPath, 'utf8'));
-      } catch (err) {}
-    }
-    res.json({ success: true, count: (inboxData.messages || []).length, messages: inboxData.messages || [] });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
+    const { to, text, templateName, templateLang, recipientName, countryCode } = req.body;
+    const cfg = await getEffectiveConfig(req);
 
-// API: Quick Reply to Candidate via Meta Cloud API using caller's private credentials
-app.post('/api/inbox/reply', async (req, res) => {
-  const { to, message } = req.body;
-  const cfg = getSessionConfig(req);
-
-  if (!cfg || !cfg.token || !cfg.phoneNumberId) {
-    return res.status(401).json({ error: 'Meta Cloud API not configured in this session. Please connect your credentials.' });
-  }
-  if (!to || !message || !message.trim()) {
-    return res.status(400).json({ error: 'Recipient phone number and reply message are required.' });
-  }
-
-  try {
-    const cleanPhone = to.replace(/\D/g, '');
-    const metaUrl = `https://graph.facebook.com/v21.0/${cfg.phoneNumberId}/messages`;
-    const payload = {
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
-      to: cleanPhone,
-      type: 'text',
-      text: { preview_url: false, body: message.trim() }
-    };
-
-    const response = await axios.post(metaUrl, payload, {
-      headers: {
-        Authorization: `Bearer ${cfg.token}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 15000
-    });
-
-    const sentMsgId = response.data.messages?.[0]?.id || 'reply_' + Date.now();
-
-    // Persist outgoing reply into caller's private session inbox for full conversation history
-    try {
-      const sInboxPath = path.join(getSessionDir(req), 'inbox.json');
-      let sInbox = { messages: [] };
-      if (fs.existsSync(sInboxPath)) {
-        try { sInbox = JSON.parse(fs.readFileSync(sInboxPath, 'utf8')); } catch (e) {}
-      }
-      sInbox.messages = sInbox.messages || [];
-      sInbox.messages.unshift({
-        id: sentMsgId,
-        from: cfg.phoneNumberId,
-        to: cleanPhone,
-        direction: 'outgoing',
-        name: 'You',
-        text: message.trim(),
-        timestamp: new Date().toISOString(),
-        type: 'text',
-        targetPhoneId: cfg.phoneNumberId
+    if (!cfg.token || !cfg.phoneNumberId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Meta WhatsApp Cloud API credentials not configured. Please add your credentials in Settings.'
       });
-      if (sInbox.messages.length > 250) sInbox.messages = sInbox.messages.slice(0, 250);
-      fs.writeFileSync(sInboxPath, JSON.stringify(sInbox, null, 2), 'utf8');
-    } catch (saveErr) {
-      console.error('[Save Outgoing Reply Warning]:', saveErr.message);
     }
 
-    res.json({ success: true, messageId: sentMsgId });
-  } catch (e) {
-    const errText = e.response?.data?.error?.message || e.message;
-    console.error('[Meta Reply API Error]:', errText);
-    res.status(500).json({ error: errText });
+    if (!to || !to.trim()) {
+      return res.status(400).json({ success: false, error: 'Recipient phone number is required.' });
+    }
+
+    const defaultCode = (countryCode || '91').replace(/\D/g, '') || '91';
+    const cleanPhone = metaApi.cleanPhoneNumber(to, defaultCode);
+
+    if (!metaApi.isValidE164(cleanPhone)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid phone number format: '${to}'. Must contain a valid country code and 10-15 digits.`
+      });
+    }
+
+    // Check opt-out status
+    const isOptedOut = await db.isOptedOut(cleanPhone);
+    if (isOptedOut) {
+      return res.status(403).json({
+        success: false,
+        error: `Recipient (+${cleanPhone}) has opted out of messaging. Message blocked per Meta WhatsApp policy.`
+      });
+    }
+
+    // Handle media attachment if uploaded or present
+    let mediaId = null;
+    let mediaType = 'image';
+    let mediaFilename = 'attachment.pdf';
+
+    if (req.file) {
+      const uploadRes = await metaApi.uploadMedia(cfg.token, cfg.phoneNumberId, req.file.path);
+      mediaId = uploadRes.mediaId;
+      mediaType = uploadRes.type;
+      mediaFilename = uploadRes.filename;
+    }
+
+    const effectiveTemplate = (templateName && templateName.trim()) ? templateName.trim() : null;
+    const effectiveLang = (templateLang && templateLang.trim()) ? templateLang.trim() : cfg.templateLang;
+
+    // Send via Meta API
+    const result = await metaApi.sendMessage({
+      token: cfg.token,
+      phoneNumberId: cfg.phoneNumberId,
+      to: cleanPhone,
+      text: (text || '').trim(),
+      mediaId,
+      mediaType,
+      filename: mediaFilename,
+      templateName: effectiveTemplate,
+      templateLang: effectiveLang,
+      recipientName: recipientName || ''
+    });
+
+    // Save outgoing message to database
+    if (result.success) {
+      await db.saveOutgoingReply({
+        phone: cleanPhone,
+        text: (text || `[${mediaType.toUpperCase()} Attachment]`).trim(),
+        type: mediaId ? mediaType : 'text',
+        mediaId: mediaId,
+        metaMessageId: result.messageId,
+        targetPhoneId: cfg.phoneNumberId,
+        status: 'sent'
+      });
+      return res.json({
+        success: true,
+        messageId: result.messageId,
+        recipient: cleanPhone,
+        status: 'sent',
+        message: 'Message accepted by Meta Cloud API.'
+      });
+    } else {
+      await db.saveOutgoingReply({
+        phone: cleanPhone,
+        text: (text || '').trim(),
+        type: mediaId ? mediaType : 'text',
+        targetPhoneId: cfg.phoneNumberId,
+        status: 'failed',
+        errorMessage: result.explanation || result.error
+      });
+      return res.status(result.code === 400 ? 400 : 502).json({
+        success: false,
+        code: result.code,
+        error: result.error,
+        explanation: result.explanation,
+        details: result.details
+      });
+    }
+  } catch (err) {
+    console.error('[Send Single Error]:', err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // ============================================================================
-// EXCEL & CAMPAIGN DISPATCH ENDPOINTS (Private Per-Session Isolation)
+// 3. EXCEL & MEDIA ATTACHMENTS (Requirements 1, 7 & 8)
 // ============================================================================
 
-// API: Upload Excel recipients file for current session
+// API: Upload Excel recipients file
 app.post('/api/upload/excel', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
   res.json({ success: true, filename: req.file.originalname, saved: 'recipients.xlsx' });
 });
 
-// API: Delete Excel recipients file for current session
+// API: Delete Excel recipients file
 app.delete('/api/delete-excel', (req, res) => {
   try {
     const exPath = path.join(getSessionDir(req), 'recipients.xlsx');
@@ -430,50 +420,117 @@ app.delete('/api/delete-excel', (req, res) => {
   }
 });
 
-// API: Upload campaign image for current session
-app.post('/api/upload/image', upload.single('file'), (req, res) => {
+// Helper to find session media file (image or pdf)
+function findSessionMedia(sDir) {
+  const candidates = [
+    'campaign_media.pdf',
+    'campaign_media.png',
+    'campaign_media.jpg',
+    'campaign.jpg',
+    'campaign.png',
+    'campaign.pdf'
+  ];
+  for (const c of candidates) {
+    const p = path.join(sDir, c);
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+// API: Upload Media Attachment (Supports PDF documents, PNG, and JPG images)
+app.post('/api/upload/media', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
-  res.json({ success: true, filename: req.file.originalname, saved: 'campaign.jpg' });
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  const type = ext === '.pdf' ? 'document' : 'image';
+  res.json({
+    success: true,
+    filename: req.file.originalname,
+    saved: path.basename(req.file.path),
+    type: type
+  });
 });
 
-// API: Delete campaign image for current session
+// Backward-compatible alias for /api/upload/image
+app.post('/api/upload/image', upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+  // Also copy to campaign.jpg for backwards compatibility with send_campaign.py
+  const sDir = getSessionDir(req);
+  try {
+    fs.copyFileSync(req.file.path, path.join(sDir, 'campaign.jpg'));
+  } catch (e) {}
+  res.json({ success: true, filename: req.file.originalname, saved: 'campaign.jpg', type: 'image' });
+});
+
+// API: Delete Media Attachment
+app.delete('/api/delete-media', (req, res) => {
+  try {
+    const sDir = getSessionDir(req);
+    const mediaPath = findSessionMedia(sDir);
+    if (mediaPath && fs.existsSync(mediaPath)) fs.unlinkSync(mediaPath);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 app.delete('/api/delete-image', (req, res) => {
   try {
-    const imgPath = path.join(getSessionDir(req), 'campaign.jpg');
-    if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+    const sDir = getSessionDir(req);
+    const mediaPath = findSessionMedia(sDir);
+    if (mediaPath && fs.existsSync(mediaPath)) fs.unlinkSync(mediaPath);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// API: Check status of files for current session
-app.get('/api/files-status', (req, res) => {
+// API: Check files status for current session
+app.get('/api/files-status', async (req, res) => {
   const dir = getSessionDir(req);
   const exPath = path.join(dir, 'recipients.xlsx');
-  const imPath = path.join(dir, 'campaign.jpg');
+  const mediaPath = findSessionMedia(dir);
+
+  let mediaType = null;
+  let mediaFilename = null;
+  if (mediaPath) {
+    const ext = path.extname(mediaPath).toLowerCase();
+    mediaType = ext === '.pdf' ? 'document' : 'image';
+    mediaFilename = path.basename(mediaPath);
+  }
+
   let optOutCount = 0;
   try {
-    if (fs.existsSync(optOutFilePath)) {
-      const data = JSON.parse(fs.readFileSync(optOutFilePath, 'utf8'));
-      optOutCount = (data.opted_out_numbers || []).length;
-    }
+    const optList = await db.getOptOutList();
+    optOutCount = optList.length;
   } catch (e) {}
 
   res.json({
     excelExists: fs.existsSync(exPath),
-    imageExists: fs.existsSync(imPath),
+    imageExists: !!mediaPath,
+    mediaExists: !!mediaPath,
+    mediaType: mediaType,
+    mediaFilename: mediaFilename,
     optOutCount: optOutCount
   });
 });
 
-// API: Parse Excel recipients with Consent Verification & Preview for current session
+// API: Parse Excel Recipients with validation, preview, and deduplication
 app.get('/api/recipients', (req, res) => {
   const exPath = path.join(getSessionDir(req), 'recipients.xlsx');
   if (!fs.existsSync(exPath)) {
-    return res.json({ exists: false, total: 0, valid: 0, consented: 0, non_consented: 0, duplicates: 0, invalid: 0, opted_out: 0, preview: [] });
+    return res.json({
+      exists: false,
+      total: 0,
+      valid: 0,
+      consented: 0,
+      non_consented: 0,
+      duplicates: 0,
+      invalid: 0,
+      opted_out: 0,
+      preview: []
+    });
   }
 
+  const optOutFilePath = path.join(__dirname, 'optouts.json');
   const pythonCmd = process.platform === 'win32' ? 'python' : (process.env.PYTHON_CMD || 'python3');
   const py = spawn(pythonCmd, ['-u', 'send_campaign.py', '--excel', exPath, '--optouts', optOutFilePath, '--preview'], { cwd: __dirname });
   let stdout = '';
@@ -492,7 +549,7 @@ app.get('/api/recipients', (req, res) => {
   });
 });
 
-// API: Save message text for current session
+// API: Message template text
 app.post('/api/save-message', (req, res) => {
   const { message } = req.body;
   if (typeof message !== 'string') return res.status(400).json({ error: 'Invalid message.' });
@@ -500,7 +557,6 @@ app.post('/api/save-message', (req, res) => {
   res.json({ success: true });
 });
 
-// API: Get current message text for current session
 app.get('/api/get-message', (req, res) => {
   try {
     const msgPath = path.join(getSessionDir(req), 'message.txt');
@@ -513,30 +569,50 @@ app.get('/api/get-message', (req, res) => {
   }
 });
 
-// API: Get campaign image as base64 for preview for current session
+// API: Preview media attachment (Base64 for images or PDF info)
 app.get('/api/preview-image', (req, res) => {
   try {
-    const imgPath = path.join(getSessionDir(req), 'campaign.jpg');
-    if (!fs.existsSync(imgPath)) return res.json({ image: null });
-    const data = fs.readFileSync(imgPath);
-    res.json({ image: 'data:image/jpeg;base64,' + data.toString('base64') });
+    const sDir = getSessionDir(req);
+    const mediaPath = findSessionMedia(sDir);
+    if (!mediaPath) return res.json({ image: null, type: null });
+
+    const ext = path.extname(mediaPath).toLowerCase();
+    if (ext === '.pdf') {
+      return res.json({
+        type: 'document',
+        filename: path.basename(mediaPath),
+        isPdf: true,
+        image: null
+      });
+    }
+
+    const data = fs.readFileSync(mediaPath);
+    const mime = ext === '.png' ? 'image/png' : 'image/jpeg';
+    res.json({
+      type: 'image',
+      image: `data:${mime};base64,` + data.toString('base64'),
+      filename: path.basename(mediaPath)
+    });
   } catch (e) {
-    res.json({ image: null });
+    res.json({ image: null, type: null });
   }
 });
 
-// API: Streaming Campaign Dispatcher via Official Meta Cloud API (Session Isolated)
-app.get('/api/stream-campaign', (req, res) => {
+// ============================================================================
+// 4. STREAMING BULK CAMPAIGN DISPATCHER (Requirements 2 & 8)
+// ============================================================================
+
+app.get('/api/stream-campaign', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  const cfg = getSessionConfig(req);
+  const cfg = await getEffectiveConfig(req);
 
-  if (!cfg || !cfg.token || !cfg.phoneNumberId) {
+  if (!cfg.token || !cfg.phoneNumberId) {
     res.write(`data: ${JSON.stringify({
       type: 'error',
-      text: '[Configuration Error] Meta WhatsApp Cloud API credentials missing! Please configure Phone Number ID and Permanent Access Token in Card 01.'
+      text: '[Configuration Error] Meta WhatsApp Cloud API credentials missing! Please configure Phone Number ID and Permanent Access Token in Settings.'
     })}\n\n`);
     res.write(`data: ${JSON.stringify({ type: 'finish', exitCode: 1 })}\n\n`);
     return res.end();
@@ -545,28 +621,35 @@ app.get('/api/stream-campaign', (req, res) => {
   const sDir = getSessionDir(req);
   const exPath = path.join(sDir, 'recipients.xlsx');
   const msgPath = path.join(sDir, 'message.txt');
-  const imgPath = path.join(sDir, 'campaign.jpg');
+  const mediaPath = findSessionMedia(sDir);
 
   if (!fs.existsSync(exPath)) {
     res.write(`data: ${JSON.stringify({
       type: 'error',
-      text: '[Excel Error] No recipients.xlsx file found. Please upload your Excel list in Card 02 before launching.'
+      text: '[Excel Error] No recipients.xlsx file found. Please upload your Excel list before launching.'
     })}\n\n`);
     res.write(`data: ${JSON.stringify({ type: 'finish', exitCode: 1 })}\n\n`);
     return res.end();
   }
 
-  res.write(`data: ${JSON.stringify({ type: 'log', text: 'Connecting to Official Meta WhatsApp Cloud API...' })}\n\n`);
+  const campaignId = 'camp_' + Date.now();
+  await db.createCampaign(campaignId, 'Bulk Campaign ' + new Date().toLocaleDateString(), 0).catch(() => {});
 
+  res.write(`data: ${JSON.stringify({ type: 'log', text: 'Connecting to Official Meta WhatsApp Cloud API...' })}\n\n`);
+  res.write(`data: ${JSON.stringify({ type: 'log', text: `Campaign ID initialized: ${campaignId}` })}\n\n`);
+
+  const optOutFilePath = path.join(__dirname, 'optouts.json');
   const pythonCmd = process.platform === 'win32' ? 'python' : (process.env.PYTHON_CMD || 'python3');
+
   const pyArgs = [
     '-u', 'send_campaign.py',
     '--excel', exPath,
     '--message', fs.existsSync(msgPath) ? msgPath : path.join(__dirname, 'message.txt'),
-    '--image', fs.existsSync(imgPath) ? imgPath : 'campaign.jpg',
+    '--image', mediaPath || 'campaign.jpg',
     '--token', cfg.token,
     '--phone-id', cfg.phoneNumberId,
     '--template', cfg.templateName || '',
+    '--template-lang', cfg.templateLang || 'en_US',
     '--optouts', optOutFilePath
   ];
 
@@ -575,8 +658,15 @@ app.get('/api/stream-campaign', (req, res) => {
     env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUNBUFFERED: '1' }
   });
 
+  let sentCount = 0;
+  let failedCount = 0;
+
   py.stdout.on('data', (chunk) => {
     const text = chunk.toString();
+    // Parse accepted / failed from output to update campaign stats
+    if (text.includes('ACCEPTED by Meta Cloud API')) sentCount++;
+    if (text.includes('Status: FAILED')) failedCount++;
+
     res.write(`data: ${JSON.stringify({ type: 'log', text })}\n\n`);
   });
 
@@ -585,13 +675,296 @@ app.get('/api/stream-campaign', (req, res) => {
     res.write(`data: ${JSON.stringify({ type: 'error', text })}\n\n`);
   });
 
-  py.on('close', (exitCode) => {
-    res.write(`data: ${JSON.stringify({ type: 'finish', exitCode })}\n\n`);
+  py.on('close', async (exitCode) => {
+    await db.updateCampaignStats(campaignId, sentCount, failedCount, exitCode === 0 ? 'completed' : 'failed').catch(() => {});
+    res.write(`data: ${JSON.stringify({ type: 'finish', exitCode, sentCount, failedCount })}\n\n`);
     res.end();
   });
 });
 
+// ============================================================================
+// 5. META WEBHOOKS & 2-WAY INBOX (Requirements 3 & 4)
+// ============================================================================
+
+// Webhook Verification (Meta Hub Challenge)
+app.get('/api/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+  const expectedToken = process.env.WEBHOOK_VERIFY_TOKEN || 'whatsapp_campaign_verify_token_123';
+
+  if (mode === 'subscribe' && token === expectedToken) {
+    console.log('[Meta Webhook] Successfully verified webhook subscription challenge.');
+    return res.status(200).send(challenge);
+  }
+  console.warn('[Meta Webhook] Verification failed. Received token:', token);
+  res.status(403).send('Forbidden');
+});
+
+// Webhook Listener: Incoming Messages & Delivery Status Updates
+app.post('/api/webhook', async (req, res) => {
+  const body = req.body;
+
+  if (body.object === 'whatsapp_business_account') {
+    const entries = body.entry || [];
+    for (const entry of entries) {
+      const changes = entry.changes || [];
+      for (const change of changes) {
+        const value = change.value || {};
+        const targetPhoneId = value.metadata?.phone_number_id || null;
+
+        // 1. Process delivery receipts (sent, delivered, read, failed)
+        if (value.statuses) {
+          for (const status of value.statuses) {
+            const metaId = status.id;
+            const deliveryStatus = status.status; // 'sent' | 'delivered' | 'read' | 'failed'
+            const errorDetails = status.errors ? JSON.stringify(status.errors) : null;
+
+            console.log(`[Meta Webhook] Delivery: ${deliveryStatus} | Recipient: ${status.recipient_id} | MetaID: ${metaId}`);
+            await db.updateMessageDeliveryStatus(metaId, deliveryStatus, errorDetails).catch(() => {});
+          }
+        }
+
+        // 2. Process incoming messages
+        if (value.messages) {
+          const contacts = value.contacts || [];
+          const contactName = contacts[0]?.profile?.name || '';
+
+          for (const msg of value.messages) {
+            const from = msg.from;
+            const cleanFrom = metaApi.cleanPhoneNumber(from);
+            const msgType = msg.type || 'text';
+
+            let rawText = '';
+            if (msgType === 'text') {
+              rawText = msg.text?.body || '';
+            } else if (msgType === 'button') {
+              rawText = msg.button?.text || '';
+            } else if (msgType === 'interactive') {
+              rawText = msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title || '';
+            } else if (['image', 'document', 'audio', 'video'].includes(msgType)) {
+              rawText = msg[msgType]?.caption || `[${msgType.toUpperCase()} Attachment]`;
+            }
+
+            const mediaId = msg[msgType]?.id || null;
+            const textUpper = rawText.trim().toUpperCase();
+
+            // Save incoming message permanently into SQLite
+            await db.saveIncomingMessage({
+              id: msg.id,
+              phone: cleanFrom,
+              name: contactName,
+              text: rawText,
+              type: msgType,
+              mediaId: mediaId,
+              targetPhoneId: targetPhoneId,
+              timestamp: msg.timestamp ? new Date(parseInt(msg.timestamp) * 1000).toISOString() : new Date().toISOString()
+            }).catch(err => console.error('[Webhook Save Error]:', err.message));
+
+            // Check Opt-Out Keywords (STOP, UNSUBSCRIBE, CANCEL)
+            if (['STOP', 'UNSUBSCRIBE', 'CANCEL', 'OPTOUT'].includes(textUpper)) {
+              console.log(`[Meta Webhook] Opt-out keyword received from +${cleanFrom}. Updating exclusion status.`);
+              await db.setOptOut(cleanFrom, 1, `User sent keyword: ${textUpper}`).catch(() => {});
+
+              // Also write to optouts.json for backwards compatibility
+              const optOutFilePath = path.join(__dirname, 'optouts.json');
+              try {
+                let optData = { opted_out_numbers: [] };
+                if (fs.existsSync(optOutFilePath)) {
+                  optData = JSON.parse(fs.readFileSync(optOutFilePath, 'utf8'));
+                }
+                if (!optData.opted_out_numbers.includes(cleanFrom)) {
+                  optData.opted_out_numbers.push(cleanFrom);
+                  optData.updated_at = new Date().toISOString();
+                  fs.writeFileSync(optOutFilePath, JSON.stringify(optData, null, 2), 'utf8');
+                }
+              } catch (e) {}
+            }
+          }
+        }
+      }
+    }
+    return res.status(200).send('EVENT_RECEIVED');
+  }
+  res.sendStatus(404);
+});
+
+// API: Get Inbox Conversations (Persistent SQLite)
+app.get('/api/inbox', async (req, res) => {
+  try {
+    const cfg = await getEffectiveConfig(req);
+    const conversations = await db.getConversations(cfg.phoneNumberId || null);
+    res.json({
+      success: true,
+      count: conversations.length,
+      conversations: conversations
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: Get Full Conversation History for a specific contact
+app.get('/api/inbox/messages/:phone', async (req, res) => {
+  try {
+    const phone = req.params.phone;
+    const cleanPhone = metaApi.cleanPhoneNumber(phone);
+    const messages = await db.getMessagesForContact(cleanPhone);
+    await db.markConversationRead(cleanPhone);
+    res.json({
+      success: true,
+      phone: cleanPhone,
+      messages: messages
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: Send Reply to Contact via Meta Cloud API
+// Fixes the bug where inbox replies were not reaching recipients
+app.post('/api/inbox/reply', async (req, res) => {
+  try {
+    const { to, message, templateName } = req.body;
+    const cfg = await getEffectiveConfig(req);
+
+    if (!cfg.token || !cfg.phoneNumberId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Meta Cloud API not configured. Please add your Phone Number ID and Permanent Access Token in Settings.'
+      });
+    }
+
+    if (!to || !message || !message.trim()) {
+      return res.status(400).json({ success: false, error: 'Recipient phone number and reply message are required.' });
+    }
+
+    const cleanPhone = metaApi.cleanPhoneNumber(to);
+    if (!metaApi.isValidE164(cleanPhone)) {
+      return res.status(400).json({ success: false, error: `Invalid phone number: '${to}'. Must contain 10-15 digits.` });
+    }
+
+    // Check opt-out
+    if (await db.isOptedOut(cleanPhone)) {
+      return res.status(403).json({ success: false, error: 'This contact has opted out of WhatsApp messages.' });
+    }
+
+    // Send reply via Meta Cloud API
+    const result = await metaApi.sendMessage({
+      token: cfg.token,
+      phoneNumberId: cfg.phoneNumberId,
+      to: cleanPhone,
+      text: message.trim(),
+      templateName: templateName || null,
+      templateLang: cfg.templateLang
+    });
+
+    if (result.success) {
+      // Save outgoing reply to SQLite database immediately
+      const saved = await db.saveOutgoingReply({
+        phone: cleanPhone,
+        text: message.trim(),
+        metaMessageId: result.messageId,
+        targetPhoneId: cfg.phoneNumberId,
+        status: 'sent'
+      });
+
+      return res.json({
+        success: true,
+        messageId: result.messageId,
+        replyId: saved.id,
+        status: 'sent'
+      });
+    } else {
+      // Save failed attempt
+      await db.saveOutgoingReply({
+        phone: cleanPhone,
+        text: message.trim(),
+        targetPhoneId: cfg.phoneNumberId,
+        status: 'failed',
+        errorMessage: result.explanation || result.error
+      });
+
+      return res.status(result.code === 400 ? 400 : 502).json({
+        success: false,
+        code: result.code,
+        error: result.error,
+        explanation: result.explanation,
+        details: result.details
+      });
+    }
+  } catch (e) {
+    console.error('[Inbox Reply Error]:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ============================================================================
+// 6. DELIVERY REPORTS & AUDIT LOGS (Requirements 7 & 8)
+// ============================================================================
+
+// API: Get Recent Delivery Logs
+app.get('/api/reports', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const logs = await db.getRecentCampaignLogs(limit);
+    const campaigns = await db.all('SELECT * FROM campaigns ORDER BY created_at DESC LIMIT 20');
+    res.json({
+      success: true,
+      campaigns,
+      logs
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: Download Delivery Report as CSV
+app.get('/api/reports/download', async (req, res) => {
+  try {
+    const logs = await db.getRecentCampaignLogs(1000);
+    let csv = 'Campaign Name,Recipient Name,Phone,Status,Meta Message ID,Error Code,Error Details,Sent At\n';
+
+    for (const log of logs) {
+      const camp = (log.campaign_name || 'Campaign').replace(/"/g, '""');
+      const name = (log.name || '').replace(/"/g, '""');
+      const phone = log.phone || '';
+      const status = log.status || '';
+      const metaId = log.meta_id || '';
+      const errCode = log.error_code || '';
+      const errDetails = (log.error_details || '').replace(/"/g, '""').replace(/\n/g, ' ');
+      const sentAt = log.sent_at || '';
+
+      csv += `"${camp}","${name}","${phone}","${status}","${metaId}","${errCode}","${errDetails}","${sentAt}"\n`;
+    }
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="whatsapp_delivery_report.csv"');
+    res.send(csv);
+  } catch (e) {
+    res.status(500).send('Error generating report: ' + e.message);
+  }
+});
+
+// API: Get Opt-Out List
+app.get('/api/contacts/optouts', async (req, res) => {
+  try {
+    const list = await db.getOptOutList();
+    res.json({ success: true, count: list.length, optouts: list });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ============================================================================
+// SERVER INITIALIZATION
+// ============================================================================
+
 const PORT = process.env.PORT || 8085;
 app.listen(PORT, () => {
+  console.log(`=============================================================`);
   console.log(`[Official WhatsApp Cloud API Gateway] Server running on port ${PORT}`);
+  console.log(`[Database] Persistent SQLite active with auto-recovery.`);
+  console.log(`[Webhook] Listening at /api/webhook`);
+  console.log(`=============================================================`);
 });

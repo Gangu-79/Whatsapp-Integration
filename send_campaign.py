@@ -193,29 +193,50 @@ RECIPIENT NAME: {recipient.get('name', 'Valued Customer')}
         return fallback_personalize(template, recipient)
 
 
-def upload_meta_media(token: str, phone_number_id: str, image_path: str) -> str:
-    """Upload media file to Meta WhatsApp Cloud API and return media ID."""
+def detect_media_type(file_path: str):
+    """Detect MIME type and Meta media category from file extension."""
+    if not file_path or not os.path.exists(file_path):
+        return None, None
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext == ".pdf":
+        return "application/pdf", "document"
+    elif ext == ".png":
+        return "image/png", "image"
+    elif ext in [".jpg", ".jpeg"]:
+        return "image/jpeg", "image"
+    elif ext in [".mp4", ".mov"]:
+        return "video/mp4", "video"
+    return "application/octet-stream", "document"
+
+
+def upload_meta_media(token: str, phone_number_id: str, media_path: str) -> tuple:
+    """Upload media file (PDF document or JPG/PNG image) to Meta Cloud API and return (media_id, media_type, filename)."""
+    mime_type, media_type = detect_media_type(media_path)
+    if not mime_type:
+        raise FileNotFoundError(f"Media file not found at: {media_path}")
+
     url = f"https://graph.facebook.com/v21.0/{phone_number_id}/media"
     headers = {"Authorization": f"Bearer {token}"}
+    filename = os.path.basename(media_path)
     
-    with open(image_path, "rb") as f:
+    with open(media_path, "rb") as f:
         files = {
-            "file": (os.path.basename(image_path), f, "image/jpeg"),
+            "file": (filename, f, mime_type),
             "messaging_product": (None, "whatsapp")
         }
         res = requests.post(url, headers=headers, files=files, timeout=45)
         
     if res.status_code in (200, 201):
         media_id = res.json().get("id")
-        return media_id
+        return media_id, media_type, filename
     else:
         raise RuntimeError(f"Meta Media Upload failed ({res.status_code}): {res.text}")
 
 
-def send_meta_message(token: str, phone_number_id: str, phone: str, text: str, media_id: str = None, template_name: str = None, template_lang: str = "en_US", recipient_name: str = "") -> dict:
+def send_meta_message(token: str, phone_number_id: str, phone: str, text: str, media_id: str = None, media_type: str = "image", filename: str = "document.pdf", template_name: str = None, template_lang: str = "en_US", recipient_name: str = "") -> dict:
     """
     Send official WhatsApp message via Meta Cloud API Graph endpoint.
-    Supports both official Template Messages and Standard Session Messages.
+    Supports official Template Messages (image/document/text) and Standard Session Messages.
     """
     url = f"https://graph.facebook.com/v21.0/{phone_number_id}/messages"
     headers = {
@@ -224,42 +245,62 @@ def send_meta_message(token: str, phone_number_id: str, phone: str, text: str, m
     }
 
     # If template_name is specified, send approved Meta Business Template
-    if template_name:
+    if template_name and template_name.strip():
         payload = {
             "messaging_product": "whatsapp",
             "to": phone,
             "type": "template",
             "template": {
-                "name": template_name,
+                "name": template_name.strip(),
                 "language": {"code": template_lang or "en_US"},
                 "components": []
             }
         }
-        # Add Header media if uploaded
+        # Add Header media if uploaded (supports both document/PDF and image templates)
         if media_id:
-            payload["template"]["components"].append({
-                "type": "header",
-                "parameters": [
-                    {"type": "image", "image": {"id": media_id}}
-                ]
-            })
+            if media_type == "document":
+                payload["template"]["components"].append({
+                    "type": "header",
+                    "parameters": [
+                        {"type": "document", "document": {"id": media_id, "filename": filename or "document.pdf"}}
+                    ]
+                })
+            else:
+                payload["template"]["components"].append({
+                    "type": "header",
+                    "parameters": [
+                        {"type": "image", "image": {"id": media_id}}
+                    ]
+                })
         # Add Body parameters (Name variable)
-        if recipient_name:
+        if recipient_name and recipient_name.strip():
             payload["template"]["components"].append({
                 "type": "body",
                 "parameters": [
-                    {"type": "text", "text": recipient_name}
+                    {"type": "text", "text": recipient_name.strip()}
                 ]
             })
+    elif media_id and media_type == "document":
+        # Standard document/PDF message (within 24hr customer service window)
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": phone,
+            "type": "document",
+            "document": {
+                "id": media_id,
+                "caption": text or "",
+                "filename": filename or "document.pdf"
+            }
+        }
     elif media_id:
-        # Standard media message (within 24hr customer service window)
+        # Standard image message (within 24hr customer service window)
         payload = {
             "messaging_product": "whatsapp",
             "to": phone,
             "type": "image",
             "image": {
                 "id": media_id,
-                "caption": text
+                "caption": text or ""
             }
         }
     else:
@@ -269,7 +310,8 @@ def send_meta_message(token: str, phone_number_id: str, phone: str, text: str, m
             "to": phone,
             "type": "text",
             "text": {
-                "body": text
+                "preview_url": False,
+                "body": text or "Hello"
             }
         }
 
@@ -286,14 +328,23 @@ def send_meta_message(token: str, phone_number_id: str, phone: str, text: str, m
             error_msg = error_obj.get("message", res.text)
             error_details = error_obj.get("error_data", {}).get("details", "")
 
+            explanation = error_msg
+            if error_code == 131047:
+                explanation = "24-Hour Customer Window Expired: Outside 24hr window, Meta requires an approved message template."
+            elif error_code == 132001:
+                explanation = f"Template '{template_name}' not found or not approved in language '{template_lang}'."
+            elif error_code == 130429:
+                explanation = "Meta Rate Limit Exceeded: Please throttle message sending speed."
+
             return {
                 "success": False,
                 "code": error_code,
                 "error": error_msg,
-                "details": error_details
+                "details": error_details,
+                "explanation": explanation
             }
     except Exception as e:
-        return {"success": False, "code": -1, "error": str(e)}
+        return {"success": False, "code": -1, "error": str(e), "explanation": str(e)}
 
 
 def main():
@@ -397,14 +448,16 @@ def main():
     else:
         print("[Claude AI] Disabled. Using template variable substitution ({{name}}).", flush=True)
 
-    # 5. Media Upload via Meta Cloud API
+    # 5. Media Upload via Meta Cloud API (Supports PDF, PNG, JPG)
     media_id = None
+    media_type = "image"
+    media_filename = "attachment.pdf"
     has_image = os.path.exists(args.image)
     if has_image and not args.dry_run:
         try:
             print(f"[Media] Uploading '{args.image}' to Meta WhatsApp Cloud API...", flush=True)
-            media_id = upload_meta_media(whatsapp_token, phone_number_id, args.image)
-            print(f"[Media] Uploaded successfully! Meta Media ID: {media_id}", flush=True)
+            media_id, media_type, media_filename = upload_meta_media(whatsapp_token, phone_number_id, args.image)
+            print(f"[Media] Uploaded successfully! Meta Media ID: {media_id} ({media_type.upper()}: {media_filename})", flush=True)
         except Exception as e:
             print(f"[Warning] Failed to upload media to Meta: {e}. Continuing as text.", flush=True)
             media_id = None
@@ -414,11 +467,14 @@ def main():
     else:
         print(f"[Delivery Type] Direct Session Message (Active 24-hr customer service window)", flush=True)
 
-    # 6. Process and send to recipients via Official Meta Cloud API
+    # 6. Process and send to recipients via Official Meta Cloud API with controlled rate-limiting
     sent_count = 0
     failed_count = 0
+    total_count = len(recipients_to_send)
 
     print("\n=================== DISPATCHING MESSAGES ===================", flush=True)
+    print(f"[Rate-Limiter] Pacing: 1.5s delay between messages with batch pauses every 10 messages.\n", flush=True)
+
     for idx, recipient in enumerate(recipients_to_send, 1):
         name = recipient["name"]
         phone = recipient["phone"]
@@ -426,7 +482,7 @@ def main():
         # Personalize Message
         personalized_msg = personalize_with_claude(claude_client, claude_model, template_text, recipient)
 
-        print(f"\n[{idx}/{len(recipients_to_send)}] Recipient: {name} (+{phone})", flush=True)
+        print(f"[{idx}/{total_count}] Recipient: {name} (+{phone})", flush=True)
 
         if args.dry_run:
             print(f"Message Preview: {personalized_msg}", flush=True)
@@ -440,36 +496,61 @@ def main():
             phone=phone,
             text=personalized_msg,
             media_id=media_id,
+            media_type=media_type,
+            filename=media_filename,
             template_name=template_name,
             template_lang=template_lang,
             recipient_name=name
         )
 
+        # Automatic retry with 5s backoff if Meta rate-limited (HTTP 429 or Error 130429)
+        if not result["success"] and result.get("code") in [429, 130429]:
+            print(f"--> [Rate Limit Hit] Meta throttled request. Backing off 5 seconds before retrying...", flush=True)
+            time.sleep(5)
+            result = send_meta_message(
+                token=whatsapp_token,
+                phone_number_id=phone_number_id,
+                phone=phone,
+                text=personalized_msg,
+                media_id=media_id,
+                media_type=media_type,
+                filename=media_filename,
+                template_name=template_name,
+                template_lang=template_lang,
+                recipient_name=name
+            )
+
         if result["success"]:
-            print(f"Status: ACCEPTED by Meta Cloud API (Message ID: {result['id']})", flush=True)
+            print(f"--> Status: ACCEPTED by Meta Cloud API (Message ID: {result['id']})", flush=True)
             sent_count += 1
         else:
             err_code = result.get("code")
             err_msg = result.get("error")
             err_details = result.get("details", "")
+            explanation = result.get("explanation", err_msg)
 
-            print(f"Status: FAILED (Meta Error {err_code})", flush=True)
-            print(f"Reason: {err_msg} {err_details}", flush=True)
+            print(f"--> Status: FAILED (Meta Error {err_code})", flush=True)
+            print(f"    Reason: {explanation} {err_details}", flush=True)
             failed_count += 1
 
-            # HALT ON POLICY / ACCOUNT RESTRICTION ERRORS
+            # HALT ON POLICY / ACCOUNT RESTRICTION / AUTH TOKEN ERRORS
             # 131031: Account is restricted
-            # 130429: Rate limit hit
-            # 190: Invalid access token
-            if err_code in [190, 131031, 131047, 130429]:
-                print(f"\n[CRITICAL ERROR] Stopping campaign: Meta reported policy/account code {err_code}.", flush=True)
+            # 190: Invalid or expired access token
+            if err_code in [190, 131031]:
+                print(f"\n[CRITICAL ERROR] Stopping campaign: Meta reported fatal code {err_code}.", flush=True)
                 if err_code == 131031:
                     print("--> Your Meta WhatsApp Account is restricted. Resolve restrictions in Meta Business Suite.", flush=True)
-                elif err_code == 131047:
-                    print("--> Re-engagement error: Outside 24hr window. You must use an approved Meta Message Template.", flush=True)
                 elif err_code == 190:
-                    print("--> Access Token is invalid or expired. Generate a new System User Token in Meta Developers.", flush=True)
+                    print("--> Access Token is invalid or expired. Generate a Permanent System User Token in Meta Business Suite.", flush=True)
                 break
+
+        # Controlled pacing to respect Meta API rate limits
+        if idx < total_count:
+            if idx % 10 == 0:
+                print(f"[Batch Pause] Completed batch of 10. Pausing 3s to respect Meta Cloud API rate limits...", flush=True)
+                time.sleep(3.0)
+            else:
+                time.sleep(1.5)
 
     print("\n====================== CAMPAIGN SUMMARY ======================", flush=True)
     print(f"Total Recipients:    {len(recipients_to_send)}", flush=True)

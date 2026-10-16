@@ -5,3 +5,7 @@ auth_info_baileys/
 .env
 __pycache__/
 *.pyc
+data/*.db
+data/*.db-wal
+data/*.db-shm
+sessions/

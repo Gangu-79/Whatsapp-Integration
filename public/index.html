@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp Campaign Engine | Premium Outreach Platform</title>
+  <title>WhatsApp Campaign Engine | Official Meta Cloud API Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #070611;
@@ -113,22 +113,22 @@
     /* ─── FLOATING TOPBAR ─── */
     .topbar-wrapper {
       position: fixed;
-      top: 20px;
+      top: 16px;
       left: 0;
       right: 0;
       z-index: 500;
       display: flex;
       justify-content: center;
-      padding: 0 24px;
+      padding: 0 20px;
       pointer-events: none;
     }
 
     .topbar {
       pointer-events: auto;
       width: 100%;
-      max-width: 1240px;
-      height: 62px;
-      background: rgba(13, 11, 26, 0.75);
+      max-width: 1260px;
+      height: 64px;
+      background: rgba(13, 11, 26, 0.82);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 100px;
       padding: 0 14px 0 22px;
@@ -137,7 +137,7 @@
       justify-content: space-between;
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
       transition: all 0.3s ease;
     }
 
@@ -180,13 +180,17 @@
     }
 
     .nav-link {
-      padding: 8px 18px;
+      padding: 8px 16px;
       font-size: 13px;
       font-weight: 600;
       color: var(--txt-secondary);
       text-decoration: none;
       border-radius: 100px;
       transition: all 0.25s;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .nav-link:hover {
@@ -202,16 +206,16 @@
     .top-right {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .conn-badge {
       display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 8px;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 7px 16px;
+      padding: 7px 15px;
       border-radius: 100px;
       font-size: 12.5px;
       font-weight: 600;
@@ -245,24 +249,6 @@
       50% { box-shadow: 0 0 16px var(--grn); }
     }
 
-    .btn-quickstart {
-      padding: 9px 20px;
-      border-radius: 100px;
-      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      text-decoration: none;
-      box-shadow: 0 4px 18px rgba(139, 92, 246, 0.35);
-      transition: all 0.25s;
-    }
-
-    .btn-quickstart:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
-    }
-
-    /* ─── LIVE INBOX STYLES & MOBILE FAB ─── */
     .btn-topbar-inbox {
       display: inline-flex;
       align-items: center;
@@ -297,204 +283,62 @@
       line-height: 1.2;
     }
 
-    /* Mobile Floating Action Button (FAB) */
-    .mobile-fab-inbox {
-      display: none;
-      position: fixed;
-      bottom: 22px;
-      right: 18px;
-      z-index: 999;
-      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-      color: #ffffff;
-      padding: 11px 18px;
+    .btn-quickstart {
+      padding: 9px 18px;
       border-radius: 100px;
-      box-shadow: 0 10px 28px rgba(139, 92, 246, 0.55), 0 0 20px rgba(6, 182, 212, 0.3);
-      cursor: pointer;
-      align-items: center;
-      gap: 8px;
-      font-family: var(--font-body);
-      font-size: 13.5px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
-      border: 1.5px solid rgba(255, 255, 255, 0.3);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      animation: fabFloat 3s ease-in-out infinite;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    @keyframes fabFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
-    }
-    .mobile-fab-inbox:active {
-      transform: scale(0.94);
-    }
-    .mobile-fab-icon-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .mobile-fab-badge {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: #ef4444;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
       color: #fff;
-      font-size: 10px;
-      font-weight: 900;
-      min-width: 17px;
-      height: 17px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid #06040f;
-    }
-
-    /* Inbox Modal Overlay & Container */
-    .inbox-modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(6, 4, 15, 0.88);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      z-index: 9999;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .inbox-card-container {
-      background: #0d0b1a;
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      border-radius: 24px;
-      width: 100%;
-      max-width: 760px;
-      max-height: 85vh;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
-      overflow: hidden;
-      animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @keyframes modalPop {
-      from { transform: scale(0.96); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    /* Mobile Bottom Navigation Bar */
-    .mobile-bottom-nav {
-      display: none;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 64px;
-      background: rgba(13, 11, 26, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      z-index: 9990;
-      align-items: center;
-      justify-content: space-around;
-      padding: 0 10px;
-      box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.6);
-    }
-    .mobile-nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--txt-secondary);
-      text-decoration: none;
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 700;
-      gap: 4px;
-      padding: 6px 12px;
-      border-radius: 12px;
-      transition: all 0.2s;
-      cursor: pointer;
-      position: relative;
-    }
-    .mobile-nav-item svg {
-      width: 20px;
-      height: 20px;
-      fill: currentColor;
-    }
-    .mobile-nav-item:hover, .mobile-nav-item.active-accent {
-      color: #c084fc;
-    }
-    .mobile-nav-badge {
-      position: absolute;
-      top: -3px;
-      right: 2px;
-      background: #10b981;
-      color: #fff;
-      font-size: 9.5px;
-      font-weight: 800;
-      min-width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      text-decoration: none;
+      box-shadow: 0 4px 18px rgba(139, 92, 246, 0.35);
+      transition: all 0.25s;
     }
 
-    /* ─── PAGE LAYOUT ─── */
+    .btn-quickstart:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+    }
+
+    /* ─── PAGE CONTAINER & HERO ─── */
     .page-container {
       position: relative;
       z-index: 1;
       width: 100%;
       max-width: 1280px;
       margin: 0 auto;
-      padding: 120px 24px 80px;
+      padding: 110px 24px 60px;
     }
 
-    /* ─── HERO SECTION ─── */
     .hero-section {
-      min-height: 80vh;
+      text-align: center;
+      padding: 40px 0 50px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      text-align: center;
-      padding: 60px 0 80px;
-      position: relative;
     }
 
     .hero-pill {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 8px 20px;
+      gap: 8px;
+      padding: 6px 18px;
       background: rgba(139, 92, 246, 0.12);
       border: 1px solid rgba(139, 92, 246, 0.3);
       border-radius: 100px;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 700;
-      color: #a78bfa;
-      margin-bottom: 32px;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-    }
-
-    .hero-pill-sparkle {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #c084fc;
-      box-shadow: 0 0 12px #c084fc;
+      color: #c084fc;
+      margin-bottom: 24px;
     }
 
     .hero-title {
       font-family: var(--font-display);
-      font-size: clamp(3rem, 7.5vw, 6.5rem);
+      font-size: clamp(2.4rem, 5.2vw, 4.2rem);
       font-weight: 900;
-      line-height: 1.05;
-      letter-spacing: -2.5px;
-      color: #ffffff;
-      margin-bottom: 28px;
+      line-height: 1.08;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
       text-transform: uppercase;
     }
 
@@ -506,53 +350,57 @@
     }
 
     .hero-subtitle {
-      max-width: 680px;
-      font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+      max-width: 720px;
+      font-size: 16px;
       color: var(--txt-secondary);
       line-height: 1.6;
-      margin-bottom: 44px;
-      font-weight: 400;
+      margin-bottom: 36px;
     }
 
     .hero-actions {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
       flex-wrap: wrap;
       justify-content: center;
     }
 
     .btn-hero-primary {
-      padding: 16px 36px;
+      padding: 14px 32px;
       border-radius: 100px;
       background: linear-gradient(135deg, #8b5cf6 0%, #0284c7 100%);
       color: #ffffff;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
       text-decoration: none;
       box-shadow: 0 10px 30px rgba(139, 92, 246, 0.45);
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: all 0.3s;
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      cursor: pointer;
     }
 
     .btn-hero-primary:hover {
-      transform: translateY(-3px) scale(1.03);
+      transform: translateY(-2px);
       box-shadow: 0 16px 40px rgba(139, 92, 246, 0.6);
     }
 
     .btn-hero-secondary {
-      padding: 16px 32px;
+      padding: 14px 28px;
       border-radius: 100px;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.12);
       color: #ffffff;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       text-decoration: none;
       backdrop-filter: blur(12px);
       transition: all 0.25s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
     }
 
     .btn-hero-secondary:hover {
@@ -560,552 +408,255 @@
       border-color: rgba(255, 255, 255, 0.25);
     }
 
-    .hero-stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      width: 100%;
-      max-width: 900px;
-      margin-top: 70px;
-      padding: 24px 32px;
-      background: rgba(18, 14, 38, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 24px;
-      backdrop-filter: blur(20px);
+    /* ─── WORKSPACE SECTIONS ─── */
+    .engine-section {
+      margin-top: 10px;
     }
 
-    .hero-stat-item {
-      text-align: center;
-    }
-
-    .hero-stat-val {
-      font-family: var(--font-display);
-      font-size: 32px;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: -1px;
-    }
-
-    .hero-stat-lbl {
-      font-size: 13px;
-      color: var(--txt-muted);
-      font-weight: 600;
-      margin-top: 4px;
-    }
-
-    /* ─── SECTION HEADER ─── */
     .section-header {
-      margin-bottom: 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
+      margin-bottom: 28px;
     }
 
     .section-tag {
       font-family: var(--font-mono);
       font-size: 12px;
       font-weight: 700;
-      color: #c084fc;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
+      color: var(--pur);
+      letter-spacing: 1px;
+      margin-bottom: 4px;
     }
 
     .section-title {
       font-family: var(--font-display);
-      font-size: clamp(2rem, 4vw, 3rem);
+      font-size: 28px;
       font-weight: 800;
-      color: #fff;
-      letter-spacing: -1px;
+      color: #ffffff;
+      letter-spacing: -0.5px;
     }
 
     .section-desc {
-      font-size: 15px;
+      font-size: 14px;
       color: var(--txt-secondary);
-      max-width: 540px;
+      margin-top: 4px;
     }
 
-    /* ─── ENGINE GRID ─── */
-    .engine-section {
-      padding-top: 40px;
-      margin-bottom: 60px;
-    }
-
+    /* ─── CARD GRIDS ─── */
     .cards-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 28px;
-      margin-bottom: 32px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 28px;
     }
 
-    @media (max-width: 1024px) {
-      .cards-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* ─── CARD COMPONENT ─── */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 28px;
-      padding: 30px 28px;
+      border-radius: 24px;
+      padding: 26px 24px;
       backdrop-filter: blur(24px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      flex-direction: column;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.3s;
       position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
     }
 
     .card:hover {
       border-color: var(--card-border-hover);
-      box-shadow: 0 20px 50px rgba(124, 58, 237, 0.15);
-      transform: translateY(-4px);
     }
 
     .card-header {
       display: flex;
       align-items: center;
-      gap: 14px;
-      margin-bottom: 24px;
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
     .card-num {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
       background: rgba(139, 92, 246, 0.15);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      display: grid;
-      place-items: center;
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      color: #c084fc;
       font-family: var(--font-mono);
       font-size: 13px;
       font-weight: 800;
-      color: #c084fc;
-      flex-shrink: 0;
+      display: grid;
+      place-items: center;
     }
 
     .card-title {
       font-family: var(--font-display);
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 800;
       color: #ffffff;
-      line-height: 1.2;
     }
 
     .card-subtitle {
-      font-size: 12.5px;
-      color: var(--txt-secondary);
-      margin-top: 3px;
+      font-size: 12px;
+      color: var(--txt-muted);
     }
 
-    /* Form & Control Inputs */
+    /* Form Inputs */
     .lbl {
+      display: block;
       font-size: 12px;
       font-weight: 700;
+      color: var(--txt-secondary);
+      margin-bottom: 6px;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--txt-muted);
-      display: block;
-      margin-bottom: 8px;
+      letter-spacing: 0.5px;
     }
 
     .inp {
       width: 100%;
-      background: rgba(7, 6, 17, 0.7);
+      background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 14px;
-      padding: 13px 16px;
-      font-size: 14px;
-      font-weight: 500;
+      border-radius: 12px;
+      padding: 11px 14px;
       color: #ffffff;
       font-family: inherit;
+      font-size: 13.5px;
       outline: none;
-      transition: all 0.25s;
+      transition: all 0.2s;
     }
 
     .inp:focus {
-      border-color: #8b5cf6;
-      background: rgba(7, 6, 17, 0.95);
-      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+      border-color: var(--pur);
+      background: rgba(139, 92, 246, 0.06);
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.25);
     }
 
-    .inp::placeholder {
-      color: rgba(255, 255, 255, 0.25);
-    }
-
-    /* CARD 03 TEXTAREA OPTIMIZATION: Fills Card 03 height & clean custom scrollbar */
     textarea.inp {
       resize: vertical;
-      min-height: 270px;
-      flex: 1;
-      line-height: 1.65;
+      min-height: 140px;
+      line-height: 1.5;
     }
 
-    textarea.inp::-webkit-scrollbar {
-      width: 6px;
-    }
-    textarea.inp::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.03);
-      border-radius: 10px;
-    }
-    textarea.inp::-webkit-scrollbar-thumb {
-      background: rgba(139, 92, 246, 0.35);
-      border-radius: 10px;
-    }
-    textarea.inp::-webkit-scrollbar-thumb:hover {
-      background: rgba(139, 92, 246, 0.6);
-    }
-
-    /* Mode Toggles */
-    .mode-toggle {
-      display: flex;
-      gap: 4px;
-      padding: 4px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      margin-bottom: 18px;
-    }
-
-    .mode-btn {
-      flex: 1;
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: none;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      color: var(--txt-secondary);
-      background: transparent;
-      transition: all 0.25s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-    }
-
-    .mode-btn svg {
-      width: 15px;
-      height: 15px;
-      fill: currentColor;
-    }
-
-    .mode-btn.on {
-      background: linear-gradient(135deg, #8b5cf6, #6366f1);
-      color: #ffffff;
-      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
-    }
-
-    /* Buttons */
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 13.5px;
-      border: none;
+      padding: 11px 20px;
       border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 700;
       cursor: pointer;
-      transition: all 0.25s;
-      white-space: nowrap;
-    }
-
-    .btn svg {
-      width: 16px;
-      height: 16px;
-      fill: currentColor;
+      border: none;
+      transition: all 0.2s;
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
       color: #ffffff;
-      padding: 12px 20px;
       box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
     }
 
     .btn-primary:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 8px 22px rgba(139, 92, 246, 0.5);
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
     }
 
-    .btn-primary:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+    .btn-danger {
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      color: #f43f5e;
     }
 
-    .input-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .input-row .inp {
-      flex: 1;
-    }
-
-    /* Pairing Code Box */
-    .pair-box {
-      display: none;
-      margin-top: 16px;
-      background: rgba(7, 6, 17, 0.9);
-      border: 1.5px dashed rgba(139, 92, 246, 0.4);
-      border-radius: 18px;
-      padding: 18px 16px;
-      text-align: center;
-    }
-
-    .pair-lbl {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--txt-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 6px;
-    }
-
-    .pair-code {
-      font-family: var(--font-mono);
-      font-size: 30px;
-      font-weight: 800;
-      letter-spacing: 5px;
-      color: var(--cyan);
-      text-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
-      cursor: pointer;
-      user-select: all;
-      margin: 4px 0;
-    }
-
-    .pair-hint {
-      font-size: 11.5px;
-      color: var(--txt-secondary);
-      cursor: pointer;
-    }
-
-    .pair-steps {
-      text-align: left;
-      font-size: 11.5px;
-      color: var(--txt-secondary);
-      background: rgba(255, 255, 255, 0.03);
-      border-radius: 12px;
-      padding: 12px 14px;
-      margin-top: 12px;
-      line-height: 1.7;
-    }
-
-    .pair-steps ol {
-      margin-left: 18px;
-    }
-
-    .pair-steps b {
+    .btn-danger:hover {
+      background: rgba(244, 63, 94, 0.3);
       color: #fff;
     }
 
-    /* QR Code Display */
-    .qr-box {
-      display: none;
-      margin-top: 16px;
-      text-align: center;
-      background: rgba(7, 6, 17, 0.9);
-      border: 1.5px dashed rgba(6, 182, 212, 0.3);
-      border-radius: 18px;
-      padding: 18px;
-    }
-
-    .qr-box img {
-      width: 160px;
-      height: 160px;
-      border-radius: 12px;
-      border: 2px solid rgba(139, 92, 246, 0.3);
-    }
-
-    .qr-hint {
-      font-size: 12px;
-      color: var(--txt-secondary);
-      margin-top: 10px;
-    }
-
-    .qr-timer {
-      font-size: 11px;
-      color: var(--amb);
-      margin-top: 6px;
-      font-weight: 700;
-    }
-
-    /* Upload Zones */
+    /* Upload Zone */
     .upload-zone {
-      border: 2px dashed rgba(139, 92, 246, 0.25);
-      border-radius: 18px;
-      padding: 22px 16px;
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 22px 14px;
       text-align: center;
       cursor: pointer;
+      background: rgba(255, 255, 255, 0.02);
       transition: all 0.25s;
-      background: rgba(139, 92, 246, 0.02);
       position: relative;
-      overflow: hidden;
-      min-height: 140px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
     }
 
     .upload-zone:hover, .upload-zone.drag {
-      border-color: #8b5cf6;
-      background: rgba(139, 92, 246, 0.08);
-      transform: translateY(-2px);
+      border-color: var(--pur);
+      background: rgba(139, 92, 246, 0.05);
     }
 
-    .upload-zone input[type=file] {
+    .upload-zone input[type="file"] {
       position: absolute;
       inset: 0;
       opacity: 0;
       cursor: pointer;
       width: 100%;
       height: 100%;
-      z-index: 5;
-    }
-
-    .upload-default {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .upload-icon {
-      width: 42px;
-      height: 42px;
-      background: rgba(139, 92, 246, 0.15);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      margin: 0 auto 10px;
     }
 
     .upload-icon svg {
-      width: 22px;
-      height: 22px;
-      fill: #a78bfa;
+      width: 32px;
+      height: 32px;
+      fill: var(--pur);
+      margin-bottom: 8px;
     }
 
     .upload-title {
       font-size: 13.5px;
       font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 2px;
+      color: #fff;
     }
 
     .upload-sub {
       font-size: 11.5px;
       color: var(--txt-muted);
+      margin-top: 3px;
     }
 
-    /* IMAGE PREVIEW DIRECTLY INSIDE DROP BOX */
     .upload-preview-inside {
       display: none;
-      position: absolute;
-      inset: 0;
+      position: relative;
       width: 100%;
-      height: 100%;
-      background: #000;
-      z-index: 6;
+      max-height: 140px;
+      border-radius: 10px;
+      overflow: hidden;
     }
 
     .upload-preview-inside img {
       width: 100%;
-      height: 100%;
+      height: 140px;
       object-fit: cover;
+      border-radius: 10px;
     }
 
-    .img-remove-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: rgba(244, 63, 94, 0.92);
-      border: none;
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-      transition: all 0.2s;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
-      z-index: 10;
-    }
-
-    .img-remove-btn:hover {
-      background: #f43f5e;
-      transform: scale(1.1);
-    }
-
-    .img-remove-btn svg {
-      width: 16px;
-      height: 16px;
-      fill: #ffffff;
+    .pdf-preview-box {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 12px;
+      padding: 12px 16px;
+      text-align: left;
     }
 
     .file-badge {
-      display: none;
+      display: flex;
       align-items: center;
       gap: 8px;
+      padding: 8px 12px;
       background: rgba(16, 185, 129, 0.12);
       border: 1px solid rgba(16, 185, 129, 0.3);
       border-radius: 10px;
-      padding: 8px 12px;
       font-size: 12px;
-      font-weight: 600;
       color: var(--grn);
       margin-top: 10px;
-    }
-
-    .file-badge.on {
-      display: flex;
     }
 
     .file-badge svg {
       width: 14px;
       height: 14px;
-      fill: var(--grn);
-    }
-
-    .saved-status {
-      font-size: 12px;
-      color: var(--grn);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 10px;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .saved-status.on {
-      opacity: 1;
-    }
-
-    .saved-status svg {
-      width: 12px;
-      height: 12px;
-      fill: var(--grn);
+      fill: currentColor;
     }
 
     /* ─── LAUNCH CONTROL CARD ─── */
@@ -1118,6 +669,7 @@
       box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
       position: relative;
       overflow: hidden;
+      margin-top: 10px;
     }
 
     .stats-summary-grid {
@@ -1252,22 +804,24 @@
       bottom: 28px;
       left: 50%;
       transform: translateX(-50%) translateY(100px);
-      background: rgba(18, 14, 38, 0.95);
-      border: 1px solid rgba(139, 92, 246, 0.4);
+      background: rgba(13, 11, 26, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 24px;
       border-radius: 100px;
-      padding: 12px 28px;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 700;
       color: #ffffff;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-      z-index: 9999;
-      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-      backdrop-filter: blur(16px);
-      white-space: nowrap;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(20px);
+      z-index: 10000;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
     }
 
     .toast.on {
       transform: translateX(-50%) translateY(0);
+      opacity: 1;
     }
 
     .toast.ok_ {
@@ -1280,258 +834,195 @@
       color: var(--red);
     }
 
-    /* Footer */
-    .footer {
-      margin-top: 80px;
-      padding-top: 40px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      display: flex;
+    /* ─── MODAL OVERLAY & CONTAINERS ─── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 4, 15, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      z-index: 9999;
       align-items: center;
-      justify-content: space-between;
-      color: var(--txt-muted);
-      font-size: 13px;
+      justify-content: center;
+      padding: 20px;
     }
 
-    .footer-brand {
+    .modal-container {
+      background: #0d0b1a;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+      overflow: hidden;
+      animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalPop {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Mobile Floating Action Button (FAB) */
+    .mobile-fab-inbox {
+      display: none;
+      position: fixed;
+      bottom: 22px;
+      right: 18px;
+      z-index: 999;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      color: #ffffff;
+      padding: 11px 18px;
+      border-radius: 100px;
+      box-shadow: 0 10px 28px rgba(139, 92, 246, 0.55), 0 0 20px rgba(6, 182, 212, 0.3);
+      cursor: pointer;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      font-weight: 800;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      animation: fabFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes fabFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .mobile-fab-icon-wrap {
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-weight: 700;
+      justify-content: center;
+    }
+
+    .mobile-fab-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ef4444;
       color: #fff;
+      font-size: 10px;
+      font-weight: 900;
+      min-width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #06040f;
     }
 
-    .sp8 { height: 12px; }
-    @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
-    .spin { display: inline-block; animation: spin 0.9s linear infinite; }
+    /* Mobile Bottom Navigation Bar */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: rgba(13, 11, 26, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 9990;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+      box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.6);
+    }
 
-    /* ══════════════════════════════════════════════════════════════
-       RESPONSIVE DESIGN (Tablets, Mobiles & Small Screens)
-       ══════════════════════════════════════════════════════════════ */
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--txt-secondary);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 700;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .mobile-nav-item svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .mobile-nav-item:hover, .mobile-nav-item.active-accent {
+      color: #c084fc;
+    }
+
+    .mobile-nav-badge {
+      position: absolute;
+      top: -3px;
+      right: 2px;
+      background: #10b981;
+      color: #fff;
+      font-size: 9.5px;
+      font-weight: 800;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Responsive Breakpoints */
     @media (max-width: 1024px) {
       .cards-grid {
         grid-template-columns: 1fr;
-        gap: 22px;
       }
-      .page-container {
-        padding: 110px 20px 60px;
+      .nav-links {
+        display: none;
       }
     }
 
     @media (max-width: 860px) {
-      .nav-links {
-        display: none;
-      }
       .mobile-bottom-nav {
         display: flex;
       }
-      body {
-        padding-bottom: 74px;
-      }
       .mobile-fab-inbox {
-        bottom: 82px;
-        display: inline-flex;
+        display: flex;
+        bottom: 78px;
       }
-      .hero-stats-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 14px;
-        padding: 18px 20px;
-      }
-      .hero-stat-val {
-        font-size: 24px;
-      }
-    }
-
-    @media (max-width: 680px) {
-      .topbar-wrapper {
-        top: 10px;
-        padding: 0 10px;
+      .page-container {
+        padding: 85px 14px 90px;
       }
       .topbar {
-        height: 52px;
-        padding: 0 10px;
-      }
-      .top-right {
-        gap: 6px;
-      }
-      .logo {
-        font-size: 13.5px;
-        gap: 7px;
-      }
-      .logo-icon {
-        width: 28px;
-        height: 28px;
-      }
-      .logo-icon svg {
-        width: 15px;
-        height: 15px;
+        height: 54px;
+        padding: 0 12px;
       }
       .btn-quickstart {
         display: none;
       }
-      .conn-badge {
-        padding: 4px 10px;
-        font-size: 10.5px;
-      }
-      .btn-topbar-inbox {
-        padding: 5px 10px;
-        font-size: 11.5px;
-      }
-      #topbarDisconnectBtn {
-        padding: 5px 10px !important;
-        font-size: 11.5px !important;
-      }
-      .inbox-modal-overlay {
-        padding: 0;
-        align-items: flex-end;
-      }
-      .inbox-card-container {
-        max-width: 100%;
-        max-height: 92vh;
-        border-radius: 22px 22px 0 0;
-        border-bottom: none;
-      }
-      .inbox-header-wrap {
-        padding: 14px 16px !important;
-      }
-      .inbox-body-wrap {
-        padding: 14px 12px !important;
-      }
-      .btn-refresh-text {
-        display: none;
-      }
-
-      .page-container {
-        padding: 85px 14px 40px;
-      }
-
-      .hero-section {
-        min-height: auto;
-        padding: 25px 0 40px;
-      }
-      .hero-pill {
-        font-size: 11px;
-        padding: 6px 14px;
-        margin-bottom: 20px;
-      }
       .hero-title {
-        font-size: clamp(2.2rem, 9.5vw, 3.6rem);
-        letter-spacing: -1.2px;
-        margin-bottom: 18px;
-      }
-      .hero-subtitle {
-        font-size: 14px;
-        margin-bottom: 28px;
-      }
-      .hero-actions {
-        width: 100%;
-        flex-direction: column;
-        gap: 12px;
-      }
-      .btn-hero-primary, .btn-hero-secondary {
-        width: 100%;
-        justify-content: center;
-        padding: 14px 20px;
-        font-size: 14.5px;
-      }
-
-      .hero-stats-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-        margin-top: 36px;
-        padding: 16px;
-      }
-      .hero-stat-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 12px;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 12px;
-      }
-      .hero-stat-val {
-        font-size: 20px;
-      }
-      .hero-stat-lbl {
-        margin-top: 0;
-        font-size: 12px;
-      }
-
-      .section-header {
-        margin-bottom: 24px;
-      }
-      .section-title {
-        font-size: 24px;
-      }
-      .section-desc {
-        font-size: 13.5px;
-      }
-
-      .card {
-        padding: 22px 18px;
-        border-radius: 20px;
-      }
-      .card-header {
-        margin-bottom: 18px;
-        gap: 10px;
-      }
-      .card-title {
-        font-size: 16px;
-      }
-      .card-subtitle {
-        font-size: 11.5px;
-      }
-
-      .input-row {
-        flex-direction: column;
-        gap: 8px;
-      }
-      .input-row .btn {
-        width: 100%;
-      }
-
-      .pair-code {
-        font-size: 24px;
-        letter-spacing: 3px;
-      }
-
-      textarea.inp {
-        min-height: 180px;
-      }
-
-      .launch-card {
-        padding: 22px 18px;
-        border-radius: 20px;
+        font-size: clamp(2rem, 8vw, 3rem);
       }
       .stats-summary-grid {
         grid-template-columns: 1fr;
         gap: 10px;
       }
-      .btn-launch {
-        padding: 15px 20px;
-        font-size: 15px;
+      .modal-container {
+        max-width: 100%;
+        max-height: 94vh;
+        border-radius: 20px 20px 0 0;
+        border-bottom: none;
       }
-
-      .console-body {
-        font-size: 11.5px;
-        padding: 12px;
-        max-height: 220px;
-      }
-
-      .footer {
-        flex-direction: column;
-        gap: 14px;
-        text-align: center;
-        margin-top: 40px;
-        padding-top: 24px;
-        font-size: 12px;
-      }
-
-      .toast {
-        width: calc(100% - 32px);
-        font-size: 12.5px;
-        padding: 10px 18px;
-        text-align: center;
-        white-space: normal;
+      .modal-overlay {
+        padding: 0;
+        align-items: flex-end;
       }
     }
   </style>
@@ -1546,7 +1037,7 @@
   </div>
   <div class="bg-noise"></div>
 
-  <!-- FLOATING NAVBAR -->
+  <!-- FLOATING TOPBAR -->
   <div class="topbar-wrapper">
     <header class="topbar">
       <a href="#" class="logo">
@@ -1558,11 +1049,11 @@
 
       <nav class="nav-links">
         <a href="#hero" class="nav-link active">Home</a>
-        <a href="#engine" class="nav-link">Connect</a>
-        <a href="#engine" class="nav-link">Files</a>
-        <a href="#engine" class="nav-link">Message</a>
-        <a href="#launch-section" class="nav-link">Launch</a>
+        <a href="javascript:void(0)" onclick="openSingleMsgModal()" class="nav-link">Send Single</a>
+        <a href="#engine" class="nav-link">Bulk Campaign</a>
         <a href="javascript:void(0)" onclick="openInbox()" class="nav-link" id="navInbox">Inbox <span id="inboxBadge" style="display:none;background:#10b981;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:4px;">0</span></a>
+        <a href="javascript:void(0)" onclick="openReportsModal()" class="nav-link">Reports</a>
+        <a href="#engine" class="nav-link">Settings</a>
       </nav>
 
       <div class="top-right">
@@ -1575,11 +1066,11 @@
           <div class="dot" id="dot"></div>
           <span id="clbl">Checking...</span>
         </div>
-        <button id="topbarDisconnectBtn" onclick="doLogout()" style="display:none; background:rgba(244,63,94,0.18); border:1px solid rgba(244,63,94,0.45); color:#f43f5e; font-size:12px; font-weight:700; padding:7px 15px; border-radius:100px; cursor:pointer; align-items:center; gap:6px; transition:all 0.2s;" title="Disconnect WhatsApp Account">
+        <button id="topbarDisconnectBtn" onclick="doLogout()" style="display:none; background:rgba(244,63,94,0.18); border:1px solid rgba(244,63,94,0.45); color:#f43f5e; font-size:12px; font-weight:700; padding:7px 15px; border-radius:100px; cursor:pointer; align-items:center; gap:6px; transition:all 0.2s;" title="Logout Web Session">
           <svg style="width:12px;height:12px;fill:currentColor;" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-          Disconnect
+          Logout
         </button>
-        <a href="#engine" class="btn-quickstart">Start Campaign</a>
+        <button onclick="openSingleMsgModal()" class="btn-quickstart">Send Message</button>
       </div>
     </header>
   </div>
@@ -1590,66 +1081,40 @@
     <!-- HERO SECTION -->
     <section class="hero-section" id="hero">
       <div class="hero-pill">
-        <div class="hero-pill-sparkle"></div>
         Official WhatsApp Business Platform · Meta Cloud API · Policy Compliant
       </div>
 
-      <!-- HERO TITLE FIX: Clean Grammatical High-End Display Header -->
       <h1 class="hero-title">
         WE CREATE<br>
         <span class="gradient-text">AWESOME CAMPAIGNS</span>
       </h1>
 
       <p class="hero-subtitle">
-        Automate policy-compliant WhatsApp customer outreach using the official Meta WhatsApp Cloud API, verified recipient lists, and personalized rich-media messaging.
+        Dispatch single and bulk WhatsApp messages, attach images & PDF documents, manage 2-way conversations, and track real delivery reports via official Meta Cloud API.
       </p>
 
       <div class="hero-actions">
-        <a href="#engine" class="btn-hero-primary">
-          Launch Workspace
-          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
-        </a>
-        <button onclick="openInbox()" class="btn-hero-secondary" style="border-color:rgba(139,92,246,0.45); background:rgba(139,92,246,0.12); color:#c084fc; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
-          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-          Live Inbox <span id="heroInboxBadge" class="inbox-count-badge" style="display:none;margin-left:2px;">0</span>
+        <button onclick="openSingleMsgModal()" class="btn-hero-primary">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          Send Single Message
         </button>
-        <a href="#launch-section" class="btn-hero-secondary">
-          View Console Status
-        </a>
-      </div>
-
-      <!-- Quick Stats Grid -->
-      <div class="hero-stats-grid">
-        <div class="hero-stat-item">
-          <div class="hero-stat-val">Meta API</div>
-          <div class="hero-stat-lbl">Official Verified Platform</div>
-        </div>
-        <div class="hero-stat-item">
-          <div class="hero-stat-val">Opt-In Safe</div>
-          <div class="hero-stat-lbl">Consent & Opt-Out Protection</div>
-        </div>
-        <div class="hero-stat-item">
-          <div class="hero-stat-val">{{name}}</div>
-          <div class="hero-stat-lbl">Smart Dynamic Tags</div>
-        </div>
+        <button onclick="openInbox()" class="btn-hero-secondary" style="border-color:rgba(139,92,246,0.45); background:rgba(139,92,246,0.12); color:#c084fc;">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+          Live Inbox <span id="heroInboxBadge" class="inbox-count-badge" style="display:none;margin-left:4px;">0</span>
+        </button>
+        <button onclick="openReportsModal()" class="btn-hero-secondary">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          Delivery Reports
+        </button>
       </div>
     </section>
 
     <!-- WORKSPACE / ENGINE SECTION -->
     <section class="engine-section" id="engine">
-      
       <div class="section-header">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;">
-          <div>
-            <div class="section-tag">// Campaign Studio</div>
-            <h2 class="section-title">Setup & Dispatch Workflow</h2>
-            <p class="section-desc">Follow the steps below to verify your official WhatsApp Cloud API connection, import consented contacts, and dispatch your campaign.</p>
-          </div>
-          <button onclick="openInbox()" style="margin-top:4px;display:inline-flex;align-items:center;gap:8px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.4);color:#c084fc;padding:9px 18px;border-radius:100px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;">
-            <svg style="width:15px;height:15px;fill:currentColor;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-            Live Replies (<span id="sectionInboxBadge">0</span>)
-          </button>
-        </div>
+        <div class="section-tag">// Campaign Studio</div>
+        <h2 class="section-title">Official Meta Cloud API Engine</h2>
+        <p class="section-desc">Follow the steps below to configure your official WhatsApp Business credentials, import recipients, and dispatch your campaign.</p>
       </div>
 
       <!-- 3-COL CARDS GRID -->
@@ -1665,15 +1130,14 @@
             </div>
           </div>
 
-          <!-- Unconfigured Meta API Configuration Form -->
           <div id="metaConfigPanel">
-            <div style="font-size:12px; color:var(--txt-dim); line-height:1.5; margin-bottom:12px;">
-              Authorize your official WhatsApp Business Cloud API. Messages are delivered directly through Meta's infrastructure without risk of web-session bans.
+            <div style="font-size:12px; color:var(--txt-secondary); line-height:1.5; margin-bottom:12px;">
+              Authorize your WhatsApp Business account. Outbound bulk messaging requires an approved Meta Message Template.
             </div>
 
             <div style="margin-bottom:10px;">
               <label class="lbl" for="metaPhoneId">Phone Number ID</label>
-              <input type="text" id="metaPhoneId" class="inp" placeholder="e.g. 562148903671234">
+              <input type="text" id="metaPhoneId" class="inp" placeholder="e.g. 1337215722817983">
             </div>
 
             <div style="margin-bottom:10px;">
@@ -1683,155 +1147,154 @@
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
               <div>
-                <label class="lbl" for="metaWabaId">WABA ID (Optional)</label>
-                <input type="text" id="metaWabaId" class="inp" placeholder="Business Account ID">
+                <label class="lbl" for="metaWabaId">WABA ID</label>
+                <input type="text" id="metaWabaId" class="inp" placeholder="e.g. 1704639724550656">
               </div>
               <div>
                 <label class="lbl" for="metaTplName">Template Name</label>
-                <input type="text" id="metaTplName" class="inp" placeholder="e.g. campaign_update">
+                <input type="text" id="metaTplName" class="inp" placeholder="campaign_update">
               </div>
             </div>
 
             <button type="button" class="btn btn-primary" id="btnSaveMeta" onclick="saveMetaConfig()" style="width:100%;">
-              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              Authorize & Verify Meta API
+              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Authorize & Save Credentials
             </button>
-            <div style="font-size:11px; color:var(--txt-muted); margin-top:8px; line-height:1.4;">
-              💡 Obtain your credentials from <a href="https://developers.facebook.com/apps" target="_blank" style="color:var(--grn); text-decoration:underline;">Meta Developers Console</a> &gt; WhatsApp &gt; API Setup.
+
+            <!-- Detailed Error & Advice Container (Fixes masked "Check Credentials" error) -->
+            <div id="metaErrorBox" style="display:none; margin-top:12px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:12px; padding:12px; font-size:12px; line-height:1.5;">
+              <div style="font-weight:800; color:#f43f5e; margin-bottom:4px;" id="metaErrorCodeTitle">Meta API Error</div>
+              <div style="color:#ffffff;" id="metaErrorMsgText">Error validating access token.</div>
+              <div style="color:var(--txt-secondary); margin-top:6px;" id="metaErrorAdviceText">Please generate a Permanent System User Token in Meta Business Suite.</div>
             </div>
           </div>
 
-          <!-- Active Verified Meta Cloud API Display with Prominent Disconnect Button -->
-          <div id="connInfo" style="display:none; margin-top:14px; background:rgba(16,185,129,0.06); border:1.5px solid rgba(16,185,129,0.35); border-radius:18px; padding:18px 20px; box-shadow:0 8px 24px rgba(16,185,129,0.12);">
+          <!-- Active Verified Display -->
+          <div id="connInfo" style="display:none; margin-top:14px; background:rgba(16,185,129,0.06); border:1.5px solid rgba(16,185,129,0.35); border-radius:18px; padding:18px 20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981; box-shadow:0 0 10px #10b981;"></span>
-                <span style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:var(--grn); letter-spacing:1px;">Active WhatsApp Account</span>
+                <span style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:var(--grn); letter-spacing:1px;">Connected Account</span>
               </div>
               <span id="qualityBadge" style="font-size:11px; background:rgba(16,185,129,0.2); color:var(--grn); padding:3px 10px; border-radius:100px; font-weight:800;">Quality: HIGH</span>
             </div>
 
             <div style="margin-bottom:14px;">
-              <div id="activePhoneDisplay" style="font-size:24px; font-weight:900; color:#fff; font-family:var(--font-mono); letter-spacing:0.5px;">+91XXXXXXXXXX</div>
-              <div id="verifiedBusinessName" style="font-size:13px; color:var(--txt-secondary); margin-top:3px; font-weight:600;">Verified Business Profile</div>
+              <div id="activePhoneDisplay" style="font-size:22px; font-weight:900; color:#fff; font-family:var(--font-mono); letter-spacing:0.5px;">+91 99665 59211</div>
+              <div id="verifiedBusinessName" style="font-size:13px; color:var(--txt-secondary); margin-top:3px; font-weight:600;">Verified WhatsApp Business</div>
             </div>
 
-            <!-- PROMINENT INBOX & DISCONNECT ACTION BUTTONS -->
-            <div style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; gap:10px;">
-              <button type="button" class="btn" onclick="openInbox()" style="width:100%; background:linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.3)); border:1.5px solid rgba(139,92,246,0.5); color:#ffffff; font-size:13.5px; font-weight:800; padding:12px 18px; border-radius:12px; display:flex; align-items:center; justify-content:center; gap:9px; cursor:pointer; transition:all 0.25s;">
-                <svg viewBox="0 0 24 24" style="width:17px; height:17px; fill:currentColor;"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-                📬 OPEN LIVE INBOX (<span id="card01InboxBadge">0</span> REPLIES)
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button type="button" class="btn" onclick="openInbox()" style="width:100%; background:rgba(139,92,246,0.2); border:1px solid rgba(139,92,246,0.5); color:#fff;">
+                📬 Open Live Inbox (<span id="card01InboxBadge">0</span> Replies)
               </button>
-              <button type="button" class="btn" onclick="doLogout()" style="width:100%; background:linear-gradient(135deg, rgba(244,63,94,0.25), rgba(225,29,72,0.4)); border:1.5px solid rgba(244,63,94,0.6); color:#ffffff; font-size:13.5px; font-weight:800; padding:13px 18px; border-radius:12px; display:flex; align-items:center; justify-content:center; gap:9px; cursor:pointer; transition:all 0.25s; box-shadow:0 4px 14px rgba(244,63,94,0.3);">
-                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-                🔴 DISCONNECT / LOG OUT THIS NUMBER
+              <button type="button" class="btn btn-danger" onclick="doLogout()" style="width:100%;">
+                🔴 Logout Web Session
               </button>
-              <div style="font-size:11px; color:var(--txt-muted); text-align:center;">
-                Click here anytime to log out, switch numbers, or reconfigure credentials.
-              </div>
             </div>
           </div>
         </div>
 
-        <!-- CARD 02: UPLOAD FILES -->
+        <!-- CARD 02: UPLOAD ASSETS (Excel & Media - Image or PDF) -->
         <div class="card">
           <div class="card-header">
             <div class="card-num">02</div>
             <div>
-              <div class="card-title">Upload Assets</div>
-              <div class="card-subtitle">Recipients spreadsheet & media image</div>
+              <div class="card-title">Upload Contacts & Media</div>
+              <div class="card-subtitle">Excel sheet & Image (JPG/PNG) or PDF Document</div>
             </div>
           </div>
 
-          <label class="lbl">Recipient List (.xlsx / .xls)</label>
+          <label class="lbl">Excel Contact List (.xlsx / .xls)</label>
           <div class="upload-zone" id="exZ">
             <input type="file" id="exI" accept=".xlsx,.xls" onchange="upEx(event)">
             <div class="upload-icon">
               <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
             </div>
             <div class="upload-title">Drop Excel File Here</div>
-            <div class="upload-sub">Supports .xlsx and .xls formats</div>
+            <div class="upload-sub">Validates names, phone numbers, and duplicates</div>
           </div>
           <div class="file-badge" id="exB" style="display:none; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:8px;">
               <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               <span id="exN">No file selected</span>
             </div>
-            <button type="button" onclick="rmEx(event)" title="Remove Excel file" style="background:transparent; border:none; cursor:pointer; color:#f43f5e; display:flex; align-items:center; padding:2px 4px;">
-              <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-            </button>
+            <button type="button" onclick="rmEx(event)" title="Remove Excel file" style="background:transparent; border:none; cursor:pointer; color:#f43f5e; padding:2px 4px;">✕</button>
           </div>
 
-          <!-- Recipient List Preview Box -->
+          <!-- Recipient List Validation Box -->
           <div id="recPrevBox" style="display:none; margin-top:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <span id="recSummaryText" style="font-size:12px; font-weight:700; color:var(--grn);">0 Recipients Loaded</span>
-              <span id="recDedupText" style="font-size:11px; color:var(--txt-muted);">0 duplicates removed</span>
+              <span id="recSummaryText" style="font-size:12px; font-weight:700; color:var(--grn);">0 Contacts Loaded</span>
+              <span id="recDedupText" style="font-size:11px; color:var(--txt-muted);">Validation clean</span>
             </div>
-            <div id="recListPreview" style="font-size:11.5px; font-family:var(--font-mono); color:var(--txt-dim); max-height:100px; overflow-y:auto; line-height:1.6;">
-            </div>
+            <div id="recListPreview" style="font-size:11.5px; font-family:var(--font-mono); color:var(--txt-secondary); max-height:90px; overflow-y:auto; line-height:1.6;"></div>
           </div>
 
-          <div class="sp8"></div>
+          <div style="height:14px;"></div>
 
-          <label class="lbl">Campaign Attachment Image</label>
-          
-          <!-- IMAGE DROP BOX WITH DIRECT EMBEDDED PREVIEW INSIDE -->
+          <label class="lbl">Media Attachment (JPG, PNG, or PDF)</label>
           <div class="upload-zone" id="imZ">
-            <input type="file" id="imI" accept="image/*" onchange="upIm(event)">
+            <input type="file" id="imI" accept="image/jpeg,image/png,image/jpg,application/pdf" onchange="upMedia(event)">
             
-            <!-- Default Upload View -->
             <div class="upload-default" id="imDef">
               <div class="upload-icon">
-                <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
               </div>
-              <div class="upload-title">Upload Image File</div>
-              <div class="upload-sub">Click or drag · JPG, PNG, WEBP (Optional)</div>
+              <div class="upload-title">Upload Image or PDF Document</div>
+              <div class="upload-sub">Supports JPG, PNG, and PDF files</div>
             </div>
 
-            <!-- Image Preview Overlay DIRECTLY INSIDE Drop Box -->
+            <!-- Image Preview Overlay -->
             <div class="upload-preview-inside" id="ipw">
-              <img id="ipv" alt="Uploaded Image Preview">
-              <button type="button" class="img-remove-btn" title="Remove Image" onclick="rmIm(event)">
-                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-              </button>
+              <img id="ipv" alt="Attachment Preview">
+              <button type="button" onclick="rmMedia(event)" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;">✕</button>
+            </div>
+
+            <!-- PDF Document Preview Overlay -->
+            <div class="pdf-preview-box" id="pdfPrevBox">
+              <div style="width:36px;height:36px;border-radius:8px;background:#ef4444;color:#fff;display:grid;place-items:center;font-weight:900;font-size:12px;">PDF</div>
+              <div style="flex:1;min-width:0;">
+                <div id="pdfFilenameDisplay" style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">document.pdf</div>
+                <div style="font-size:11px;color:var(--txt-muted);">PDF Document Attachment</div>
+              </div>
+              <button type="button" onclick="rmMedia(event)" style="background:transparent;border:none;color:#f43f5e;font-size:16px;cursor:pointer;">✕</button>
             </div>
           </div>
 
           <div class="file-badge" id="imB" style="display:none;">
             <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            <span id="imN">No image attached</span>
+            <span id="imN">No attachment</span>
           </div>
         </div>
 
-        <!-- CARD 03: MESSAGE CONTENT -->
+        <!-- CARD 03: COMPOSE MESSAGE -->
         <div class="card">
           <div class="card-header">
             <div class="card-num">03</div>
             <div>
               <div class="card-title">Compose Message</div>
-              <div class="card-subtitle">Use <code style="background:rgba(139,92,246,0.2);padding:2px 6px;border-radius:4px;color:#c084fc;font-family:var(--font-mono);font-size:11px;">{{name}}</code> tag · Mapped to Meta Template variable</div>
+              <div class="card-subtitle">Dynamic tag <code style="background:rgba(139,92,246,0.2);padding:2px 6px;border-radius:4px;color:#c084fc;font-family:var(--font-mono);font-size:11px;">{{name}}</code> supported</div>
             </div>
           </div>
 
-          <label class="lbl" for="msgI">Message Template</label>
-          <textarea id="msgI" class="inp" placeholder="Hello {{name}},&#10;&#10;Excited to share our latest offer with you!&#10;&#10;Best regards,&#10;The Team" oninput="schedSave()"></textarea>
+          <label class="lbl" for="msgI">Message Template Content</label>
+          <textarea id="msgI" class="inp" placeholder="Hello {{name}},&#10;&#10;Thank you for reaching out to us! Here is your requested update.&#10;&#10;Best regards,&#10;Insurance Services" oninput="schedSave()"></textarea>
           
-          <div class="saved-status" id="savedI">
-            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            Changes auto-saved
+          <div id="savedI" style="font-size:11.5px; color:var(--grn); margin-top:8px; display:none; align-items:center; gap:6px;">
+            ✓ Changes saved
           </div>
         </div>
 
       </div>
 
-      <!-- CARD 04: LAUNCH & CONSOLE -->
+      <!-- CARD 04: LAUNCH & RATE-LIMITED DISPATCH -->
       <div class="launch-card" id="launch-section">
         <div class="card-header" style="margin-bottom: 20px;">
           <div class="card-num">04</div>
           <div>
             <div class="card-title">Launch Campaign Engine</div>
-            <div class="card-subtitle">Official Meta Cloud API dispatch with verified opt-in safeguards</div>
+            <div class="card-subtitle">Official Meta Cloud API dispatch with controlled rate-limiting & batch pauses</div>
           </div>
         </div>
 
@@ -1846,7 +1309,7 @@
           </div>
           <div class="stat-box">
             <div class="stat-label">WhatsApp Status</div>
-            <div class="stat-val log-err" id="stC">Not connected</div>
+            <div class="stat-val log-err" id="stC">Not configured</div>
           </div>
         </div>
 
@@ -1870,27 +1333,196 @@
     </section>
 
     <!-- FOOTER -->
-    <footer class="footer">
-      <div class="footer-brand">
-        <div class="logo-icon" style="width:28px;height:28px;">
-          <svg viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.888 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        </div>
-        WhatsApp Campaign Engine
-      </div>
-      <div>Designed with Premium Aesthetic · Fast & Direct</div>
+    <footer style="margin-top:50px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:12.5px; color:var(--txt-muted);">
+      <div>WhatsApp Campaign Engine · Official Meta WhatsApp Cloud API</div>
+      <div>High-Performance Persistent Messaging Platform</div>
     </footer>
 
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <!-- SCRIPT INTEGRATION -->
+  <!-- ============================================================================ -->
+  <!-- MODAL 1: SEND SINGLE MESSAGE (Requirement 1 & 6) -->
+  <!-- ============================================================================ -->
+  <div id="singleMsgModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 620px;">
+      <div style="padding:20px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:grid; place-items:center;">
+            <svg style="width:16px;height:16px;fill:#fff;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </div>
+          <div>
+            <h3 style="font-size:17px; font-weight:800; color:#fff;">Send Direct WhatsApp Message</h3>
+            <p style="font-size:12px; color:var(--txt-muted);">1-to-1 dispatch with optional PDF/image attachment</p>
+          </div>
+        </div>
+        <button onclick="closeSingleMsgModal()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+      </div>
+
+      <div style="padding:22px 24px; overflow-y:auto; flex:1;">
+        <!-- Phone & Country Code Row -->
+        <div style="margin-bottom:14px;">
+          <label class="lbl">Recipient Phone Number (With Country Code)</label>
+          <div style="display:flex; gap:10px;">
+            <select id="singleCountryCode" class="inp" style="width:140px; flex-shrink:0;">
+              <option value="91" selected>🇮🇳 India (+91)</option>
+              <option value="1">🇺🇸 US/CA (+1)</option>
+              <option value="44">🇬🇧 UK (+44)</option>
+              <option value="971">🇦🇪 UAE (+971)</option>
+              <option value="966">🇸🇦 Saudi (+966)</option>
+              <option value="61">🇦🇺 Australia (+61)</option>
+              <option value="65">🇸🇬 Singapore (+65)</option>
+              <option value="49">🇩🇪 Germany (+49)</option>
+              <option value="33">🇫🇷 France (+33)</option>
+              <option value="custom">Other Country</option>
+            </select>
+            <input type="text" id="singlePhoneInp" class="inp" placeholder="e.g. 9966559211 or +919966559211">
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label class="lbl">Recipient Name (Optional)</label>
+          <input type="text" id="singleNameInp" class="inp" placeholder="e.g. Rahul Sharma">
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label class="lbl">Message Text / Caption</label>
+          <textarea id="singleTextInp" class="inp" style="min-height:90px;" placeholder="Type your WhatsApp message here..."></textarea>
+        </div>
+
+        <!-- Optional Attachment File -->
+        <div style="margin-bottom:14px;">
+          <label class="lbl">Attach Media (Optional - JPG, PNG, or PDF)</label>
+          <input type="file" id="singleMediaInp" class="inp" accept="image/jpeg,image/png,application/pdf" style="padding:8px 12px;">
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label class="lbl">Approved Template Name (Required if outside 24-hr window)</label>
+          <input type="text" id="singleTplInp" class="inp" placeholder="Leave empty for direct message, or e.g. campaign_update">
+          <div style="font-size:11px; color:var(--txt-muted); margin-top:4px;">
+            ℹ️ Meta WhatsApp policy: Messages initiated to contacts outside the 24-hr window require an approved template.
+          </div>
+        </div>
+
+        <button type="button" id="btnSendSingle" onclick="dispatchSingleMessage()" class="btn btn-primary" style="width:100%; padding:14px;">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          Send WhatsApp Message Now
+        </button>
+
+        <div id="singleSendResult" style="display:none; margin-top:14px; padding:12px; border-radius:10px; font-size:12.5px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================================ -->
+  <!-- MODAL 2: LIVE 2-WAY INBOX (Requirement 3 & 4) -->
+  <!-- ============================================================================ -->
+  <div id="inboxModal" class="modal-overlay">
+    <div class="modal-container">
+      <div style="padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02);">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:grid; place-items:center;">
+            <svg style="width:18px;height:18px;fill:#fff;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+          </div>
+          <div>
+            <h3 style="font-size:17.5px; font-weight:800; color:#fff;">WhatsApp Live Inbox</h3>
+            <p style="font-size:12px; color:var(--txt-muted);">Two-way customer messages, delivery receipts, and fast replies</p>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button onclick="requestNotificationPermission()" class="btn" style="background:rgba(255,255,255,0.06); color:var(--txt-secondary); font-size:12px; padding:6px 12px; border-radius:100px;">
+            🔔 Enable Notifications
+          </button>
+          <button onclick="fetchInbox()" class="btn" style="background:rgba(255,255,255,0.06); color:var(--txt-secondary); font-size:12px; padding:6px 12px; border-radius:100px;">
+            ⟳ Refresh
+          </button>
+          <button onclick="closeInbox()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+      </div>
+
+      <div id="inboxList" style="padding:20px 24px; overflow-y:auto; flex:1;">
+        <!-- Populated via fetchInbox() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================================ -->
+  <!-- MODAL 3: DELIVERY REPORTS & CSV DOWNLOAD (Requirements 7 & 8) -->
+  <!-- ============================================================================ -->
+  <div id="reportsModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 900px;">
+      <div style="padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#06b6d4,#3b82f6); display:grid; place-items:center;">
+            <svg style="width:18px;height:18px;fill:#fff;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          </div>
+          <div>
+            <h3 style="font-size:17.5px; font-weight:800; color:#fff;">Delivery Reports & Audit Logs</h3>
+            <p style="font-size:12px; color:var(--txt-muted);">Individual message statuses, Meta IDs, and exportable reports</p>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <a href="/api/reports/download" target="_blank" class="btn btn-primary" style="font-size:12px; padding:7px 14px; text-decoration:none;">
+            📥 Download CSV Report
+          </a>
+          <button onclick="closeReportsModal()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+      </div>
+
+      <div id="reportsBody" style="padding:20px 24px; overflow-y:auto; flex:1;">
+        <!-- Populated via loadDeliveryReports() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE FLOATING ACTION BUTTON (FAB) -->
+  <div id="mobileFabInbox" onclick="openInbox()" class="mobile-fab-inbox">
+    <div class="mobile-fab-icon-wrap">
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#fff;"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+      <span id="mobileFabBadge" class="mobile-fab-badge" style="display:none;">0</span>
+    </div>
+    <span>Live Inbox</span>
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav class="mobile-bottom-nav">
+    <a href="#hero" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="javascript:void(0)" onclick="openSingleMsgModal()" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      <span>Send</span>
+    </a>
+    <a href="javascript:void(0)" onclick="openInbox()" class="mobile-nav-item active-accent">
+      <div style="position:relative;display:inline-block;">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+        <span id="bottomNavBadge" class="mobile-nav-badge" style="display:none;">0</span>
+      </div>
+      <span>Inbox</span>
+    </a>
+    <a href="javascript:void(0)" onclick="openReportsModal()" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      <span>Reports</span>
+    </a>
+    <a href="#engine" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+      <span>Settings</span>
+    </a>
+  </nav>
+
+  <!-- ============================================================================ -->
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <!-- ============================================================================ -->
   <script>
-    let ok = false, sT = null;
+    let ok = false;
+    let sT = null;
+    let activeRecipientsCount = 0;
+    let activeSenderPhone = '';
 
     const $ = id => document.getElementById(id);
 
-    // ─── USER SESSION ISOLATION (Private per browser/device) ───
     function getSessionId() {
       let sid = localStorage.getItem('wa_session_id');
       if (!sid) {
@@ -1912,9 +1544,87 @@
     }
 
     function toast(m, t = '') {
-      const e = $('toast'); e.textContent = m; e.className = 'toast ' + t;
+      const e = $('toast');
+      e.textContent = m;
+      e.className = 'toast ' + t;
       requestAnimationFrame(() => e.classList.add('on'));
-      setTimeout(() => e.classList.remove('on'), 3000);
+      setTimeout(() => e.classList.remove('on'), 3500);
+    }
+
+    // Browser Notifications API
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') toast('Browser notifications enabled! ✓', 'ok_');
+          else toast('Notifications were not granted.', '');
+        });
+      } else {
+        toast('Browser notifications not supported.', '');
+      }
+    }
+
+    // ─── 1. STATUS & META CONFIGURATION ───
+    async function poll() {
+      try {
+        const r = await apiFetch('/api/status');
+        const d = await r.json();
+
+        const badge = $('cbadge');
+        const dot_ = $('dot');
+        const lbl = $('clbl');
+        const sc = $('stC');
+        const bl = $('btnL');
+        const tbDisc = $('topbarDisconnectBtn');
+        const errBox = $('metaErrorBox');
+
+        if (d.connected) {
+          ok = true;
+          activeSenderPhone = d.phone;
+          dot_.className = 'dot on';
+          lbl.textContent = 'Meta API · +' + d.phone;
+          badge.className = 'conn-badge live';
+          sc.textContent = 'Connected ✓ (+' + d.phone + ')';
+          sc.className = 'stat-val log-ok';
+          if (activeRecipientsCount > 0) bl.disabled = false;
+
+          $('connInfo').style.display = 'block';
+          $('metaConfigPanel').style.display = 'none';
+          $('activePhoneDisplay').textContent = '+' + d.phone;
+          if ($('verifiedBusinessName')) $('verifiedBusinessName').textContent = d.verifiedName || 'WhatsApp Business Profile';
+          if ($('qualityBadge')) $('qualityBadge').textContent = 'Quality: ' + (d.qualityRating || 'GREEN');
+          if (tbDisc) tbDisc.style.display = 'inline-flex';
+          if (errBox) errBox.style.display = 'none';
+        } else {
+          ok = false;
+          activeSenderPhone = '';
+          dot_.className = 'dot';
+          lbl.textContent = d.configured ? 'Meta API · Error' : 'Meta API · Setup Needed';
+          badge.className = 'conn-badge';
+          
+          // Clear, unmasked error diagnostic
+          if (d.configured && d.error) {
+            sc.textContent = `Error ${d.code || ''}: ${d.error}`;
+            sc.className = 'stat-val log-err';
+            if (errBox) {
+              errBox.style.display = 'block';
+              $('metaErrorCodeTitle').textContent = `Meta API Error (${d.code || 'Diagnostic'}):`;
+              $('metaErrorMsgText').textContent = d.error;
+              $('metaErrorAdviceText').textContent = d.advice || 'Please verify token and Phone Number ID in Meta Developers Console.';
+            }
+          } else {
+            sc.textContent = 'Not configured';
+            sc.className = 'stat-val log-err';
+            if (errBox) errBox.style.display = 'none';
+          }
+
+          bl.disabled = true;
+          $('connInfo').style.display = 'none';
+          $('metaConfigPanel').style.display = 'block';
+          if (tbDisc) tbDisc.style.display = 'none';
+        }
+      } catch (e) {
+        console.warn('Status poll exception:', e);
+      }
     }
 
     async function saveMetaConfig() {
@@ -1930,22 +1640,17 @@
 
       const b = $('btnSaveMeta');
       b.disabled = true;
-      b.innerHTML = '<span class="spin">⟳</span> Verifying with Meta...';
+      b.textContent = 'Verifying with Meta API...';
 
       try {
         const r = await apiFetch('/api/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phoneNumberId: phoneId,
-            token: token,
-            wabaId: wabaId,
-            templateName: tplName
-          })
+          body: JSON.stringify({ phoneNumberId: phoneId, token, wabaId, templateName: tplName })
         });
         const d = await r.json();
         if (d.success) {
-          toast('Configuration saved to your private session. Verifying with Meta...', 'ok_');
+          toast(d.message, d.verified ? 'ok_' : 'err_');
           await poll();
         } else {
           toast(d.error || 'Failed to save configuration', 'err_');
@@ -1954,13 +1659,97 @@
         toast('Connection error: ' + e.message, 'err_');
       } finally {
         b.disabled = false;
-        b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Authorize & Verify Meta API';
+        b.textContent = 'Authorize & Save Credentials';
       }
     }
 
-    let activeRecipientsCount = 0;
-    let activeSenderPhone = '';
+    async function doLogout() {
+      if (!confirm('Log out of this web application? Your WhatsApp Business connection will remain securely connected for background messaging.')) return;
+      try {
+        await apiFetch('/api/logout', { method: 'POST' });
+        localStorage.removeItem('wa_session_id');
+        toast('Logged out of web application. WhatsApp connection preserved.', 'ok_');
+        poll();
+      } catch (err) {
+        toast('Logout error: ' + err.message, 'err_');
+      }
+    }
 
+    // ─── 2. SINGLE DIRECT MESSAGING ───
+    function openSingleMsgModal() {
+      $('singleMsgModal').style.display = 'flex';
+      $('singleSendResult').style.display = 'none';
+    }
+
+    function closeSingleMsgModal() {
+      $('singleMsgModal').style.display = 'none';
+    }
+
+    async function dispatchSingleMessage() {
+      const countryCode = $('singleCountryCode').value;
+      const phoneRaw = $('singlePhoneInp').value.trim();
+      const name = $('singleNameInp').value.trim();
+      const text = $('singleTextInp').value.trim();
+      const tpl = $('singleTplInp').value.trim();
+      const mediaInput = $('singleMediaInp');
+
+      if (!phoneRaw) {
+        toast('Please enter a recipient phone number', 'err_');
+        return;
+      }
+
+      const btn = $('btnSendSingle');
+      const resBox = $('singleSendResult');
+      btn.disabled = true;
+      btn.textContent = 'Sending message...';
+      resBox.style.display = 'none';
+
+      const fd = new FormData();
+      fd.append('to', phoneRaw);
+      fd.append('countryCode', countryCode);
+      fd.append('recipientName', name);
+      fd.append('text', text);
+      if (tpl) fd.append('templateName', tpl);
+      if (mediaInput.files && mediaInput.files[0]) {
+        fd.append('mediaFile', mediaInput.files[0]);
+      }
+
+      try {
+        const r = await apiFetch('/api/send-single', {
+          method: 'POST',
+          body: fd
+        });
+        const d = await r.json();
+
+        resBox.style.display = 'block';
+        if (d.success) {
+          resBox.style.background = 'rgba(16,185,129,0.12)';
+          resBox.style.border = '1px solid rgba(16,185,129,0.4)';
+          resBox.style.color = '#10b981';
+          resBox.innerHTML = `✓ <b>Message Sent Successfully!</b><br>Recipient: +${d.recipient}<br>Meta Message ID: <code>${d.messageId}</code>`;
+          toast('WhatsApp message sent! ✓', 'ok_');
+          $('singleTextInp').value = '';
+          mediaInput.value = '';
+          fetchInbox();
+        } else {
+          resBox.style.background = 'rgba(244,63,94,0.12)';
+          resBox.style.border = '1px solid rgba(244,63,94,0.4)';
+          resBox.style.color = '#f43f5e';
+          resBox.innerHTML = `✗ <b>Meta API Error (${d.code || ''})</b><br>${d.explanation || d.error}<br>${d.details || ''}`;
+          toast(d.explanation || d.error || 'Failed to send message', 'err_');
+        }
+      } catch (err) {
+        resBox.style.display = 'block';
+        resBox.style.background = 'rgba(244,63,94,0.12)';
+        resBox.style.color = '#f43f5e';
+        resBox.textContent = 'Network error: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send WhatsApp Message Now';
+      }
+    }
+
+    // ─── 3. ASSETS (EXCEL & MEDIA UPLOADS) ───
     async function fetchRecipientsPreview() {
       try {
         const r = await apiFetch('/api/recipients');
@@ -1973,58 +1762,41 @@
 
         if (d.exists && d.success) {
           activeRecipientsCount = d.valid;
-          if (d.valid > 0) {
-            pBox.style.display = 'block';
-            sTxt.textContent = `✓ ${d.valid} Unique Contacts Ready (${d.consented || d.valid} Consented)`;
-            sTxt.style.color = 'var(--grn)';
-            
-            const badges = [];
-            if (d.consented) badges.push(`✓ ${d.consented} Opt-In Verified`);
-            if (d.opted_out) badges.push(`🛑 ${d.opted_out} Opted-Out Suppressed`);
-            if (d.duplicates) badges.push(`${d.duplicates} duplicates removed`);
-            dTxt.textContent = badges.join(' · ') || 'Verified List';
-            
-            let previewHtml = (d.preview || []).map(p => 
-              `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);">` +
-              `<span><b>${p.name}</b> <span style="font-size:10px; color:var(--grn); background:rgba(16,185,129,0.12); padding:1px 5px; border-radius:4px;">${p.has_consent ? 'Consent ✓' : 'Standard'}</span></span>` +
-              `<span style="color:var(--grn);">+${p.phone}</span>` +
-              `</div>`
-            ).join('');
-            if (d.valid > (d.preview || []).length) {
-              previewHtml += `<div style="padding-top:4px; font-size:10.5px; color:var(--txt-muted);">...and ${d.valid - d.preview.length} more contacts</div>`;
-            }
-            lPrev.innerHTML = previewHtml;
+          pBox.style.display = 'block';
+          sTxt.textContent = `✓ ${d.valid} Contacts Verified (${d.consented || d.valid} Consented)`;
+          sTxt.style.color = 'var(--grn)';
 
-            stE.textContent = `${d.valid} Contacts (${d.consented || d.valid} Consented)`;
-            stE.style.color = 'var(--grn)';
-            if (ok) $('btnL').disabled = false;
-          } else {
-            pBox.style.display = 'block';
-            sTxt.textContent = `⚠️ 0 Valid Recipients Found`;
-            sTxt.style.color = '#f43f5e';
-            dTxt.textContent = `Check phone & name columns in spreadsheet`;
-            lPrev.innerHTML = `<div style="color:var(--txt-muted);">No valid 10-15 digit phone numbers found.</div>`;
-            stE.textContent = `0 Valid Recipients`;
-            stE.style.color = '#f43f5e';
-            $('btnL').disabled = true;
-          }
+          const badges = [];
+          if (d.duplicates) badges.push(`${d.duplicates} duplicates removed`);
+          if (d.invalid) badges.push(`${d.invalid} invalid`);
+          if (d.opted_out) badges.push(`🛑 ${d.opted_out} opted-out`);
+          dTxt.textContent = badges.join(' · ') || 'Validation clean';
+
+          let previewHtml = (d.preview || []).map(p =>
+            `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);">` +
+            `<span><b>${p.name}</b></span>` +
+            `<span style="color:var(--grn);">+${p.phone}</span>` +
+            `</div>`
+          ).join('');
+          lPrev.innerHTML = previewHtml;
+
+          stE.textContent = `${d.valid} Contacts (${d.consented || d.valid} Consented)`;
+          stE.style.color = 'var(--grn)';
+          if (ok) $('btnL').disabled = false;
         } else {
           activeRecipientsCount = 0;
           pBox.style.display = 'none';
-          lPrev.innerHTML = '';
           stE.textContent = 'Not uploaded';
           stE.style.color = 'var(--txt-muted)';
         }
-      } catch (err) {
-        console.error('Error fetching recipients preview:', err);
-      }
+      } catch (err) {}
     }
 
     async function upEx(e) {
       const f = e.target.files[0]; if (!f) return;
       const fd = new FormData(); fd.append('file', f);
       try {
-        toast('Uploading and analyzing Excel...', '');
+        toast('Uploading & validating contacts...', '');
         const r = await apiFetch('/api/upload/excel', { method: 'POST', body: fd });
         const d = await r.json();
         if (d.success) {
@@ -2032,7 +1804,7 @@
           $('exB').style.display = 'flex';
           $('exZ').style.borderColor = 'var(--grn)';
           await fetchRecipientsPreview();
-          toast('Excel loaded: ' + f.name, 'ok_');
+          toast('Excel validated: ' + f.name, 'ok_');
         }
       } catch { toast('Upload failed', 'err_'); }
     }
@@ -2048,18 +1820,19 @@
         $('stE').textContent = 'Not uploaded';
         $('stE').style.color = 'var(--txt-muted)';
         $('recPrevBox').style.display = 'none';
-        $('recListPreview').innerHTML = '';
         activeRecipientsCount = 0;
         $('btnL').disabled = true;
-        toast('Excel sheet removed', 'ok_');
-      } catch { toast('Error removing Excel', 'err_'); }
+        toast('Excel removed', 'ok_');
+      } catch { toast('Error removing file', 'err_'); }
     }
 
-    async function upIm(e) {
+    // Media upload supporting JPG, PNG, and PDF
+    async function upMedia(e) {
       const f = e.target.files[0]; if (!f) return;
       const fd = new FormData(); fd.append('file', f);
       try {
-        const r = await apiFetch('/api/upload/image', { method: 'POST', body: fd });
+        toast('Uploading media attachment...', '');
+        const r = await apiFetch('/api/upload/media', { method: 'POST', body: fd });
         const d = await r.json();
         if (d.success) {
           $('imN').textContent = f.name;
@@ -2067,64 +1840,49 @@
           $('stI').textContent = f.name;
           $('stI').style.color = 'var(--grn)';
           $('imZ').style.borderColor = 'var(--grn)';
-          $('ipv').src = URL.createObjectURL(f);
-          $('imDef').style.display = 'none';
-          $('ipw').style.display = 'block';
-          toast('Image uploaded!', 'ok_');
+
+          if (d.type === 'document' || f.name.toLowerCase().endsWith('.pdf')) {
+            $('imDef').style.display = 'none';
+            $('ipw').style.display = 'none';
+            $('pdfPrevBox').style.display = 'flex';
+            $('pdfFilenameDisplay').textContent = f.name;
+          } else {
+            $('imDef').style.display = 'none';
+            $('pdfPrevBox').style.display = 'none';
+            $('ipv').src = URL.createObjectURL(f);
+            $('ipw').style.display = 'block';
+          }
+          toast('Media attached: ' + f.name, 'ok_');
         }
       } catch { toast('Upload failed', 'err_'); }
     }
 
-    async function rmIm(e) {
+    async function rmMedia(e) {
       if (e) e.stopPropagation();
       try {
-        await apiFetch('/api/delete-image', { method: 'DELETE' });
+        await apiFetch('/api/delete-media', { method: 'DELETE' });
         $('ipv').src = '';
         $('ipw').style.display = 'none';
+        $('pdfPrevBox').style.display = 'none';
         $('imDef').style.display = 'flex';
         $('imB').style.display = 'none';
         $('imI').value = '';
         $('imZ').style.borderColor = '';
         $('stI').textContent = 'None (Text only)';
         $('stI').style.color = 'var(--txt-muted)';
-        toast('Image removed', 'ok_');
-      } catch { toast('Error removing image', 'err_'); }
+        toast('Media removed', 'ok_');
+      } catch { toast('Error removing media', 'err_'); }
     }
-
-    ['exZ', 'imZ'].forEach(id => {
-      const z = $(id);
-      z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag'); });
-      z.addEventListener('dragleave', () => z.classList.remove('drag'));
-      z.addEventListener('drop', e => {
-        e.preventDefault(); z.classList.remove('drag');
-        const inp = z.querySelector('input'); const dt = new DataTransfer();
-        dt.items.add(e.dataTransfer.files[0]); inp.files = dt.files;
-        inp.dispatchEvent(new Event('change'));
-      });
-    });
 
     function schedSave() { clearTimeout(sT); sT = setTimeout(savMsg, 900); }
     async function savMsg() {
       const m = $('msgI').value;
       try {
         await apiFetch('/api/save-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: m }) });
-        const i = $('savedI'); i.classList.add('on'); setTimeout(() => i.classList.remove('on'), 2500);
-      } catch { }
+        const i = $('savedI'); i.style.display = 'flex'; setTimeout(() => i.style.display = 'none', 2500);
+      } catch {}
     }
-    async function loadMsg() { try { const r = await apiFetch('/api/get-message'); const d = await r.json(); if (d.message) $('msgI').value = d.message; } catch { } }
-    async function loadImg() {
-      try {
-        const r = await apiFetch('/api/preview-image'); const d = await r.json();
-        if (d.image) {
-          $('ipv').src = d.image;
-          $('imDef').style.display = 'none';
-          $('ipw').style.display = 'block';
-          $('imB').style.display = 'flex';
-          $('stI').textContent = 'campaign.jpg';
-          $('stI').style.color = 'var(--grn)';
-        }
-      } catch { }
-    }
+    async function loadMsg() { try { const r = await apiFetch('/api/get-message'); const d = await r.json(); if (d.message) $('msgI').value = d.message; } catch {} }
 
     async function checkFilesStatus() {
       try {
@@ -2135,393 +1893,318 @@
           $('exB').style.display = 'flex';
           $('exZ').style.borderColor = 'var(--grn)';
           await fetchRecipientsPreview();
-        } else {
-          $('exN').textContent = 'No file selected';
-          $('exB').style.display = 'none';
-          $('stE').textContent = 'Not uploaded';
-          $('stE').style.color = 'var(--txt-muted)';
-          $('exZ').style.borderColor = '';
-          $('recPrevBox').style.display = 'none';
         }
-
-        if (d.imageExists) {
-          loadImg();
-        } else {
-          $('stI').textContent = 'None (Text only)';
-          $('stI').style.color = 'var(--txt-muted)';
+        if (d.mediaExists) {
+          $('stI').textContent = d.mediaFilename || 'campaign_media';
+          $('stI').style.color = 'var(--grn)';
+          $('imN').textContent = d.mediaFilename || 'campaign_media';
+          $('imB').style.display = 'flex';
+          if (d.mediaType === 'document') {
+            $('imDef').style.display = 'none';
+            $('ipw').style.display = 'none';
+            $('pdfPrevBox').style.display = 'flex';
+            $('pdfFilenameDisplay').textContent = d.mediaFilename;
+          } else {
+            const imR = await apiFetch('/api/preview-image');
+            const imD = await imR.json();
+            if (imD.image) {
+              $('ipv').src = imD.image;
+              $('imDef').style.display = 'none';
+              $('ipw').style.display = 'block';
+            }
+          }
         }
-      } catch { }
+      } catch {}
     }
 
+    // ─── 4. BULK LAUNCH WITH CONTROLLED RATE-LIMITING ───
     function doLaunch() {
       if (!ok) { toast('Please configure and authorize official Meta Cloud API first!', 'err_'); return; }
       if (activeRecipientsCount <= 0) {
-        toast('Please upload an Excel contact sheet (.xlsx) with valid recipients first!', 'err_');
-        $('exZ').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        toast('Please upload an Excel contact sheet with valid recipients first!', 'err_');
         return;
       }
 
-      // Explicit Policy & Consent Confirmation
-      const senderText = activeSenderPhone ? ('+' + activeSenderPhone) : 'Meta Cloud API';
-      const confirmPrompt = `Confirm Official Meta WhatsApp Cloud API Campaign Dispatch:\n\n` +
-        `• Verified Platform: Official Meta WhatsApp Business Platform\n` +
-        `• Business Account: ${senderText}\n` +
-        `• Target Recipients: ${activeRecipientsCount} verified contacts\n` +
-        `• Attachment: ${$('stI').textContent}\n\n` +
-        `Policy Compliance Notice:\n` +
-        `By launching, you confirm all contacts have documented consent/opt-in to receive this WhatsApp message category and that opted-out contacts have been permanently suppressed.\n\n` +
-        `Proceed with official campaign dispatch?`;
-      if (!confirm(confirmPrompt)) return;
+      if (!confirm(`Dispatch campaign to ${activeRecipientsCount} verified recipients via official Meta WhatsApp Cloud API?\n\nPacing: Controlled 1.5s delay with batch pauses every 10 messages.`)) return;
 
       savMsg().then(() => {
         const b = $('btnL'), cl = $('clog'), feed = $('cfeed');
-        cl.style.display = 'block'; feed.innerHTML = '<div class="log-dim">🚀 Initializing official Meta WhatsApp Cloud API engine...</div>';
-        b.disabled = true; b.innerHTML = '⏳ Dispatching Messages...';
+        cl.style.display = 'block';
+        feed.innerHTML = '<div class="log-dim">🚀 Initializing official Meta WhatsApp Cloud API campaign engine...</div>';
+        b.disabled = true;
+        b.textContent = '⏳ Dispatching Messages...';
         cl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
         const streamUrl = '/api/stream-campaign?sessionId=' + encodeURIComponent(getSessionId());
         const src = new EventSource(streamUrl);
+
         src.onmessage = ev => {
           const msg = JSON.parse(ev.data);
           const addLine = (txt, cls) => {
             txt.split('\n').forEach(l => {
               if (!l.trim()) return;
-              const d = document.createElement('div'); d.className = cls || ''; d.textContent = l; feed.appendChild(d);
+              const d = document.createElement('div');
+              d.className = cls || '';
+              d.textContent = l;
+              feed.appendChild(d);
             });
             feed.parentElement.scrollTop = feed.parentElement.scrollHeight;
           };
-          if (msg.type === 'log') addLine(msg.text, msg.text.includes('ACCEPTED') ? 'log-ok' : msg.text.includes('FAILED') ? 'log-err' : '');
-          else if (msg.type === 'error') addLine(msg.text, 'log-err');
-          else if (msg.type === 'finish') {
-            src.close(); b.disabled = false;
+
+          if (msg.type === 'log') {
+            addLine(msg.text, msg.text.includes('ACCEPTED') ? 'log-ok' : msg.text.includes('FAILED') ? 'log-err' : '');
+          } else if (msg.type === 'error') {
+            addLine(msg.text, 'log-err');
+          } else if (msg.type === 'finish') {
+            src.close();
+            b.disabled = false;
+            b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
             if (msg.exitCode === 0) {
-              b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> ✅ Campaign Finished! Send Again?';
-              addLine('🎉 Campaign completed via Meta Cloud API!', 'log-ok'); toast('Campaign completed!', 'ok_');
+              addLine('🎉 Campaign completed successfully!', 'log-ok');
+              toast('Campaign finished!', 'ok_');
             } else {
-              b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Retry Campaign';
-              toast('Campaign stopped or halted on Meta policy check', 'err_');
+              toast('Campaign stopped. Check log details.', 'err_');
             }
           }
         };
-        src.onerror = () => { src.close(); b.disabled = false; b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now'; };
+
+        src.onerror = () => {
+          src.close();
+          b.disabled = false;
+          b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+        };
       });
     }
 
-    async function doLogout() {
-      if (!confirm('Are you sure you want to disconnect from this WhatsApp account? This will log out your session and clear your temporary credentials on this device.')) return;
-      try {
-        toast('Disconnecting WhatsApp account...', '');
-        const r = await apiFetch('/api/logout', { method: 'POST' });
-        const d = await r.json();
-        localStorage.removeItem('wa_session_id');
-        toast(d.message || 'Disconnected successfully.', 'ok_');
-        ok = false;
-        activeSenderPhone = '';
-        $('connInfo').style.display = 'none';
-        $('metaConfigPanel').style.display = 'block';
-        if ($('topbarDisconnectBtn')) $('topbarDisconnectBtn').style.display = 'none';
-        if ($('bottomNavDisconnect')) $('bottomNavDisconnect').style.display = 'none';
-        $('metaPhoneId').value = '';
-        $('metaToken').value = '';
-        if ($('metaWabaId')) $('metaWabaId').value = '';
-        if ($('metaTplName')) $('metaTplName').value = '';
-        $('exB').style.display = 'none';
-        $('imB').style.display = 'none';
-        activeRecipientsCount = 0;
-        $('stV').textContent = '0';
-        $('stI').textContent = 'None';
-        fetchInbox();
-        poll();
-        checkFilesStatus();
-      } catch (err) {
-        toast('Error disconnecting: ' + err.message, 'err_');
-      }
-    }
+    // ─── 5. TWO-WAY INBOX & PERSISTENT CHAT HISTORY ───
+    let knownUnreadCount = 0;
 
-    async function poll() {
-      try {
-        const r = await apiFetch('/api/status'); const d = await r.json();
-        const badge = $('cbadge'), dot_ = $('dot'), lbl = $('clbl'), sc = $('stC'), bl = $('btnL');
-        const tbDisc = $('topbarDisconnectBtn');
-        const bNavDisc = $('bottomNavDisconnect');
-        if (d.connected) {
-          ok = true; 
-          activeSenderPhone = d.phone;
-          dot_.className = 'dot on'; 
-          lbl.textContent = 'Meta API · +' + d.phone; 
-          badge.className = 'conn-badge live';
-          sc.textContent = 'Connected ✓ (Meta API: +' + d.phone + ')'; 
-          sc.className = 'stat-val log-ok'; 
-          if (activeRecipientsCount > 0) bl.disabled = false;
-          $('connInfo').style.display = 'block';
-          $('metaConfigPanel').style.display = 'none';
-          $('activePhoneDisplay').textContent = '+' + d.phone;
-          if ($('verifiedBusinessName')) $('verifiedBusinessName').textContent = d.verifiedName || 'WhatsApp Business Profile';
-          if ($('qualityBadge')) $('qualityBadge').textContent = 'Quality: ' + (d.qualityRating || 'GREEN');
-          if (tbDisc) tbDisc.style.display = 'inline-flex';
-          if (bNavDisc) bNavDisc.style.display = 'flex';
-        } else {
-          ok = false; 
-          activeSenderPhone = '';
-          dot_.className = 'dot'; 
-          lbl.textContent = d.configured ? 'Meta API · Error' : 'Meta API · Setup Needed'; 
-          badge.className = 'conn-badge';
-          sc.textContent = d.configured ? 'Meta API Error (Check Credentials)' : 'Not configured'; 
-          sc.className = 'stat-val log-err'; 
-          bl.disabled = true;
-          $('connInfo').style.display = 'none';
-          $('metaConfigPanel').style.display = 'block';
-          if (tbDisc) tbDisc.style.display = 'none';
-          if (bNavDisc) bNavDisc.style.display = 'none';
-        }
-      } catch { }
-    }
-
-    // ─── INBOX & REAL-TIME REPLIES (Conversation Threaded) ───
     async function fetchInbox() {
       try {
         const res = await apiFetch('/api/inbox');
         const data = await res.json();
-        const count = data.messages ? data.messages.length : 0;
+        const convs = data.conversations || [];
+        const totalUnread = convs.reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
-        // Update all badges across desktop and mobile UI
-        const badgeIds = ['inboxBadge', 'topbarInboxBadge', 'mobileFabBadge', 'bottomNavBadge', 'heroInboxBadge'];
-        badgeIds.forEach(id => {
+        // Notify user if new incoming unread messages arrived
+        if (totalUnread > knownUnreadCount && knownUnreadCount >= 0) {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('New WhatsApp Message Received', {
+              body: `You have ${totalUnread} unread customer message(s).`,
+              icon: '/favicon.ico'
+            });
+          }
+        }
+        knownUnreadCount = totalUnread;
+
+        // Update all badges
+        const count = convs.length;
+        ['inboxBadge', 'topbarInboxBadge', 'mobileFabBadge', 'bottomNavBadge', 'heroInboxBadge'].forEach(id => {
           const el = $(id);
           if (el) {
-            el.textContent = count;
-            el.style.display = count > 0 ? (id === 'mobileFabBadge' || id === 'bottomNavBadge' ? 'flex' : 'inline-block') : 'none';
+            el.textContent = totalUnread > 0 ? totalUnread : count;
+            el.style.display = count > 0 ? (id.includes('mobile') ? 'flex' : 'inline-block') : 'none';
           }
         });
-        const secBadge = $('sectionInboxBadge');
-        if (secBadge) secBadge.textContent = count;
-        const c01Badge = $('card01InboxBadge');
-        if (c01Badge) c01Badge.textContent = count;
+        if ($('card01InboxBadge')) $('card01InboxBadge').textContent = count;
 
         const list = $('inboxList');
         if (!list) return;
 
-        if (!data.messages || data.messages.length === 0) {
+        if (convs.length === 0) {
           list.innerHTML = `
             <div style="text-align:center;padding:48px 20px;color:var(--txt-muted);">
-              <div style="font-size:38px;margin-bottom:12px;">📬</div>
-              <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">No Incoming Replies Yet</div>
-              <div style="font-size:13px;max-width:380px;margin:0 auto;line-height:1.5;">When candidates respond to your campaign messages, their incoming replies and questions will appear here instantly in real time!</div>
+              <div style="font-size:36px;margin-bottom:12px;">📬</div>
+              <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">No WhatsApp Conversations Yet</div>
+              <div style="font-size:13px;max-width:380px;margin:0 auto;line-height:1.5;">When candidates respond or send a message to your WhatsApp Business number, their chat and replies appear here instantly!</div>
             </div>`;
           return;
         }
 
-        // Group into conversation threads by contact phone
-        const threads = {};
-        data.messages.forEach(m => {
-          const phone = (m.direction === 'outgoing' ? m.to : m.from || '').replace(/\D/g, '');
-          if (!phone) return;
-          if (!threads[phone]) {
-            threads[phone] = {
-              phone,
-              name: m.name && m.name !== 'You' ? m.name : '',
-              messages: []
-            };
-          }
-          threads[phone].messages.push(m);
-          if (m.name && m.name !== 'You' && !threads[phone].name) {
-            threads[phone].name = m.name;
-          }
-        });
-
-        list.innerHTML = Object.values(threads).map(thread => {
-          const safePhone = thread.phone;
-          const contactName = thread.name || ('Candidate (+' + safePhone + ')');
-          const latestMsg = thread.messages[0] || {};
-          const latestTime = new Date(latestMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date(latestMsg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
-
-          // Render message bubbles in chronological order (oldest to newest)
-          const chronological = [...thread.messages].reverse();
-          const bubblesHtml = chronological.map(m => {
-            const isOut = m.direction === 'outgoing';
-            const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            if (isOut) {
-              return `
-                <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-                  <div style="background:linear-gradient(135deg,rgba(139,92,246,0.35),rgba(6,182,212,0.3));border:1px solid rgba(139,92,246,0.45);border-radius:14px 14px 2px 14px;padding:9px 13px;max-width:85%;color:#fff;word-break:break-word;">
-                    <div style="font-size:13.5px;line-height:1.4;">${m.text}</div>
-                    <div style="font-size:10px;color:rgba(255,255,255,0.65);text-align:right;margin-top:3px;">You · ${time} ✓✓</div>
-                  </div>
-                </div>`;
-            } else {
-              return `
-                <div style="display:flex;justify-content:flex-start;margin-bottom:8px;">
-                  <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:14px 14px 14px 2px;padding:9px 13px;max-width:85%;color:#e2e8f0;word-break:break-word;">
-                    <div style="font-size:13.5px;line-height:1.4;">${m.text || '<span style="color:var(--txt-muted);font-style:italic;">[Media/Response]</span>'}</div>
-                    <div style="font-size:10px;color:var(--txt-muted);margin-top:3px;">${time}</div>
-                  </div>
-                </div>`;
-            }
-          }).join('');
+        list.innerHTML = convs.map(c => {
+          const safePhone = c.phone;
+          const contactName = c.contact_name || ('+' + safePhone);
+          const time = new Date(c.last_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date(c.last_timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
+          const windowBadge = c.is_window_active
+            ? `<span style="font-size:10px; background:rgba(16,185,129,0.18); color:var(--grn); padding:2px 7px; border-radius:100px; font-weight:700;">🟢 24h Window Active (${c.window_time_left} left)</span>`
+            : `<span style="font-size:10px; background:rgba(244,63,94,0.18); color:#f43f5e; padding:2px 7px; border-radius:100px; font-weight:700;">🔴 24h Window Expired (Template Required)</span>`;
 
           return `
-            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:16px;margin-bottom:14px;transition:all 0.2s;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06);gap:8px;flex-wrap:wrap;">
-                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                  <div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#3b82f6);display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;">
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#3b82f6); display:grid; place-items:center; font-weight:800; font-size:13px; color:#fff;">
                     ${contactName.charAt(0).toUpperCase()}
                   </div>
-                  <div style="min-width:0;">
-                    <div style="font-size:14.5px;font-weight:700;color:#fff;word-break:break-word;">${contactName}</div>
-                    <div style="font-size:11.5px;color:var(--txt-secondary);font-family:var(--font-mono);">+${safePhone} · <span style="color:var(--txt-muted);">${latestTime}</span></div>
+                  <div>
+                    <div style="font-size:14.5px; font-weight:700; color:#fff;">${contactName}</div>
+                    <div style="font-size:11.5px; color:var(--txt-secondary); font-family:var(--font-mono);">+${safePhone} · <span style="color:var(--txt-muted);">${time}</span></div>
                   </div>
                 </div>
-                <button onclick="toggleReplyBox('${safePhone}')" style="background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.4);color:#c084fc;padding:6px 14px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">
-                  💬 Chat / Reply
+                <div>${windowBadge}</div>
+              </div>
+
+              <!-- Message History Container -->
+              <div id="thread_${safePhone}" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:14px; padding:12px 14px; max-height:220px; overflow-y:auto; margin-bottom:12px;">
+                <div style="font-size:13px; color:#cbd5e1;">${c.last_message || ''}</div>
+              </div>
+
+              <!-- Reply Form -->
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <input type="text" id="replyInp_${safePhone}" onkeydown="if(event.key==='Enter') sendInboxReply('${safePhone}')" placeholder="Type WhatsApp reply to +${safePhone}..." style="flex:1; min-width:200px; background:#06050b; border:1px solid rgba(255,255,255,0.18); border-radius:10px; padding:10px 14px; color:#fff; font-size:13px; outline:none;" />
+                <button onclick="sendInboxReply('${safePhone}')" class="btn btn-primary" style="padding:10px 18px; font-size:13px;">
+                  Send Reply
                 </button>
-              </div>
-
-              <!-- Message History Bubble Thread -->
-              <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.04);border-radius:14px;padding:12px 14px;max-height:260px;overflow-y:auto;display:flex;flex-direction:column;">
-                ${bubblesHtml}
-              </div>
-
-              <!-- Fast Reply Form -->
-              <div id="replyBox_${safePhone}" style="display:none;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                  <input type="text" id="replyInp_${safePhone}" onkeydown="if(event.key==='Enter') sendQuickReply('${safePhone}')" placeholder="Type WhatsApp reply to +${safePhone}..." style="flex:1;min-width:200px;background:#06050b;border:1px solid rgba(255,255,255,0.18);border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;outline:none;" />
-                  <button onclick="sendQuickReply('${safePhone}')" style="background:linear-gradient(135deg,#8b5cf6,#06b6d4);border:none;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;gap:6px;">
-                    <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#fff;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                    Send
-                  </button>
-                </div>
               </div>
             </div>`;
         }).join('');
       } catch (e) {
-        console.error('Failed to fetch inbox:', e);
+        console.warn('Inbox fetch error:', e);
       }
     }
 
-    function toggleReplyBox(phone) {
-      const el = $('replyBox_' + phone);
-      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    async function loadThread(phone) {
+      try {
+        const r = await apiFetch(`/api/inbox/messages/${phone}`);
+        const d = await r.json();
+        const threadBox = $('thread_' + phone);
+        if (!threadBox || !d.messages) return;
+
+        threadBox.innerHTML = d.messages.map(m => {
+          const isOut = m.direction === 'outgoing';
+          const t = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          if (isOut) {
+            return `
+              <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+                <div style="background:linear-gradient(135deg,rgba(139,92,246,0.35),rgba(6,182,212,0.3)); border:1px solid rgba(139,92,246,0.45); border-radius:12px 12px 2px 12px; padding:8px 12px; max-width:85%; color:#fff;">
+                  <div style="font-size:13px;">${m.body}</div>
+                  <div style="font-size:10px; color:rgba(255,255,255,0.6); text-align:right; margin-top:2px;">You · ${t} ✓✓ (${m.status})</div>
+                </div>
+              </div>`;
+          } else {
+            return `
+              <div style="display:flex; justify-content:flex-start; margin-bottom:6px;">
+                <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px 12px 12px 2px; padding:8px 12px; max-width:85%; color:#e2e8f0;">
+                  <div style="font-size:13px;">${m.body}</div>
+                  <div style="font-size:10px; color:var(--txt-muted); margin-top:2px;">${t}</div>
+                </div>
+              </div>`;
+          }
+        }).join('');
+      } catch (e) {}
     }
 
-    async function sendQuickReply(phone) {
+    async function sendInboxReply(phone) {
       const inp = $('replyInp_' + phone);
-      if (!inp || !inp.value.trim()) return toast('Please enter a reply message', 'err_');
+      if (!inp || !inp.value.trim()) return toast('Please type a reply message', 'err_');
       const text = inp.value.trim();
+
       try {
-        toast('Sending reply via Meta API...', 'ok_');
+        toast('Sending reply via Meta Cloud API...', '');
         const res = await apiFetch('/api/inbox/reply', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ to: phone, message: text })
         });
-        const data = await res.json();
-        if (data.success) {
+        const d = await res.json();
+        if (d.success) {
           toast('Reply sent successfully! ✓', 'ok_');
           inp.value = '';
           fetchInbox();
         } else {
-          toast(data.error || 'Failed to send reply', 'err_');
+          toast(`Meta Error (${d.code || ''}): ${d.explanation || d.error}`, 'err_');
         }
       } catch (e) {
-        toast('Error sending reply: ' + e.message, 'err_');
+        toast('Failed to send reply: ' + e.message, 'err_');
       }
     }
 
     function openInbox() {
-      const modal = $('inboxModal');
-      if (modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-      }
+      $('inboxModal').style.display = 'flex';
       fetchInbox();
     }
-
     function closeInbox() {
-      const modal = $('inboxModal');
-      if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
+      $('inboxModal').style.display = 'none';
+    }
+
+    // ─── 6. DELIVERY REPORTS & AUDIT LOGS ───
+    async function openReportsModal() {
+      $('reportsModal').style.display = 'flex';
+      loadDeliveryReports();
+    }
+    function closeReportsModal() {
+      $('reportsModal').style.display = 'none';
+    }
+
+    async function loadDeliveryReports() {
+      const b = $('reportsBody');
+      b.innerHTML = '<div style="color:var(--txt-muted);text-align:center;padding:30px;">Loading delivery logs...</div>';
+      try {
+        const r = await apiFetch('/api/reports');
+        const d = await r.json();
+        const logs = d.logs || [];
+
+        if (logs.length === 0) {
+          b.innerHTML = '<div style="text-align:center;padding:40px;color:var(--txt-muted);">No delivery records found yet. Dispatched messages will appear here.</div>';
+          return;
+        }
+
+        b.innerHTML = `
+          <table style="width:100%; border-collapse:collapse; font-size:12.5px; text-align:left;">
+            <thead>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.12); color:var(--txt-muted);">
+                <th style="padding:10px 8px;">Recipient</th>
+                <th style="padding:10px 8px;">Phone</th>
+                <th style="padding:10px 8px;">Status</th>
+                <th style="padding:10px 8px;">Meta Message ID</th>
+                <th style="padding:10px 8px;">Sent At</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${logs.map(l => {
+                const statusColor = l.status === 'sent' || l.status === 'delivered' || l.status === 'read' ? 'var(--grn)' : '#f43f5e';
+                return `
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:10px 8px; font-weight:700; color:#fff;">${l.name || 'Customer'}</td>
+                    <td style="padding:10px 8px; font-family:var(--font-mono); color:var(--txt-secondary);">+${l.phone}</td>
+                    <td style="padding:10px 8px; color:${statusColor}; font-weight:700; text-transform:uppercase;">${l.status}</td>
+                    <td style="padding:10px 8px; font-family:var(--font-mono); font-size:11px; color:var(--txt-muted);">${l.meta_id || (l.error_details ? l.error_details.slice(0, 30) : '-')}</td>
+                    <td style="padding:10px 8px; color:var(--txt-muted); font-size:11.5px;">${new Date(l.sent_at).toLocaleString([], { dateStyle:'short', timeStyle:'short' })}</td>
+                  </tr>`;
+              }).join('')}
+            </tbody>
+          </table>`;
+      } catch (e) {
+        b.innerHTML = '<div style="color:#f43f5e;padding:20px;">Failed to load delivery reports: ' + e.message + '</div>';
       }
     }
 
-    // Modal background overlay click & ESC key handlers
-    const modalEl = $('inboxModal');
-    if (modalEl) {
-      modalEl.addEventListener('click', function(e) {
-        if (e.target === this) closeInbox();
-      });
-    }
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape' && $('inboxModal') && $('inboxModal').style.display !== 'none') {
-        closeInbox();
+    // Modal background click & escape listeners
+    ['singleMsgModal', 'inboxModal', 'reportsModal'].forEach(id => {
+      const el = $(id);
+      if (el) {
+        el.addEventListener('click', function(e) {
+          if (e.target === this) this.style.display = 'none';
+        });
       }
     });
 
-    loadMsg(); checkFilesStatus(); poll(); fetchInbox();
-    setInterval(poll, 2500);
-    setInterval(fetchInbox, 6000);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        ['singleMsgModal', 'inboxModal', 'reportsModal'].forEach(id => {
+          const el = $(id);
+          if (el) el.style.display = 'none';
+        });
+      }
+    });
+
+    // Initial Load & Heartbeats
+    loadMsg();
+    checkFilesStatus();
+    poll();
+    fetchInbox();
+    setInterval(poll, 3000);
+    setInterval(fetchInbox, 5000);
   </script>
-
-  <!-- INBOX MODAL (Responsive Bottom-Sheet on Mobile, Centered Card on Desktop) -->
-  <div id="inboxModal" class="inbox-modal-overlay">
-    <div class="inbox-card-container">
-      <div class="inbox-header-wrap" style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.02);gap:10px;">
-        <div style="display:flex;align-items:center;gap:12px;min-width:0;">
-          <div style="width:38px;height:38px;min-width:38px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#06b6d4);display:grid;place-items:center;box-shadow:0 4px 12px rgba(139,92,246,0.4);">
-            <svg style="width:20px;height:20px;fill:#fff;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-          </div>
-          <div style="min-width:0;">
-            <h3 style="font-family:var(--font-display);font-size:17.5px;font-weight:800;color:#fff;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">WhatsApp Live Inbox</h3>
-            <p style="font-size:12px;color:var(--txt-muted);margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Real-time candidate replies & customer responses</p>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-          <button onclick="fetchInbox()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:var(--txt-secondary);padding:7px 13px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;">
-            <svg style="width:13px;height:13px;fill:currentColor;" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-            <span class="btn-refresh-text">Refresh</span>
-          </button>
-          <button onclick="closeInbox()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:18px;cursor:pointer;transition:all 0.2s;" title="Close Modal">×</button>
-        </div>
-      </div>
-      <div id="inboxList" class="inbox-body-wrap" style="padding:20px 24px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;">
-        <!-- Dynamically populated -->
-      </div>
-    </div>
-  </div>
-
-  <!-- MOBILE FLOATING ACTION BUTTON (Always accessible at thumb position on mobile phones) -->
-  <div id="mobileFabInbox" onclick="openInbox()" class="mobile-fab-inbox" role="button" aria-label="Open WhatsApp Live Inbox">
-    <div class="mobile-fab-icon-wrap">
-      <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#fff;"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-      <span id="mobileFabBadge" class="mobile-fab-badge" style="display:none;">0</span>
-    </div>
-    <span>Live Inbox</span>
-  </div>
-
-  <!-- MOBILE BOTTOM NAVIGATION BAR (Screens <= 860px) -->
-  <nav class="mobile-bottom-nav" id="mobileBottomNav">
-    <a href="#hero" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      <span>Home</span>
-    </a>
-    <a href="#engine" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-      <span>Connect</span>
-    </a>
-    <a href="javascript:void(0)" onclick="openInbox()" class="mobile-nav-item active-accent">
-      <div style="position:relative;display:inline-block;">
-        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-        <span id="bottomNavBadge" class="mobile-nav-badge" style="display:none;">0</span>
-      </div>
-      <span>Inbox</span>
-    </a>
-    <a href="#launch-section" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-      <span>Launch</span>
-    </a>
-    <a href="javascript:void(0)" id="bottomNavDisconnect" onclick="doLogout()" class="mobile-nav-item" style="display:none;color:#f43f5e;">
-      <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-      <span>Logout</span>
-    </a>
-  </nav>
 </body>
 </html>
