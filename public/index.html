@@ -950,6 +950,10 @@
       </nav>
 
       <div class="top-right">
+        <button id="topbarReportsBtn" onclick="openReportsModal()" class="btn-topbar-inbox" style="background:rgba(6,182,212,0.14); border:1px solid rgba(6,182,212,0.4); color:#22d3ee;" title="View Delivery Reports & Reach">
+          <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          <span>Reports & Reach</span>
+        </button>
         <button id="topbarInboxBtn" onclick="openInbox()" class="btn-topbar-inbox" title="View Live WhatsApp Inbox & Replies">
           <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
           <span>Inbox</span>
@@ -991,6 +995,9 @@
         </button>
         <button onclick="switchSendingMode('bulk')" class="btn" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:14px 28px;">
           📊 Bulk Message (Excel)
+        </button>
+        <button onclick="openReportsModal()" class="btn" style="background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.4); color:#22d3ee; padding:14px 24px;">
+          📈 Delivery Reports & Reach
         </button>
         <button onclick="openInbox()" class="btn" style="background:rgba(139,92,246,0.12); border:1px solid rgba(139,92,246,0.4); color:#c084fc; padding:14px 24px;">
           📬 Live Inbox (<span id="heroInboxCount">0</span>)
@@ -1249,6 +1256,55 @@
               <span class="console-label">LIVE EXECUTION TERMINAL</span>
             </div>
             <div class="console-body" id="cfeed"></div>
+          </div>
+
+          <!-- CAMPAIGN REACH & DELIVERY SCORECARD -->
+          <div id="campaignReachCard" style="display:none; margin-top:20px; background:rgba(18, 14, 38, 0.9); border:1px solid rgba(139, 92, 246, 0.4); border-radius:18px; padding:22px; box-shadow:0 12px 36px rgba(0,0,0,0.4);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+              <div>
+                <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#c084fc; font-weight:800;">Real-Time WhatsApp Delivery Tracking</div>
+                <h3 style="font-size:18px; font-weight:800; color:#fff; margin-top:2px;">Campaign Reach & Delivery Status</h3>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="button" onclick="openReportsModal()" class="btn" style="background:rgba(6,182,212,0.18); border:1px solid rgba(6,182,212,0.45); color:#22d3ee; padding:8px 16px; font-size:12.5px;">
+                  📊 View Detailed Contact Logs
+                </button>
+                <a href="/api/reports/download" target="_blank" class="btn btn-primary" style="padding:8px 16px; font-size:12.5px; text-decoration:none;">
+                  📥 Download CSV Report
+                </a>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px;">
+              <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px; text-align:center;">
+                <div style="font-size:11px; color:var(--txt-muted); font-weight:700; text-transform:uppercase;">Dispatched</div>
+                <div id="reachDispatched" style="font-size:26px; font-weight:900; color:#fff; font-family:var(--font-mono); margin-top:4px;">0</div>
+                <div style="font-size:10.5px; color:var(--txt-muted); margin-top:2px;">Total processed</div>
+              </div>
+              <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:14px; padding:14px; text-align:center;">
+                <div style="font-size:11px; color:var(--grn); font-weight:700; text-transform:uppercase;">Accepted</div>
+                <div id="reachAccepted" style="font-size:26px; font-weight:900; color:var(--grn); font-family:var(--font-mono); margin-top:4px;">0</div>
+                <div style="font-size:10.5px; color:var(--txt-muted); margin-top:2px;">Meta Cloud API</div>
+              </div>
+              <div style="background:rgba(6,182,212,0.08); border:1px solid rgba(6,182,212,0.25); border-radius:14px; padding:14px; text-align:center;">
+                <div style="font-size:11px; color:var(--cyan); font-weight:700; text-transform:uppercase;">Delivered</div>
+                <div id="reachDelivered" style="font-size:26px; font-weight:900; color:var(--cyan); font-family:var(--font-mono); margin-top:4px;">0</div>
+                <div style="font-size:10.5px; color:var(--txt-muted); margin-top:2px;">Recipient phone</div>
+              </div>
+              <div style="background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.25); border-radius:14px; padding:14px; text-align:center;">
+                <div style="font-size:11px; color:#c084fc; font-weight:700; text-transform:uppercase;">Read</div>
+                <div id="reachRead" style="font-size:26px; font-weight:900; color:#c084fc; font-family:var(--font-mono); margin-top:4px;">0</div>
+                <div style="font-size:10.5px; color:var(--txt-muted); margin-top:2px;">Opened (Blue ticks)</div>
+              </div>
+              <div style="background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:14px; padding:14px; text-align:center;">
+                <div style="font-size:11px; color:#f43f5e; font-weight:700; text-transform:uppercase;">Failed</div>
+                <div id="reachFailed" style="font-size:26px; font-weight:900; color:#f43f5e; font-family:var(--font-mono); margin-top:4px;">0</div>
+                <div style="font-size:10.5px; color:var(--txt-muted); margin-top:2px;">Undeliverable</div>
+              </div>
+            </div>
+            <div style="margin-top:14px; font-size:12px; color:var(--txt-muted); display:flex; align-items:center; gap:6px;">
+              <span>ℹ️ Real delivery status updates automatically in real time via Meta Webhooks: <b>Accepted</b> → <b>Delivered</b> (handset ping) → <b>Read</b> (recipient opens chat).</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1605,11 +1661,20 @@
           resBox.style.background = 'rgba(16,185,129,0.12)';
           resBox.style.border = '1px solid rgba(16,185,129,0.4)';
           resBox.style.color = '#10b981';
-          resBox.innerHTML = `✓ <b>Message Sent Successfully!</b><br>Recipient: +${d.recipient}<br>Meta Message ID: <code>${d.messageId}</code>`;
+          resBox.innerHTML = `
+            <div style="font-weight:800; font-size:14px; margin-bottom:4px;">✓ Message Accepted by Meta Cloud API</div>
+            <div>Recipient: <b>+${d.recipient}</b></div>
+            <div style="font-size:11px; font-family:var(--font-mono); color:var(--txt-secondary); margin-top:3px;">Meta Message ID: ${d.messageId}</div>
+            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" onclick="openReportsModal()" class="btn" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); padding:6px 14px; font-size:12px; border-radius:8px; color:#fff;">
+                📊 View in Delivery Reports
+              </button>
+            </div>`;
           toast('WhatsApp message sent! ✓', 'ok_');
           $('singleMsgInp').value = '';
           removeSingleAttachment();
           fetchInbox();
+          refreshReachSummary();
         } else {
           resBox.style.background = 'rgba(244,63,94,0.12)';
           resBox.style.border = '1px solid rgba(244,63,94,0.4)';
@@ -1820,9 +1885,21 @@
             src.close();
             b.disabled = false;
             b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+
+            // Reveal and populate Campaign Reach Scorecard
+            const rc = $('campaignReachCard');
+            if (rc) {
+              rc.style.display = 'block';
+              $('reachDispatched').textContent = (msg.sentCount || 0) + (msg.failedCount || 0);
+              $('reachAccepted').textContent = msg.sentCount || 0;
+              $('reachFailed').textContent = msg.failedCount || 0;
+              rc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            refreshReachSummary();
+
             if (msg.exitCode === 0) {
-              addLine('🎉 Campaign completed successfully!', 'log-ok');
-              toast('Campaign finished!', 'ok_');
+              addLine(`🎉 Campaign completed! ${msg.sentCount || 0} messages accepted by Meta Cloud API.`, 'log-ok');
+              toast(`Campaign finished: ${msg.sentCount || 0} messages sent! ✓`, 'ok_');
             } else {
               toast('Campaign stopped. Check log details.', 'err_');
             }
@@ -1835,6 +1912,24 @@
           b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
         };
       });
+    }
+
+    // ─── REACH ANALYTICS SUMMARY REFRESHER ───
+    async function refreshReachSummary() {
+      try {
+        const r = await apiFetch('/api/reports');
+        const d = await r.json();
+        if (d.success && d.summary) {
+          const s = d.summary;
+          const rc = $('campaignReachCard');
+          if (rc && s.totalTracked > 0) rc.style.display = 'block';
+          if ($('reachDispatched')) $('reachDispatched').textContent = s.totalTracked || 0;
+          if ($('reachAccepted')) $('reachAccepted').textContent = s.totalSent || 0;
+          if ($('reachDelivered')) $('reachDelivered').textContent = s.totalDelivered || 0;
+          if ($('reachRead')) $('reachRead').textContent = s.totalRead || 0;
+          if ($('reachFailed')) $('reachFailed').textContent = s.totalFailed || 0;
+        }
+      } catch (e) {}
     }
 
     // ─── STATUS & CONFIG ───
@@ -2046,47 +2141,148 @@
     function openReportsModal() { $('reportsModal').style.display = 'flex'; loadDeliveryReports(); }
     function closeReportsModal() { $('reportsModal').style.display = 'none'; }
 
+    let currentReportLogs = [];
+    let currentReportFilter = 'all';
+
     async function loadDeliveryReports() {
       const b = $('reportsBody');
-      b.innerHTML = '<div style="color:var(--txt-muted);text-align:center;padding:30px;">Loading delivery logs...</div>';
+      b.innerHTML = '<div style="color:var(--txt-muted);text-align:center;padding:30px;">Loading delivery logs & reach data...</div>';
       try {
         const r = await apiFetch('/api/reports');
         const d = await r.json();
-        const logs = d.logs || [];
+        currentReportLogs = d.logs || [];
+        const s = d.summary || { totalTracked: currentReportLogs.length, totalSent: 0, totalDelivered: 0, totalRead: 0, totalFailed: 0 };
 
-        if (logs.length === 0) {
-          b.innerHTML = '<div style="text-align:center;padding:40px;color:var(--txt-muted);">No delivery records found yet. Dispatched messages will appear here.</div>';
+        if (currentReportLogs.length === 0) {
+          b.innerHTML = `
+            <div style="text-align:center;padding:48px 20px;color:var(--txt-muted);">
+              <div style="font-size:36px;margin-bottom:12px;">📊</div>
+              <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">No Delivery Records Yet</div>
+              <div style="font-size:13px;max-width:380px;margin:0 auto;line-height:1.5;">When you send messages to a single contact or launch a bulk Excel campaign, contact-level delivery statuses will appear here!</div>
+            </div>`;
           return;
         }
 
         b.innerHTML = `
-          <table style="width:100%; border-collapse:collapse; font-size:12.5px; text-align:left;">
-            <thead>
-              <tr style="border-bottom:1px solid rgba(255,255,255,0.12); color:var(--txt-muted);">
-                <th style="padding:10px 8px;">Recipient</th>
-                <th style="padding:10px 8px;">Phone</th>
-                <th style="padding:10px 8px;">Status</th>
-                <th style="padding:10px 8px;">Meta Message ID</th>
-                <th style="padding:10px 8px;">Sent At</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${logs.map(l => {
-                const statusColor = l.status === 'sent' || l.status === 'delivered' || l.status === 'read' ? 'var(--grn)' : '#f43f5e';
-                return `
-                  <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-                    <td style="padding:10px 8px; font-weight:700; color:#fff;">${l.name || 'Customer'}</td>
-                    <td style="padding:10px 8px; font-family:var(--font-mono); color:var(--txt-secondary);">+${l.phone}</td>
-                    <td style="padding:10px 8px; color:${statusColor}; font-weight:700; text-transform:uppercase;">${l.status}</td>
-                    <td style="padding:10px 8px; font-family:var(--font-mono); font-size:11px; color:var(--txt-muted);">${l.meta_id || (l.error_details ? l.error_details.slice(0, 30) : '-')}</td>
-                    <td style="padding:10px 8px; color:var(--txt-muted); font-size:11.5px;">${new Date(l.sent_at).toLocaleString([], { dateStyle:'short', timeStyle:'short' })}</td>
-                  </tr>`;
-              }).join('')}
-            </tbody>
-          </table>`;
+          <!-- KPI REACH SCORECARD -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:18px;">
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; text-align:center;">
+              <div style="font-size:10px; color:var(--txt-muted); font-weight:700; text-transform:uppercase;">Dispatched</div>
+              <div style="font-size:22px; font-weight:900; color:#fff; font-family:var(--font-mono);">${s.totalTracked}</div>
+            </div>
+            <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:12px; padding:12px; text-align:center;">
+              <div style="font-size:10px; color:var(--grn); font-weight:700; text-transform:uppercase;">Accepted</div>
+              <div style="font-size:22px; font-weight:900; color:var(--grn); font-family:var(--font-mono);">${s.totalSent}</div>
+            </div>
+            <div style="background:rgba(6,182,212,0.08); border:1px solid rgba(6,182,212,0.25); border-radius:12px; padding:12px; text-align:center;">
+              <div style="font-size:10px; color:var(--cyan); font-weight:700; text-transform:uppercase;">Delivered</div>
+              <div style="font-size:22px; font-weight:900; color:var(--cyan); font-family:var(--font-mono);">${s.totalDelivered}</div>
+            </div>
+            <div style="background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.25); border-radius:12px; padding:12px; text-align:center;">
+              <div style="font-size:10px; color:#c084fc; font-weight:700; text-transform:uppercase;">Read</div>
+              <div style="font-size:22px; font-weight:900; color:#c084fc; font-family:var(--font-mono);">${s.totalRead}</div>
+            </div>
+            <div style="background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:12px; padding:12px; text-align:center;">
+              <div style="font-size:10px; color:#f43f5e; font-weight:700; text-transform:uppercase;">Failed</div>
+              <div style="font-size:22px; font-weight:900; color:#f43f5e; font-family:var(--font-mono);">${s.totalFailed}</div>
+            </div>
+          </div>
+
+          <!-- SEARCH & FILTER TOOLBAR -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button type="button" onclick="setReportFilter('all')" class="btn" id="fltAll" style="padding:5px 12px; font-size:11.5px; background:rgba(255,255,255,0.18); font-weight:800; color:#fff; border-radius:100px;">All (${currentReportLogs.length})</button>
+              <button type="button" onclick="setReportFilter('delivered')" class="btn" id="fltDelivered" style="padding:5px 12px; font-size:11.5px; background:rgba(255,255,255,0.04); color:var(--cyan); border-radius:100px;">Delivered (${s.totalDelivered})</button>
+              <button type="button" onclick="setReportFilter('read')" class="btn" id="fltRead" style="padding:5px 12px; font-size:11.5px; background:rgba(255,255,255,0.04); color:#c084fc; border-radius:100px;">Read (${s.totalRead})</button>
+              <button type="button" onclick="setReportFilter('sent')" class="btn" id="fltSent" style="padding:5px 12px; font-size:11.5px; background:rgba(255,255,255,0.04); color:var(--grn); border-radius:100px;">Sent (${s.totalSent})</button>
+              <button type="button" onclick="setReportFilter('failed')" class="btn" id="fltFailed" style="padding:5px 12px; font-size:11.5px; background:rgba(255,255,255,0.04); color:#f43f5e; border-radius:100px;">Failed (${s.totalFailed})</button>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="text" id="reportSearchInp" oninput="applyReportFilters()" placeholder="Filter by name or phone..." style="background:#06050b; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 12px; font-size:12px; color:#fff; outline:none; width:180px;" />
+              <button type="button" onclick="loadDeliveryReports()" class="btn" style="background:rgba(255,255,255,0.06); padding:6px 12px; font-size:12px; border-radius:8px; color:var(--txt-secondary);" title="Refresh delivery receipts">⟳</button>
+            </div>
+          </div>
+
+          <div id="reportTableWrap"></div>`;
+
+        applyReportFilters();
       } catch (e) {
         b.innerHTML = '<div style="color:#f43f5e;padding:20px;">Failed to load delivery reports: ' + e.message + '</div>';
       }
+    }
+
+    function setReportFilter(filt) {
+      currentReportFilter = filt;
+      ['all', 'delivered', 'read', 'sent', 'failed'].forEach(f => {
+        const el = $('flt' + f.charAt(0).toUpperCase() + f.slice(1));
+        if (el) {
+          if (f === filt) {
+            el.style.background = 'rgba(255,255,255,0.18)';
+            el.style.fontWeight = '800';
+          } else {
+            el.style.background = 'rgba(255,255,255,0.04)';
+            el.style.fontWeight = '500';
+          }
+        }
+      });
+      applyReportFilters();
+    }
+
+    function applyReportFilters() {
+      const q = ($('reportSearchInp')?.value || '').trim().toLowerCase();
+      const wrap = $('reportTableWrap');
+      if (!wrap) return;
+
+      let filtered = currentReportLogs;
+      if (currentReportFilter !== 'all') {
+        filtered = filtered.filter(l => (l.status || '').toLowerCase() === currentReportFilter);
+      }
+      if (q) {
+        filtered = filtered.filter(l => (l.name || '').toLowerCase().includes(q) || (l.phone || '').includes(q));
+      }
+
+      if (filtered.length === 0) {
+        wrap.innerHTML = '<div style="text-align:center;padding:30px;color:var(--txt-muted);font-size:12.5px;">No records match your filter criteria.</div>';
+        return;
+      }
+
+      wrap.innerHTML = `
+        <table style="width:100%; border-collapse:collapse; font-size:12.5px; text-align:left;">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.12); color:var(--txt-muted);">
+              <th style="padding:10px 8px;">Recipient</th>
+              <th style="padding:10px 8px;">Phone</th>
+              <th style="padding:10px 8px;">Delivery Status</th>
+              <th style="padding:10px 8px;">Meta Message ID</th>
+              <th style="padding:10px 8px;">Sent At</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(l => {
+              const st = (l.status || '').toLowerCase();
+              let badge = '';
+              if (st === 'read') {
+                badge = '<span style="background:rgba(16,185,129,0.18); color:#10b981; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;">✓✓ READ</span>';
+              } else if (st === 'delivered') {
+                badge = '<span style="background:rgba(6,182,212,0.18); color:#22d3ee; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;">✓ DELIVERED</span>';
+              } else if (st === 'sent') {
+                badge = '<span style="background:rgba(139,92,246,0.18); color:#c084fc; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;">ACCEPTED</span>';
+              } else {
+                const titleStr = (l.error_details || '').replace(/"/g, '&quot;');
+                badge = `<span style="background:rgba(244,63,94,0.18); color:#f43f5e; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;" title="${titleStr}">✕ FAILED</span>`;
+              }
+
+              return `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                  <td style="padding:10px 8px; font-weight:700; color:#fff;">${l.name || 'Customer'}</td>
+                  <td style="padding:10px 8px; font-family:var(--font-mono); color:var(--txt-secondary);">+${l.phone}</td>
+                  <td style="padding:10px 8px;">${badge}</td>
+                  <td style="padding:10px 8px; font-family:var(--font-mono); font-size:11px; color:var(--txt-muted);">${l.meta_id || (l.error_details ? l.error_details.slice(0, 30) : '-')}</td>
+                  <td style="padding:10px 8px; color:var(--txt-muted); font-size:11.5px;">${new Date(l.sent_at).toLocaleString([], { dateStyle:'short', timeStyle:'short' })}</td>
+                </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`;
     }
 
     function requestNotificationPermission() {
@@ -2153,8 +2349,10 @@
     checkFilesStatus();
     poll();
     fetchInbox();
+    refreshReachSummary();
     setInterval(poll, 3000);
     setInterval(fetchInbox, 5000);
+    setInterval(refreshReachSummary, 8000);
   </script>
 </body>
 </html>

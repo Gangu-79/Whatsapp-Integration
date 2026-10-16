@@ -382,6 +382,13 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
         targetPhoneId: cfg.phoneNumberId,
         status: 'sent'
       });
+      await db.logCampaignRecipient(
+        'single_dispatch',
+        cleanPhone,
+        recipientName || 'Single Contact',
+        'sent',
+        result.messageId
+      ).catch(() => {});
       return res.json({
         success: true,
         messageId: result.messageId,
@@ -398,6 +405,15 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
         status: 'failed',
         errorMessage: result.explanation || result.error
       });
+      await db.logCampaignRecipient(
+        'single_dispatch',
+        cleanPhone,
+        recipientName || 'Single Contact',
+        'failed',
+        null,
+        result.code,
+        result.explanation || result.error
+      ).catch(() => {});
       return res.status(result.code === 400 ? 400 : 502).json({
         success: false,
         code: result.code,
@@ -673,12 +689,42 @@ app.get('/api/stream-campaign', async (req, res) => {
 
   let sentCount = 0;
   let failedCount = 0;
+  let currentRecipientName = '';
+  let currentRecipientPhone = '';
+  let lineRemainder = '';
 
   py.stdout.on('data', (chunk) => {
     const text = chunk.toString();
-    // Parse accepted / failed from output to update campaign stats
-    if (text.includes('ACCEPTED by Meta Cloud API')) sentCount++;
-    if (text.includes('Status: FAILED')) failedCount++;
+    lineRemainder += text;
+    const lines = lineRemainder.split(/\r?\n/);
+    lineRemainder = lines.pop(); // keep trailing incomplete line
+
+    for (const l of lines) {
+      const trimmed = l.trim();
+      const recipMatch = trimmed.match(/\[\d+\/\d+\]\s+Recipient:\s*(.*?)\s*\(\+(\d+)\)/);
+      if (recipMatch) {
+        currentRecipientName = recipMatch[1].trim();
+        currentRecipientPhone = recipMatch[2].trim();
+      }
+
+      if (trimmed.includes('ACCEPTED by Meta Cloud API')) {
+        sentCount++;
+        const idMatch = trimmed.match(/Message ID:\s*([^\)]+)/);
+        const metaId = idMatch ? idMatch[1].trim() : null;
+        if (currentRecipientPhone) {
+          db.logCampaignRecipient(campaignId, currentRecipientPhone, currentRecipientName || 'Customer', 'sent', metaId).catch(() => {});
+        }
+      }
+
+      if (trimmed.includes('Status: FAILED')) {
+        failedCount++;
+        const errMatch = trimmed.match(/Meta Error\s*(\d+)/);
+        const errCode = errMatch ? errMatch[1].trim() : null;
+        if (currentRecipientPhone) {
+          db.logCampaignRecipient(campaignId, currentRecipientPhone, currentRecipientName || 'Customer', 'failed', null, errCode, trimmed).catch(() => {});
+        }
+      }
+    }
 
     res.write(`data: ${JSON.stringify({ type: 'log', text })}\n\n`);
   });
@@ -916,14 +962,37 @@ app.post('/api/inbox/reply', async (req, res) => {
 // 6. DELIVERY REPORTS & AUDIT LOGS (Requirements 7 & 8)
 // ============================================================================
 
-// API: Get Recent Delivery Logs
+// API: Get Recent Delivery Logs & Reach Analytics Summary
 app.get('/api/reports', async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 100;
+    const limit = parseInt(req.query.limit) || 200;
     const logs = await db.getRecentCampaignLogs(limit);
     const campaigns = await db.all('SELECT * FROM campaigns ORDER BY created_at DESC LIMIT 20');
+
+    // Aggregate delivery metrics
+    let totalSent = 0;
+    let totalDelivered = 0;
+    let totalRead = 0;
+    let totalFailed = 0;
+
+    for (const log of logs) {
+      const st = (log.status || '').toLowerCase();
+      if (st === 'sent') totalSent++;
+      else if (st === 'delivered') totalDelivered++;
+      else if (st === 'read') totalRead++;
+      else if (st === 'failed') totalFailed++;
+    }
+
     res.json({
       success: true,
+      summary: {
+        totalTracked: logs.length,
+        totalSent,
+        totalDelivered,
+        totalRead,
+        totalFailed,
+        totalReached: totalDelivered + totalRead
+      },
       campaigns,
       logs
     });
@@ -935,17 +1004,17 @@ app.get('/api/reports', async (req, res) => {
 // API: Download Delivery Report as CSV
 app.get('/api/reports/download', async (req, res) => {
   try {
-    const logs = await db.getRecentCampaignLogs(1000);
-    let csv = 'Campaign Name,Recipient Name,Phone,Status,Meta Message ID,Error Code,Error Details,Sent At\n';
+    const logs = await db.getRecentCampaignLogs(2000);
+    let csv = 'Campaign,Recipient Name,Phone Number,Delivery Status,Meta Message ID,Error Code,Error Details,Sent Timestamp\n';
 
     for (const log of logs) {
-      const camp = (log.campaign_name || 'Campaign').replace(/"/g, '""');
-      const name = (log.name || '').replace(/"/g, '""');
-      const phone = log.phone || '';
-      const status = log.status || '';
+      const camp = (log.campaign_id || log.campaign_name || 'Dispatch').replace(/"/g, '""');
+      const name = (log.name || 'Customer').replace(/"/g, '""');
+      const phone = log.phone ? `+${log.phone}` : '';
+      const status = log.status || 'unknown';
       const metaId = log.meta_id || '';
       const errCode = log.error_code || '';
-      const errDetails = (log.error_details || '').replace(/"/g, '""').replace(/\n/g, ' ');
+      const errDetails = (log.error_details || '').replace(/"/g, '""').replace(/\r?\n/g, ' ');
       const sentAt = log.sent_at || '';
 
       csv += `"${camp}","${name}","${phone}","${status}","${metaId}","${errCode}","${errDetails}","${sentAt}"\n`;
