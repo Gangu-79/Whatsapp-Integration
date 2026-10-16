@@ -1,136 +1,187 @@
-# Official Meta WhatsApp Cloud API Campaign Engine
-> **Enterprise Bulk Messaging Platform powered by the Official Meta WhatsApp Business Platform, Opt-In Safeguards, and Dynamic Personalization**
+# Official Meta WhatsApp Cloud API Campaign Engine & Live Inbox
 
+> **Enterprise WhatsApp Business Platform with Single & Bulk Excel Messaging, PDF/Image Attachments, Real-Time 2-Way Inbox, Audio Notifications, Persistent Backup & Recovery, and User Authentication.**
+
+[![Production Deployment](https://img.shields.io/badge/Render-Live%20Application-success?logo=render)](https://whatsapp-integration-wylm.onrender.com/)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Whatsapp--Integration-blue?logo=github)](https://github.com/Gangu-79/Whatsapp-Integration)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![Python Version](https://img.shields.io/badge/python-%3E%3D3.10-blue.svg)](https://python.org/)
 
-An official, policy-compliant WhatsApp Campaign Studio that broadcasts marketing and transactional campaigns through the **Official Meta WhatsApp Cloud API (Graph API)**. Built to permanently eliminate account bans, device restriction warnings, and unapproved web socket automations.
+---
+
+## 🚀 Live Production URL
+
+- **Web Application**: [https://whatsapp-integration-wylm.onrender.com/](https://whatsapp-integration-wylm.onrender.com/)
+- **Default Administrator Credentials**:
+  - **Username**: `admin`
+  - **Password**: `admin123`
 
 ---
 
-## 🚨 Why Unofficial Automation Leads to Account Restrictions
+## 🌟 Key Capabilities & Requirements Implemented
 
-If you attempted to send bulk messages through personal numbers or linked WhatsApp Web sessions (using libraries like Baileys or browser scripts), WhatsApp's automated abuse detection detects:
-1. **Unregistered Bulk Traffic**: High outgoing message frequency on a standard consumer or WhatsApp Business app account.
-2. **Missing Opt-In Verification**: Sending to users who do not have you saved in their contacts triggers spam reports.
-3. **Automated Linked Sessions**: WhatsApp monitors linked device traffic for automated socket scripts. Arbitrary pauses (2–3 seconds) do **not** bypass spam detection.
+### 1. Modern Responsive Interface
+- **Universal Device Support**: Tailored for Smartphones (iPhone, Android, 360px–480px), Tablets (iPad, 768px–1024px), Laptops, and Desktops.
+- **Glassmorphic UI**: Ultra-clean dark theme with ambient lighting, gradient typography, and micro-interactions.
+- **Mobile Bottom Navigation**: Native-like app navigation bar on mobile devices for easy one-thumb operation.
 
-**The Solution:** Use Meta's **Official WhatsApp Business Platform (Cloud API)**. Messages sent through the official API are authorized by Meta, never risk device bans, deliver at high speed, and comply with international telecommunication standards.
+### 2. User Registration, Login & Session Security
+- **Secure Authentication**: Built-in user registration, login, session tokens, and logout.
+- **Password Protection**: Uses industry-standard **PBKDF2** with 10,000 iterations and cryptographic salts (`crypto` built-in module; zero native compilation dependencies).
+- **Session Isolation**: Active sessions stored securely with 7-day expiration without disconnecting the background WhatsApp webhook listener.
+
+### 3. Single Person & Bulk Excel Messaging
+- **Single Person Mode**:
+  - Country code dropdown with auto-formatting (+91, +1, +44, +971, +966, etc.).
+  - Support for custom recipient names and personalized templates.
+  - Media attachment for images (JPG, PNG, JPEG) and PDF documents with instant preview.
+- **Bulk Excel Mode**:
+  - Drag-and-drop Excel (`.xlsx`, `.xls`) contact file upload.
+  - Automatic column recognition (`Name`, `Phone`, `Consent`).
+  - Automatic international E.164 normalization.
+  - Automatic duplicate removal and opted-out recipient suppression.
+
+### 4. Official Meta Cloud API Integration & Error 200 Diagnostic Fixer
+- **Zero Account Bans**: Direct official Graph API v21.0 integration. Does NOT use unofficial web scrapers, browser automation, or QR code pairing.
+- **Deep Multi-Probe Diagnostics (`/api/meta/diagnose`)**: Probes token validity, permission scopes, Phone Number ID authorization, and WABA ID connectivity.
+- **Server-Side Security**: Permanent tokens are stored securely in backend storage and are **never** exposed in frontend responses.
+
+### 5. 2-Way Persistent Live Inbox & Fast Replies
+- **Real-Time Customer Messaging**: Displays incoming messages with contact profile name, phone number, timestamp, and unread badges.
+- **24-Hour Customer Care Window Tracker**: Visual countdown indicator (🟢 Active / 🔴 Expired) showing whether freeform replies or approved templates are required.
+- **Instant Replies**: Reply directly to customer inquiries from the inbox modal.
+
+### 6. Audio Notification Chimes & Browser Alerts
+- **Synthesized Dual-Tone Chime**: Built-in Web Audio API synthesizer sounds a pleasant double-bell chime when a new incoming message is received.
+- **Sound Toggle**: Instant **🔔 Sound: ON / 🔕 Sound: OFF** toggle button in the topbar.
+- **Browser Push Notifications**: Supports native browser notifications when permitted.
+
+### 7. Message Storage & Database Backup / Recovery
+- **Pure-JS Persistent Database (`data/whatsapp_store.json`)**: Auto-recovering schema with zero native C++ compilation dependencies (guarantees 100% build reliability on Render and Linux containers).
+- **One-Click Export Backup**: Downloads full database archive in JSON format containing settings, contacts, conversations, messages, and campaign logs.
+- **One-Click Restore**: Upload an existing backup file to restore all records with zero data loss.
+
+### 8. Live Campaign Status Tracking
+- **Meta Webhook Integration**: Real-time delivery status updates:
+  - ⏳ **Pending**: Scheduled in queue.
+  - 🚀 **Sending**: Dispatched to Meta Graph API.
+  - 📤 **Sent**: Accepted by Meta Cloud API servers.
+  - 📬 **Delivered**: Reached recipient's handset.
+  - 👁️ **Read**: Opened by recipient (blue ticks).
+  - ❌ **Failed**: Detailed error code and actionable advice recorded.
+
+### 9. Delivery Reports & Audit Logs
+- **Reach Analytics**: Dispatched count, delivered rate, read rate, and failure breakdown.
+- **Downloadable CSV Report**: One-click download of timestamped campaign delivery records.
+
+### 10. Enterprise Reliability & Safeguards
+- **Controlled Batching**: Intelligent throttling (1.5s delay + 2s batch pause) to comply with Meta Cloud API rate limits.
+- **Automatic Opt-Out Suppression**: Inbound keywords (`STOP`, `UNSUBSCRIBE`, `CANCEL`) immediately add contacts to `optouts.json`.
 
 ---
 
-## ✨ Features
+## ⚠️ Why Does Meta Error 200 ("API access blocked") Occur?
 
-- **🛡️ Official Meta Cloud API:** 100% policy-compliant server-side Graph API integration. No pairing codes, no QR codes, no device bans.
-- **📱 Responsive Glassmorphic Studio:** Modern dark-theme web interface accessible at `http://localhost:8085` or via Render.
-- **📁 Excel Contact Processor:** 
-  - Robust column detection (`Name`, `Phone`, `Consent`).
-  - Automatic international E.164 phone normalization.
-  - Automatic duplicate contact detection.
-  - **Opt-In / Consent Verification**: Validates recipient consent before dispatch.
-  - **Permanent Opt-Out Suppression (`optouts.json`)**: Automatically excludes opted-out contacts.
-- **📋 Meta Message Template Support:** Supports approved Business Templates for outreach outside the 24-hour service window.
-- **🖼️ Rich Media Attachment:** Uploads campaign imagery directly to Meta's Media API.
-- **✍️ Personalized Messaging:** Replaces dynamic tags (e.g., `{{name}}`) or uses Anthropic Claude AI.
-- **🔔 Live Delivery & Webhook Support:**
-  - `GET /api/webhook`: Webhook subscription verification.
-  - `POST /api/webhook`: Real-time delivery receipts (`sent`, `delivered`, `read`) and automatic opt-out keyword handling (`STOP`, `UNSUBSCRIBE`).
-- **🛑 Failsafe Quality Controls:** Automatically halts execution if Meta reports account restrictions, invalid tokens, or template mismatches.
+If you encounter **`Meta API Error (200): API access blocked / Permission denied`**, this is an **asset or payment authorization hold in your Meta Business Suite**, not a bug in the code.
 
----
+### The 3 Causes & Fixes:
 
-## 🏗️ Architecture Overview
+#### 1. Asset Not Assigned to System User (90% of cases)
+When creating a System User and generating a permanent token in Meta Business Suite, Meta does **not** automatically grant the user access to your WhatsApp Business Account (WABA).
+- **Fix**:
+  1. Open [Meta Business Settings > System Users](https://business.facebook.com/settings/system-users).
+  2. Select your System User from the left list.
+  3. Click **"Add Assets"**.
+  4. Select **"WhatsApp Accounts"** on the left.
+  5. Check your WhatsApp account name.
+  6. On the right, toggle **"Manage WhatsApp account (Full control)"** to **ON**.
+  7. Click **"Save Changes"**.
+  8. Click **"Generate new token"**, select your App, ensure `whatsapp_business_messaging` and `whatsapp_business_management` are checked, and copy the new token into Settings.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                 WEB STUDIO (http://localhost:8085)          │
-│   [01 Meta Setup]   [02 Assets]     [03 Compose]  [04 Launch]│
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-             ┌─────────────────┴─────────────────┐
-             ▼                                   ▼
-┌───────────────────────────┐       ┌───────────────────────────┐
-│   Node.js Gateway Server  │       │     send_campaign.py      │
-│   (Express & Meta Config) │ ◀──── │  (Excel & Meta Graph API) │
-└────────────┬──────────────┘       └─────────────┬─────────────┘
-             │                                    │
-             │ Webhooks & Auth                    │ Official Outbound API
-             ▼                                    ▼
-┌───────────────────────────────────────────────────────────────┐
-│                META WHATSAPP CLOUD API (Graph v21.0)           │
-│         https://graph.facebook.com/v21.0/{PHONE_ID}/messages   │
-└──────────────────────────────┬────────────────────────────────┘
-                               │
-                               ▼
-┌───────────────────────────────────────────────────────────────┐
-│                    VERIFIED CUSTOMER DEVICES                  │
-└───────────────────────────────────────────────────────────────┘
-```
+#### 2. Payment Method / Billing Hold
+Meta Cloud API requires an active payment method on file. If you recently added a bank card, Meta places a security hold on API traffic until the card authorization clears.
+- **Fix**:
+  1. Open [Meta Billing & Payments](https://business.facebook.com/billing_hub).
+  2. Verify that your card is marked as **Active / Default** with no unpaid hold.
+
+#### 3. App Mode (Development vs. Live)
+If your Meta App in [developers.facebook.com](https://developers.facebook.com/) is in **Development Mode**, Meta blocks API messages to any phone number not explicitly added to the Allowed Test Numbers list.
+- **Fix**:
+  1. Go to your App Dashboard and switch the top toggle from **Development** to **Live**.
+  2. Alternatively, add your recipient phone number under **WhatsApp > API Setup > To (Allowed Test Numbers)**.
 
 ---
 
-## 🔑 Meta WhatsApp Cloud API Setup Guide
-
-Follow these beginner-friendly steps to obtain your official Meta credentials:
+## 🛠️ Step-by-Step Meta Cloud API Setup
 
 ### Step 1: Create a Meta Developer App
-1. Go to [developers.facebook.com](https://developers.facebook.com/) and log in with your Facebook/Meta account.
+1. Go to [developers.facebook.com](https://developers.facebook.com/) and sign in.
 2. Click **My Apps** > **Create App**.
-3. Select **Other** > **Next**, then choose **Business** as the app type.
-4. Name your app (e.g. `WhatsApp Campaign Engine`) and link your Meta Business Account.
+3. Select **Other** > **Next**, then select **Business**.
+4. Name your app (e.g. `WhatsApp Messaging Engine`) and link your Meta Business Portfolio.
 
-### Step 2: Set Up WhatsApp Product
-1. On your App Dashboard, find **WhatsApp** and click **Set up**.
-2. Go to **WhatsApp** > **API Setup** in the left menu.
-3. You will see:
-   - **Temporary Access Token** (valid for 24 hours for testing)
-   - **Phone Number ID** (e.g. `104829104812345`)
-   - **WhatsApp Business Account ID** (WABA ID)
-   - **Test Phone Number** provided by Meta to send test messages to your personal number.
+### Step 2: Add WhatsApp Product
+1. In your App Dashboard, find **WhatsApp** and click **Set Up**.
+2. Go to **WhatsApp > API Setup** in the left sidebar.
+3. Note your **Phone Number ID** (e.g. `1337215722817983`) and **WhatsApp Business Account ID** (WABA ID).
 
 ### Step 3: Create a Permanent System User Token
-1. Open [Meta Business Suite](https://business.facebook.com/settings).
-2. Go to **Business Settings** > **Users** > **System Users**.
-3. Click **Add**, name the user (e.g. `whatsapp-gateway`), and select the role **Admin**.
-4. Click **Generate New Token**, select your WhatsApp App, and enable permissions:
+1. Open [Meta Business Settings](https://business.facebook.com/settings).
+2. Go to **Users > System Users** and click **Add**.
+3. Set Role to **Admin** and click **Create System User**.
+4. Click **Add Assets** > **WhatsApp Accounts** > Select your WABA > Enable **Manage WhatsApp account (Full control)** > Save.
+5. Click **Generate New Token**, select your App, and enable:
    - `whatsapp_business_messaging`
    - `whatsapp_business_management`
-5. Copy the generated permanent token (starts with `EAAG...`).
+6. Copy the generated permanent token (starts with `EAAG...`).
 
-### Step 4: Create an Approved Message Template
-WhatsApp requires an approved message template for business-initiated conversations outside the 24-hour service window:
-1. In Meta WhatsApp Manager, navigate to **Account Tools** > **Message Templates**.
-2. Click **Create Template**.
-3. Choose Category: **Marketing** or **Utility**.
-4. Name: `campaign_update` (matching `WHATSAPP_TEMPLATE_NAME`).
-5. Body: `Hello {{1}}, excited to share our latest offer with you!`
-6. Submit for review (approval usually takes under 5 minutes).
+### Step 4: Approved Message Template (For Outreach Outside 24h Window)
+1. In [WhatsApp Manager](https://business.facebook.com/wa/manage/home/), navigate to **Message Templates**.
+2. Click **Create Template**:
+   - **Category**: Marketing or Utility
+   - **Name**: `campaign_update`
+   - **Language**: English (US) - `en_US`
+   - **Body**: `Hello {{1}}, thank you for reaching out to us!`
+3. Click **Submit**. Approval usually takes 1 to 5 minutes.
+
+### Step 5: Webhook Configuration
+1. In Meta Developer Console, go to **WhatsApp > Configuration**.
+2. Under **Webhook**, click **Edit**:
+   - **Callback URL**: `https://whatsapp-integration-wylm.onrender.com/api/webhook`
+   - **Verify Token**: `whatsapp_campaign_verify_token_123`
+3. Click **Verify and Save**.
+4. Under **Webhook fields**, click **Manage** and subscribe to **`messages`**.
 
 ---
 
-## ⚡ Local Installation & Quick Start
+## 💻 Local Installation & Setup
 
 ### 1. Prerequisites
-- **Node.js**: v18.x or v20+ ([Download Node.js](https://nodejs.org/))
-- **Python**: 3.10 or higher ([Download Python](https://python.org/))
+- **Node.js**: v18.0.0 or higher ([Download Node.js](https://nodejs.org/))
+- **Python**: v3.10 or higher ([Download Python](https://python.org/))
+- **Git**: Installed on your system
 
-### 2. Install Dependencies
+### 2. Clone & Install
 ```bash
-# Install Node.js packages
+# Clone the repository
+git clone https://github.com/Gangu-79/Whatsapp-Integration.git
+cd "Whatsapp-Integration"
+
+# Install Node dependencies
 npm install
 
-# Install Python packages
+# Install Python dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment Variables
-Copy `.env.example` to `.env` and fill in your Meta Cloud API details:
+### 3. Environment Configuration (`.env`)
+Create a `.env` file in the root folder (or use `.env.example` as a template):
 ```ini
-WHATSAPP_TOKEN=EAAG...your_permanent_access_token_here
-WHATSAPP_PHONE_NUMBER_ID=104829104812345
-WHATSAPP_BUSINESS_ACCOUNT_ID=109283019283
+PORT=8085
+WHATSAPP_TOKEN=EAAG...your_permanent_system_user_token_here
+WHATSAPP_PHONE_NUMBER_ID=1337215722817983
+WHATSAPP_BUSINESS_ACCOUNT_ID=1704639724550656
 WHATSAPP_TEMPLATE_NAME=campaign_update
 WHATSAPP_TEMPLATE_LANG=en_US
 WEBHOOK_VERIFY_TOKEN=whatsapp_campaign_verify_token_123
@@ -140,59 +191,56 @@ WEBHOOK_VERIFY_TOKEN=whatsapp_campaign_verify_token_123
 ```bash
 node gateway.js
 ```
-Open your browser at:
+
+Open your web browser at:
 👉 **`http://localhost:8085`**
+
+Sign in with the default admin account:
+- **Username**: `admin`
+- **Password**: `admin123`
 
 ---
 
-## 📋 Excel Contact File Format (.xlsx / .xls)
+## 📊 Excel File Format Guide (`.xlsx` / `.xls`)
 
-Your spreadsheet should contain standard contact columns. The engine automatically detects flexible header names:
+When using **Bulk Excel Upload**, make sure your spreadsheet has standard headers. The engine automatically detects flexible column names:
 
 | Name | Phone | Consent |
 | :--- | :--- | :--- |
-| Alice Smith | +91 98765 43210 | Yes |
-| Bob Jones | 919876543211 | Yes |
-| Charlie Brown | 919876543212 | Yes |
+| Rahul Sharma | +91 98765 43210 | Yes |
+| Priya Patel | 9966559211 | True |
+| John Doe | +1 (555) 234-5678 | 1 |
 
-- **Name Column**: `Name`, `Full Name`, `Recipient`, `Contact Name`
-- **Phone Column**: `Phone`, `Mobile`, `Number`, `PhNo`
-- **Consent Column (Recommended)**: `Consent`, `OptIn`, `Subscribed`, `Permission`
-  - Values: `Yes`, `True`, `1`, `Agreed`, `Opted_In`
-
----
-
-## 🛑 Opt-Out Handling & Webhooks
-
-### 1. Automatic Opt-Out Keyword Detection
-When users reply with:
-`STOP`, `UNSUBSCRIBE`, `CANCEL`, or `OPTOUT`
-The webhook automatically records their phone number in `optouts.json` and suppresses them permanently from all future campaigns.
-
-### 2. Configuring Webhook in Meta
-1. In Meta Developers Console, go to **WhatsApp** > **Configuration**.
-2. Under **Webhook**, click **Edit**.
-3. **Callback URL**: `https://your-app-domain.onrender.com/api/webhook`
-4. **Verify Token**: `whatsapp_campaign_verify_token_123` (matching `WEBHOOK_VERIFY_TOKEN`).
-5. Click **Verify and Save**.
-6. Subscribe to **messages**.
+- **Name Column**: `Name`, `Full Name`, `Customer Name`, `Recipient`
+- **Phone Column**: `Phone`, `Mobile`, `Number`, `WhatsApp Number`, `PhNo`
+- **Consent Column**: `Consent`, `OptIn`, `Subscribed`, `Permission` (Values: `Yes`, `True`, `1`, `Agreed`)
 
 ---
 
-## ☁️ Deploying to Render
+## ☁️ Deploying Updates to Render
 
-1. Commit and push your code to GitHub:
-   ```bash
-   git add .
-   git commit -m "Official Meta WhatsApp Cloud API integration"
-   git push origin main
-   ```
-2. In your [Render Dashboard](https://dashboard.render.com/), open your Web Service.
-3. In **Environment**, configure the following environment variables:
-   - `WHATSAPP_TOKEN`: Your Meta Permanent Access Token
-   - `WHATSAPP_PHONE_NUMBER_ID`: Your Meta Phone Number ID
-   - `WHATSAPP_BUSINESS_ACCOUNT_ID`: Your WABA ID
-   - `WHATSAPP_TEMPLATE_NAME`: `campaign_update` (or your approved template name)
-   - `WEBHOOK_VERIFY_TOKEN`: `whatsapp_campaign_verify_token_123`
-4. Trigger **Manual Deploy** > **Deploy latest commit**.
-5. Once live, access your secure WhatsApp Campaign Studio.
+This repository is configured for automated CI/CD deployment on [Render](https://render.com/).
+
+Whenever you commit and push to the `main` branch, Render automatically redeploys:
+
+```bash
+git add .
+git commit -m "Your descriptive commit message"
+git push origin main
+```
+
+### Render Environment Variables Checklist:
+In your [Render Dashboard](https://dashboard.render.com/) > Your Service > **Environment**:
+- `WHATSAPP_TOKEN`: Permanent System User Token
+- `WHATSAPP_PHONE_NUMBER_ID`: Phone Number ID
+- `WHATSAPP_BUSINESS_ACCOUNT_ID`: WABA ID
+- `WHATSAPP_TEMPLATE_NAME`: `campaign_update`
+- `WHATSAPP_TEMPLATE_LANG`: `en_US`
+- `WEBHOOK_VERIFY_TOKEN`: `whatsapp_campaign_verify_token_123`
+- `NODE_VERSION`: `20.10.0`
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - feel free to use and customize it for your business needs.
