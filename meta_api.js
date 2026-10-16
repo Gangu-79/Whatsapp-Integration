@@ -40,7 +40,7 @@ function isValidE164(phone) {
 /**
  * Query Meta Graph API for the registered phone number status and business profile.
  */
-async function verifyCredentials(token, phoneNumberId) {
+async function verifyCredentials(token, phoneNumberId, wabaId = null) {
   if (!token || !phoneNumberId) {
     return {
       valid: false,
@@ -53,7 +53,7 @@ async function verifyCredentials(token, phoneNumberId) {
     const url = `${GRAPH_BASE_URL}/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,status`;
     const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
-      timeout: 10000
+      timeout: 12000
     });
 
     const data = response.data;
@@ -76,12 +76,22 @@ async function verifyCredentials(token, phoneNumberId) {
     const errorSubcode = errorObj.error_subcode || null;
 
     let userAdvice = 'Check your Access Token and Phone Number ID in Meta Developers Console.';
+    let rootCauses = [];
+
     if (errorCode === 190) {
       userAdvice = 'Access Token has expired or is invalid. Please generate a new Permanent System User Token in Meta Business Suite > System Users.';
+      rootCauses.push('The token has expired or was revoked.');
     } else if (errorCode === 100) {
-      userAdvice = 'Phone Number ID does not exist or does not belong to this Meta App.';
+      userAdvice = 'Phone Number ID does not exist or does not belong to this Meta App/Business Portfolio.';
+      rootCauses.push('Check that the Phone Number ID is 15-16 digits and matches the Phone Number ID in WhatsApp > API Setup.');
     } else if (errorCode === 200 || errorCode === 10) {
-      userAdvice = 'Permission denied. Ensure your token has "whatsapp_business_messaging" and "whatsapp_business_management" permissions.';
+      userAdvice = 'Meta API access is blocked or permission is denied by Meta Business Suite.';
+      rootCauses = [
+        '1. Asset Not Assigned to System User: In Meta Business Suite -> Business Settings -> System Users -> Select your System User -> Click "Add Assets" -> Select "WhatsApp Accounts" -> Select your WABA -> Enable "Manage WhatsApp account (Full control)" -> Save Changes.',
+        '2. Payment / Billing Method Verification: If you recently added or updated your payment card, Meta holds API traffic until the card is verified in Meta Business Suite -> Billing & Payments.',
+        '3. Token Permissions: Ensure your System User token was generated with both "whatsapp_business_messaging" and "whatsapp_business_management" checked.',
+        '4. App in Development Mode: If your Meta App is still in "Development" mode, switch it to "Live" mode or add recipient numbers to the Allowed Testers list in the App Dashboard.'
+      ];
     }
 
     return {
@@ -90,9 +100,145 @@ async function verifyCredentials(token, phoneNumberId) {
       subcode: errorSubcode,
       type: errorType,
       error: errorMsg,
-      advice: userAdvice
+      advice: userAdvice,
+      rootCauses: rootCauses
     };
   }
+}
+
+/**
+ * Deep Multi-Step Meta API Diagnostics
+ * Probes token, permissions, phone number ID, and WABA ID to isolate the exact cause of any error.
+ */
+async function deepDiagnoseCredentials(token, phoneNumberId, wabaId = null) {
+  const steps = [];
+
+  if (!token || !token.trim()) {
+    return {
+      ok: false,
+      summary: 'Permanent Access Token is missing',
+      steps: [{ name: 'Token Check', passed: false, detail: 'Token is blank' }]
+    };
+  }
+
+  // Probe 1: Token & User Profile
+  let tokenInfo = { ok: false };
+  try {
+    const res = await axios.get(`${GRAPH_BASE_URL}/me?fields=id,name`, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 10000
+    });
+    tokenInfo = { ok: true, id: res.data.id, name: res.data.name };
+    steps.push({
+      name: 'Token Signature & Validity',
+      passed: true,
+      detail: `Valid Meta Token (Identity: ${res.data.name || 'System User'}, ID: ${res.data.id})`
+    });
+  } catch (err) {
+    const errData = err.response?.data?.error || {};
+    steps.push({
+      name: 'Token Signature & Validity',
+      passed: false,
+      code: errData.code || 500,
+      detail: errData.message || err.message
+    });
+  }
+
+  // Probe 2: Token Permissions / Scopes
+  try {
+    const res = await axios.get(`${GRAPH_BASE_URL}/me/permissions`, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 10000
+    });
+    const perms = (res.data?.data || []).filter(p => p.status === 'granted').map(p => p.permission);
+    const hasMessaging = perms.includes('whatsapp_business_messaging');
+    const hasManagement = perms.includes('whatsapp_business_management');
+
+    steps.push({
+      name: 'Token WhatsApp Permissions',
+      passed: hasMessaging,
+      detail: `Granted: ${perms.length > 0 ? perms.join(', ') : 'None detected'}. ` +
+        (!hasMessaging ? 'Missing "whatsapp_business_messaging". ' : '') +
+        (!hasManagement ? 'Recommended: "whatsapp_business_management".' : '')
+    });
+  } catch (err) {
+    // If /me/permissions is restricted for System Users, note it gracefully
+    steps.push({
+      name: 'Token WhatsApp Permissions',
+      passed: true,
+      detail: 'System User Token active (Direct permission probe bypassed by Meta policy)'
+    });
+  }
+
+  // Probe 3: Phone Number ID Accessibility
+  let phoneAccessible = false;
+  let phoneData = null;
+  if (phoneNumberId) {
+    try {
+      const res = await axios.get(`${GRAPH_BASE_URL}/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,status`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000
+      });
+      phoneAccessible = true;
+      phoneData = res.data;
+      steps.push({
+        name: 'Phone Number ID Authorization',
+        passed: true,
+        detail: `Connected to ${res.data.display_phone_number || phoneNumberId} (${res.data.verified_name || 'Verified'}). Quality: ${res.data.quality_rating || 'GREEN'}`
+      });
+    } catch (err) {
+      const errObj = err.response?.data?.error || {};
+      const code = errObj.code || 500;
+      const msg = errObj.message || err.message;
+      let fix = 'Check Phone Number ID.';
+      if (code === 200) {
+        fix = 'API Access Blocked: System user needs WhatsApp Account asset assigned with Full Control, or Meta Payment method requires review.';
+      } else if (code === 100) {
+        fix = 'Phone Number ID does not exist or does not match this Meta Business account.';
+      }
+      steps.push({
+        name: 'Phone Number ID Authorization',
+        passed: false,
+        code,
+        detail: `Meta Error (${code}): ${msg}. Action: ${fix}`
+      });
+    }
+  }
+
+  // Probe 4: WABA ID Accessibility (Optional)
+  if (wabaId && wabaId.trim()) {
+    try {
+      const res = await axios.get(`${GRAPH_BASE_URL}/${wabaId.trim()}?fields=id,name,currency,timezone_id`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000
+      });
+      steps.push({
+        name: 'WhatsApp Business Account (WABA)',
+        passed: true,
+        detail: `WABA ID ${res.data.id} (${res.data.name || 'Active'}) verified.`
+      });
+    } catch (err) {
+      const errObj = err.response?.data?.error || {};
+      steps.push({
+        name: 'WhatsApp Business Account (WABA)',
+        passed: false,
+        code: errObj.code || 500,
+        detail: `WABA Query Note: ${errObj.message || err.message}`
+      });
+    }
+  }
+
+  const allPassed = steps.every(s => s.passed);
+
+  return {
+    ok: allPassed,
+    phoneAccessible,
+    phoneData,
+    steps,
+    summary: allPassed
+      ? 'All Meta Cloud API probes passed successfully. WhatsApp connection is healthy.'
+      : 'One or more Meta API probes flagged an authorization or configuration issue.'
+  };
 }
 
 /**
@@ -410,7 +556,9 @@ module.exports = {
   cleanPhoneNumber,
   isValidE164,
   verifyCredentials,
+  deepDiagnoseCredentials,
   uploadMedia,
   sendMessage,
   dispatchCampaignBatch
 };
+

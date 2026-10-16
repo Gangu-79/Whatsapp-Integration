@@ -8,6 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const crypto = require('crypto');
+
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
@@ -19,6 +21,7 @@ const storeFile = path.join(dataDir, 'whatsapp_store.json');
 const defaultData = {
   settings: {},
   sessions: {},
+  users: {},
   contacts: {},
   conversations: {},
   messages: [],
@@ -37,6 +40,7 @@ function loadStore() {
       memoryStore = {
         settings: parsed.settings || {},
         sessions: parsed.sessions || {},
+        users: parsed.users || {},
         contacts: parsed.contacts || {},
         conversations: parsed.conversations || {},
         messages: parsed.messages || [],
@@ -49,6 +53,34 @@ function loadStore() {
     }
   } else {
     saveStoreSync();
+  }
+
+  // Ensure default admin user exists
+  if (!memoryStore.users || Object.keys(memoryStore.users).length === 0) {
+    initDefaultAdminSync();
+  }
+}
+
+function initDefaultAdminSync() {
+  try {
+    memoryStore.users = memoryStore.users || {};
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.pbkdf2Sync('admin123', salt, 10000, 64, 'sha512').toString('hex');
+    const adminId = 'usr_admin_' + Date.now();
+    memoryStore.users['admin'] = {
+      id: adminId,
+      username: 'admin',
+      name: 'Administrator',
+      password_hash: hash,
+      salt: salt,
+      role: 'admin',
+      created_at: new Date().toISOString(),
+      last_login: null
+    };
+    saveStoreSync();
+    console.log('[Database] Default admin user initialized (Username: admin)');
+  } catch (e) {
+    console.warn('[Database] Could not init default admin:', e.message);
   }
 }
 
@@ -366,6 +398,127 @@ async function getRecentCampaignLogs(limit = 100) {
   return memoryStore.campaign_logs.slice(0, limit);
 }
 
+// ─── USER & AUTHENTICATION METHODS (Requirement 2 & 10) ───
+async function registerUser({ username, password, name = '' }) {
+  if (!username || !password) throw new Error('Username and password are required.');
+  const cleanUser = String(username).trim().toLowerCase();
+  if (cleanUser.length < 3) throw new Error('Username must be at least 3 characters.');
+  if (String(password).length < 6) throw new Error('Password must be at least 6 characters.');
+
+  memoryStore.users = memoryStore.users || {};
+  if (memoryStore.users[cleanUser]) {
+    throw new Error('Username is already registered. Please login or choose another.');
+  }
+
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(String(password), salt, 10000, 64, 'sha512').toString('hex');
+  const userId = 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+
+  const newUser = {
+    id: userId,
+    username: cleanUser,
+    name: name.trim() || cleanUser,
+    password_hash: hash,
+    salt: salt,
+    role: 'user',
+    created_at: new Date().toISOString(),
+    last_login: new Date().toISOString()
+  };
+
+  memoryStore.users[cleanUser] = newUser;
+  scheduleSave();
+
+  const { password_hash, salt: s, ...safeUser } = newUser;
+  return safeUser;
+}
+
+async function loginUser(username, password) {
+  if (!username || !password) throw new Error('Username and password are required.');
+  const cleanUser = String(username).trim().toLowerCase();
+
+  memoryStore.users = memoryStore.users || {};
+  const user = memoryStore.users[cleanUser];
+  if (!user) {
+    throw new Error('Invalid username or password.');
+  }
+
+  const hash = crypto.pbkdf2Sync(String(password), user.salt, 10000, 64, 'sha512').toString('hex');
+  if (hash !== user.password_hash) {
+    throw new Error('Invalid username or password.');
+  }
+
+  user.last_login = new Date().toISOString();
+  scheduleSave();
+
+  const { password_hash, salt, ...safeUser } = user;
+  return safeUser;
+}
+
+async function getUser(username) {
+  if (!username) return null;
+  const clean = String(username).trim().toLowerCase();
+  const u = memoryStore.users?.[clean];
+  if (!u) return null;
+  const { password_hash, salt, ...safeUser } = u;
+  return safeUser;
+}
+
+// ─── BACKUP & RESTORE METHODS (Requirement 7) ───
+async function exportBackup() {
+  return {
+    version: '2.0',
+    exported_at: new Date().toISOString(),
+    store: {
+      settings: memoryStore.settings,
+      contacts: memoryStore.contacts,
+      conversations: memoryStore.conversations,
+      messages: memoryStore.messages,
+      campaigns: memoryStore.campaigns,
+      campaign_logs: memoryStore.campaign_logs
+    }
+  };
+}
+
+async function restoreBackup(backupData) {
+  if (!backupData || !backupData.store) {
+    throw new Error('Invalid backup file format.');
+  }
+
+  const s = backupData.store;
+  if (s.settings) memoryStore.settings = { ...memoryStore.settings, ...s.settings };
+  if (s.contacts) memoryStore.contacts = { ...memoryStore.contacts, ...s.contacts };
+  if (s.conversations) memoryStore.conversations = { ...memoryStore.conversations, ...s.conversations };
+
+  if (Array.isArray(s.messages)) {
+    const existingIds = new Set(memoryStore.messages.map(m => m.id));
+    for (const msg of s.messages) {
+      if (!existingIds.has(msg.id)) {
+        memoryStore.messages.push(msg);
+      }
+    }
+  }
+
+  if (s.campaigns) {
+    memoryStore.campaigns = { ...memoryStore.campaigns, ...s.campaigns };
+  }
+
+  if (Array.isArray(s.campaign_logs)) {
+    const existingLogIds = new Set(memoryStore.campaign_logs.map(l => l.id || l.meta_id));
+    for (const log of s.campaign_logs) {
+      if (!existingLogIds.has(log.id || log.meta_id)) {
+        memoryStore.campaign_logs.push(log);
+      }
+    }
+  }
+
+  scheduleSave();
+  return {
+    success: true,
+    message: 'Backup restored successfully',
+    restored_at: new Date().toISOString()
+  };
+}
+
 module.exports = {
   run,
   get,
@@ -375,6 +528,11 @@ module.exports = {
   getSession,
   saveSession,
   deleteSession,
+  registerUser,
+  loginUser,
+  getUser,
+  exportBackup,
+  restoreBackup,
   isOptedOut,
   setOptOut,
   getOptOutList,

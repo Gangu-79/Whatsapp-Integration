@@ -9,6 +9,7 @@ const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
 const multer = require('multer');
 
@@ -284,10 +285,91 @@ app.post('/api/config', async (req, res) => {
   }
 });
 
+// ============================================================================
+// USER AUTHENTICATION & SESSION MANAGEMENT (Requirement 2)
+// ============================================================================
+
+const userSessions = new Map();
+
+function generateAuthToken(user) {
+  const token = 'wa_sec_' + crypto.randomBytes(32).toString('hex');
+  userSessions.set(token, {
+    user,
+    expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7-day session
+  });
+  return token;
+}
+
+function getAuthUser(req) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : (req.headers['x-auth-token'] || '');
+  if (!token) return null;
+  const sess = userSessions.get(token);
+  if (!sess) return null;
+  if (Date.now() > sess.expiresAt) {
+    userSessions.delete(token);
+    return null;
+  }
+  return sess.user;
+}
+
+// API: Register User
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password, name } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'Username and password are required.' });
+    }
+    const user = await db.registerUser({ username, password, name });
+    const token = generateAuthToken(user);
+    res.json({
+      success: true,
+      user,
+      token,
+      message: 'Account registered successfully.'
+    });
+  } catch (e) {
+    res.status(400).json({ success: false, error: e.message });
+  }
+});
+
+// API: Login User
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'Username and password are required.' });
+    }
+    const user = await db.loginUser(username, password);
+    const token = generateAuthToken(user);
+    res.json({
+      success: true,
+      user,
+      token,
+      message: 'Login successful.'
+    });
+  } catch (e) {
+    res.status(401).json({ success: false, error: e.message });
+  }
+});
+
+// API: Current Authenticated User Status
+app.get('/api/auth/me', (req, res) => {
+  const user = getAuthUser(req);
+  if (user) {
+    return res.json({ authenticated: true, user });
+  }
+  return res.json({ authenticated: false, user: null });
+});
+
 // API: Logout Web Session
 // Requirement 5: Web logout must NOT disconnect WhatsApp Business account credentials.
 app.post('/api/logout', async (req, res) => {
   try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : (req.headers['x-auth-token'] || '');
+    if (token) userSessions.delete(token);
+
     const sid = getSessionId(req);
     // Mark session as inactive in DB, but keep credentials safely stored
     if (sid && sid !== 'sess_default') {
@@ -299,6 +381,75 @@ app.post('/api/logout', async (req, res) => {
     });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ============================================================================
+// META DEEP DIAGNOSTICS & ERROR 200 RESOLVER (Requirement 4)
+// ============================================================================
+
+app.get('/api/meta/diagnose', async (req, res) => {
+  try {
+    const cfg = await getEffectiveConfig(req);
+    if (!cfg.token || !cfg.phoneNumberId) {
+      return res.json({
+        success: false,
+        configured: false,
+        message: 'Credentials not configured. Please enter your Permanent Access Token and Phone Number ID.'
+      });
+    }
+
+    const diagnosis = await metaApi.deepDiagnoseCredentials(cfg.token, cfg.phoneNumberId, cfg.wabaId);
+    res.json({
+      success: true,
+      configured: true,
+      phoneNumberId: cfg.phoneNumberId,
+      wabaId: cfg.wabaId,
+      diagnosis
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ============================================================================
+// MESSAGE STORAGE & DATABASE BACKUP / RECOVERY (Requirement 7)
+// ============================================================================
+
+// API: Export Full Database Backup (Settings, Messages, Conversations, Logs)
+app.get('/api/backup/export', async (req, res) => {
+  try {
+    const backup = await db.exportBackup();
+    const dateStr = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="whatsapp_backup_${dateStr}.json"`);
+    res.send(JSON.stringify(backup, null, 2));
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: Restore Database Backup
+app.post('/api/backup/restore', upload.single('backupFile'), async (req, res) => {
+  try {
+    let backupData = null;
+    if (req.file) {
+      const raw = fs.readFileSync(req.file.path, 'utf8');
+      backupData = JSON.parse(raw);
+    } else if (req.body && req.body.store) {
+      backupData = req.body;
+    } else {
+      return res.status(400).json({ success: false, error: 'No backup file or JSON payload provided.' });
+    }
+
+    const result = await db.restoreBackup(backupData);
+    res.json({
+      success: true,
+      message: 'Database backup restored successfully! All messages and settings recovered.',
+      result
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: 'Failed to restore backup: ' + e.message });
   }
 });
 
