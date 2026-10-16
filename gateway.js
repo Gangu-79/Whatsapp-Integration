@@ -127,9 +127,22 @@ const upload = multer({
   limits: { fileSize: 25 * 1024 * 1024 } // 25MB limit (Meta document limit is 100MB, image is 5MB)
 });
 
-// Serve Frontend UI
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve Frontend UI (Anti-cache headers prevent stale browser caching)
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  maxAge: 0,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 app.get('/', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
