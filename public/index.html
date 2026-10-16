@@ -11,9 +11,9 @@
     :root {
       --bg: #070611;
       --bg-alt: #0d0b1a;
-      --card-bg: rgba(18, 14, 38, 0.7);
+      --card-bg: rgba(18, 14, 38, 0.72);
       --card-border: rgba(255, 255, 255, 0.08);
-      --card-border-hover: rgba(147, 112, 255, 0.35);
+      --card-border-hover: rgba(147, 112, 255, 0.4);
       --pur: #8b5cf6;
       --pur-glow: rgba(139, 92, 246, 0.4);
       --cyan: #06b6d4;
@@ -128,7 +128,7 @@
       width: 100%;
       max-width: 1260px;
       height: 64px;
-      background: rgba(13, 11, 26, 0.82);
+      background: rgba(13, 11, 26, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 100px;
       padding: 0 14px 0 22px;
@@ -283,23 +283,6 @@
       line-height: 1.2;
     }
 
-    .btn-quickstart {
-      padding: 9px 18px;
-      border-radius: 100px;
-      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      text-decoration: none;
-      box-shadow: 0 4px 18px rgba(139, 92, 246, 0.35);
-      transition: all 0.25s;
-    }
-
-    .btn-quickstart:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
-    }
-
     /* ─── PAGE CONTAINER & HERO ─── */
     .page-container {
       position: relative;
@@ -307,12 +290,12 @@
       width: 100%;
       max-width: 1280px;
       margin: 0 auto;
-      padding: 110px 24px 60px;
+      padding: 105px 24px 60px;
     }
 
     .hero-section {
       text-align: center;
-      padding: 40px 0 50px;
+      padding: 30px 0 45px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -329,7 +312,7 @@
       font-size: 12.5px;
       font-weight: 700;
       color: #c084fc;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .hero-title {
@@ -338,7 +321,7 @@
       font-weight: 900;
       line-height: 1.08;
       letter-spacing: -1.5px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       text-transform: uppercase;
     }
 
@@ -354,67 +337,17 @@
       font-size: 16px;
       color: var(--txt-secondary);
       line-height: 1.6;
-      margin-bottom: 36px;
-    }
-
-    .hero-actions {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .btn-hero-primary {
-      padding: 14px 32px;
-      border-radius: 100px;
-      background: linear-gradient(135deg, #8b5cf6 0%, #0284c7 100%);
-      color: #ffffff;
-      font-size: 15px;
-      font-weight: 800;
-      text-decoration: none;
-      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.45);
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-    }
-
-    .btn-hero-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 16px 40px rgba(139, 92, 246, 0.6);
-    }
-
-    .btn-hero-secondary {
-      padding: 14px 28px;
-      border-radius: 100px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-      font-size: 15px;
-      font-weight: 700;
-      text-decoration: none;
-      backdrop-filter: blur(12px);
-      transition: all 0.25s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-    }
-
-    .btn-hero-secondary:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.25);
-    }
-
-    /* ─── WORKSPACE SECTIONS ─── */
-    .engine-section {
-      margin-top: 10px;
-    }
-
-    .section-header {
       margin-bottom: 28px;
+    }
+
+    /* ─── SECTION HEADER ─── */
+    .section-header {
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
     }
 
     .section-tag {
@@ -440,19 +373,55 @@
       margin-top: 4px;
     }
 
-    /* ─── CARD GRIDS ─── */
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      margin-bottom: 28px;
+    /* ─── MODE SWITCHER TABS ─── */
+    .mode-switch-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(13, 11, 26, 0.9);
+      padding: 6px;
+      border-radius: 100px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      max-width: 580px;
+      margin: 0 auto 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     }
 
+    .mode-tab-btn {
+      flex: 1;
+      padding: 12px 20px;
+      border-radius: 100px;
+      border: none;
+      background: transparent;
+      color: var(--txt-secondary);
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .mode-tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .mode-tab-btn.active {
+      background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 18px rgba(139, 92, 246, 0.5);
+    }
+
+    /* ─── CARD LAYOUTS ─── */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 24px;
-      padding: 26px 24px;
+      padding: 26px 26px;
       backdrop-filter: blur(24px);
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
       transition: border-color 0.3s;
@@ -486,7 +455,7 @@
 
     .card-title {
       font-family: var(--font-display);
-      font-size: 17px;
+      font-size: 17.5px;
       font-weight: 800;
       color: #ffffff;
     }
@@ -499,12 +468,12 @@
     /* Form Inputs */
     .lbl {
       display: block;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
       color: var(--txt-secondary);
       margin-bottom: 6px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
     }
 
     .inp {
@@ -512,7 +481,7 @@
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 12px;
-      padding: 11px 14px;
+      padding: 12px 14px;
       color: #ffffff;
       font-family: inherit;
       font-size: 13.5px;
@@ -528,7 +497,7 @@
 
     textarea.inp {
       resize: vertical;
-      min-height: 140px;
+      min-height: 120px;
       line-height: 1.5;
     }
 
@@ -537,13 +506,14 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 11px 20px;
-      border-radius: 12px;
-      font-size: 13.5px;
-      font-weight: 700;
+      padding: 12px 22px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 800;
       cursor: pointer;
       border: none;
       transition: all 0.2s;
+      font-family: var(--font-display);
     }
 
     .btn-primary {
@@ -554,7 +524,14 @@
 
     .btn-primary:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.55);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     .btn-danger {
@@ -568,11 +545,92 @@
       color: #fff;
     }
 
+    /* Attachment Button Pair */
+    .attachment-btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .btn-attach {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 13px 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .btn-attach:hover {
+      border-color: var(--pur);
+      background: rgba(139, 92, 246, 0.08);
+      transform: translateY(-1px);
+    }
+
+    /* Selected Attachment Display Cards */
+    .attached-preview-card {
+      display: none;
+      margin-top: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 12px 14px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .pdf-badge-tag {
+      background: #ef4444;
+      color: #fff;
+      font-weight: 900;
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .img-thumb-preview {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-remove-attachment {
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      color: #f43f5e;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-remove-attachment:hover {
+      background: #f43f5e;
+      color: #fff;
+    }
+
     /* Upload Zone */
     .upload-zone {
-      border: 2px dashed rgba(255, 255, 255, 0.15);
-      border-radius: 16px;
-      padding: 22px 14px;
+      border: 2px dashed rgba(255, 255, 255, 0.18);
+      border-radius: 18px;
+      padding: 24px 16px;
       text-align: center;
       cursor: pointer;
       background: rgba(255, 255, 255, 0.02);
@@ -582,7 +640,7 @@
 
     .upload-zone:hover, .upload-zone.drag {
       border-color: var(--pur);
-      background: rgba(139, 92, 246, 0.05);
+      background: rgba(139, 92, 246, 0.06);
     }
 
     .upload-zone input[type="file"] {
@@ -602,7 +660,7 @@
     }
 
     .upload-title {
-      font-size: 13.5px;
+      font-size: 14px;
       font-weight: 700;
       color: #fff;
     }
@@ -613,136 +671,7 @@
       margin-top: 3px;
     }
 
-    .upload-preview-inside {
-      display: none;
-      position: relative;
-      width: 100%;
-      max-height: 140px;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .upload-preview-inside img {
-      width: 100%;
-      height: 140px;
-      object-fit: cover;
-      border-radius: 10px;
-    }
-
-    .pdf-preview-box {
-      display: none;
-      align-items: center;
-      gap: 12px;
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.35);
-      border-radius: 12px;
-      padding: 12px 16px;
-      text-align: left;
-    }
-
-    .file-badge {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      border-radius: 10px;
-      font-size: 12px;
-      color: var(--grn);
-      margin-top: 10px;
-    }
-
-    .file-badge svg {
-      width: 14px;
-      height: 14px;
-      fill: currentColor;
-    }
-
-    /* ─── LAUNCH CONTROL CARD ─── */
-    .launch-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 28px;
-      padding: 32px 36px;
-      backdrop-filter: blur(24px);
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
-      position: relative;
-      overflow: hidden;
-      margin-top: 10px;
-    }
-
-    .stats-summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .stat-box {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 14px 18px;
-      text-align: center;
-    }
-
-    .stat-label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--txt-muted);
-      margin-bottom: 4px;
-    }
-
-    .stat-val {
-      font-size: 14px;
-      font-weight: 700;
-      color: #ffffff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .btn-launch {
-      width: 100%;
-      padding: 18px 32px;
-      background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
-      border: none;
-      border-radius: 18px;
-      cursor: pointer;
-      font-family: var(--font-display);
-      font-size: 17px;
-      font-weight: 800;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      box-shadow: 0 10px 32px rgba(139, 92, 246, 0.4);
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .btn-launch:hover:not(:disabled) {
-      transform: translateY(-3px);
-      box-shadow: 0 16px 44px rgba(139, 92, 246, 0.6);
-    }
-
-    .btn-launch:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .btn-launch svg {
-      width: 22px;
-      height: 22px;
-      fill: currentColor;
-    }
-
-    /* Live Terminal Console */
+    /* ─── LIVE TERMINAL CONSOLE ─── */
     .console-log {
       display: none;
       background: #06050b;
@@ -834,7 +763,7 @@
       color: var(--red);
     }
 
-    /* ─── MODAL OVERLAY & CONTAINERS ─── */
+    /* ─── MODAL OVERLAYS ─── */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -885,19 +814,6 @@
       font-size: 13.5px;
       font-weight: 800;
       border: 1.5px solid rgba(255, 255, 255, 0.3);
-      animation: fabFloat 3s ease-in-out infinite;
-    }
-
-    @keyframes fabFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
-    }
-
-    .mobile-fab-icon-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
     .mobile-fab-badge {
@@ -963,32 +879,7 @@
       color: #c084fc;
     }
 
-    .mobile-nav-badge {
-      position: absolute;
-      top: -3px;
-      right: 2px;
-      background: #10b981;
-      color: #fff;
-      font-size: 9.5px;
-      font-weight: 800;
-      min-width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Responsive Breakpoints */
-    @media (max-width: 1024px) {
-      .cards-grid {
-        grid-template-columns: 1fr;
-      }
-      .nav-links {
-        display: none;
-      }
-    }
-
+    /* Responsive */
     @media (max-width: 860px) {
       .mobile-bottom-nav {
         display: flex;
@@ -1004,21 +895,23 @@
         height: 54px;
         padding: 0 12px;
       }
-      .btn-quickstart {
+      .nav-links {
         display: none;
       }
-      .hero-title {
-        font-size: clamp(2rem, 8vw, 3rem);
+      .mode-switch-wrap {
+        max-width: 100%;
       }
-      .stats-summary-grid {
+      .mode-tab-btn {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+      .attachment-btn-group {
         grid-template-columns: 1fr;
-        gap: 10px;
       }
       .modal-container {
         max-width: 100%;
         max-height: 94vh;
         border-radius: 20px 20px 0 0;
-        border-bottom: none;
       }
       .modal-overlay {
         padding: 0;
@@ -1049,11 +942,11 @@
 
       <nav class="nav-links">
         <a href="#hero" class="nav-link active">Home</a>
-        <a href="javascript:void(0)" onclick="openSingleMsgModal()" class="nav-link">Send Single</a>
-        <a href="#engine" class="nav-link">Bulk Campaign</a>
+        <a href="javascript:void(0)" onclick="switchSendingMode('single')" class="nav-link">Single Message</a>
+        <a href="javascript:void(0)" onclick="switchSendingMode('bulk')" class="nav-link">Bulk Excel</a>
         <a href="javascript:void(0)" onclick="openInbox()" class="nav-link" id="navInbox">Inbox <span id="inboxBadge" style="display:none;background:#10b981;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:4px;">0</span></a>
         <a href="javascript:void(0)" onclick="openReportsModal()" class="nav-link">Reports</a>
-        <a href="#engine" class="nav-link">Settings</a>
+        <a href="#settings-section" class="nav-link">Settings</a>
       </nav>
 
       <div class="top-right">
@@ -1070,7 +963,6 @@
           <svg style="width:12px;height:12px;fill:currentColor;" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
           Logout
         </button>
-        <button onclick="openSingleMsgModal()" class="btn-quickstart">Send Message</button>
       </div>
     </header>
   </div>
@@ -1090,250 +982,355 @@
       </h1>
 
       <p class="hero-subtitle">
-        Dispatch single and bulk WhatsApp messages, attach images & PDF documents, manage 2-way conversations, and track real delivery reports via official Meta Cloud API.
+        Send messages to one person manually or broadcast via Excel. Support text, JPG, PNG, and PDF attachments with real delivery status updates.
       </p>
 
-      <div class="hero-actions">
-        <button onclick="openSingleMsgModal()" class="btn-hero-primary">
-          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-          Send Single Message
+      <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+        <button onclick="switchSendingMode('single')" class="btn btn-primary" style="padding:14px 28px;">
+          👤 Send to Single Person
         </button>
-        <button onclick="openInbox()" class="btn-hero-secondary" style="border-color:rgba(139,92,246,0.45); background:rgba(139,92,246,0.12); color:#c084fc;">
-          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-          Live Inbox <span id="heroInboxBadge" class="inbox-count-badge" style="display:none;margin-left:4px;">0</span>
+        <button onclick="switchSendingMode('bulk')" class="btn" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:14px 28px;">
+          📊 Bulk Message (Excel)
         </button>
-        <button onclick="openReportsModal()" class="btn-hero-secondary">
-          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-          Delivery Reports
+        <button onclick="openInbox()" class="btn" style="background:rgba(139,92,246,0.12); border:1px solid rgba(139,92,246,0.4); color:#c084fc; padding:14px 24px;">
+          📬 Live Inbox (<span id="heroInboxCount">0</span>)
         </button>
       </div>
     </section>
 
-    <!-- WORKSPACE / ENGINE SECTION -->
-    <section class="engine-section" id="engine">
-      <div class="section-header">
-        <div class="section-tag">// Campaign Studio</div>
-        <h2 class="section-title">Official Meta Cloud API Engine</h2>
-        <p class="section-desc">Follow the steps below to configure your official WhatsApp Business credentials, import recipients, and dispatch your campaign.</p>
+    <!-- ======================================================================== -->
+    <!-- MAIN WORKSPACE: SEND WHATSAPP MESSAGE (SINGLE & BULK OPTIONS) -->
+    <!-- ======================================================================== -->
+    <section id="send-section" style="margin-top:20px;">
+      
+      <div class="section-header" style="justify-content:center; text-align:center;">
+        <div>
+          <div class="section-tag">// Outreach Engine</div>
+          <h2 class="section-title">Send WhatsApp Message</h2>
+          <p class="section-desc">Choose between sending to an individual contact or broadcasting to an Excel recipient list.</p>
+        </div>
       </div>
 
-      <!-- 3-COL CARDS GRID -->
-      <div class="cards-grid">
-
-        <!-- CARD 01: META CLOUD API SETUP -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-num">01</div>
-            <div>
-              <div class="card-title">Meta Cloud API Setup</div>
-              <div class="card-subtitle">Official WhatsApp Business Platform</div>
-            </div>
-          </div>
-
-          <div id="metaConfigPanel">
-            <div style="font-size:12px; color:var(--txt-secondary); line-height:1.5; margin-bottom:12px;">
-              Authorize your WhatsApp Business account. Outbound bulk messaging requires an approved Meta Message Template.
-            </div>
-
-            <div style="margin-bottom:10px;">
-              <label class="lbl" for="metaPhoneId">Phone Number ID</label>
-              <input type="text" id="metaPhoneId" class="inp" placeholder="e.g. 1337215722817983">
-            </div>
-
-            <div style="margin-bottom:10px;">
-              <label class="lbl" for="metaToken">Permanent Access Token</label>
-              <input type="password" id="metaToken" class="inp" placeholder="System User Token (EAAG...)">
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
-              <div>
-                <label class="lbl" for="metaWabaId">WABA ID</label>
-                <input type="text" id="metaWabaId" class="inp" placeholder="e.g. 1704639724550656">
-              </div>
-              <div>
-                <label class="lbl" for="metaTplName">Template Name</label>
-                <input type="text" id="metaTplName" class="inp" placeholder="campaign_update">
-              </div>
-            </div>
-
-            <button type="button" class="btn btn-primary" id="btnSaveMeta" onclick="saveMetaConfig()" style="width:100%;">
-              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              Authorize & Save Credentials
-            </button>
-
-            <!-- Detailed Error & Advice Container (Fixes masked "Check Credentials" error) -->
-            <div id="metaErrorBox" style="display:none; margin-top:12px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:12px; padding:12px; font-size:12px; line-height:1.5;">
-              <div style="font-weight:800; color:#f43f5e; margin-bottom:4px;" id="metaErrorCodeTitle">Meta API Error</div>
-              <div style="color:#ffffff;" id="metaErrorMsgText">Error validating access token.</div>
-              <div style="color:var(--txt-secondary); margin-top:6px;" id="metaErrorAdviceText">Please generate a Permanent System User Token in Meta Business Suite.</div>
-            </div>
-          </div>
-
-          <!-- Active Verified Display -->
-          <div id="connInfo" style="display:none; margin-top:14px; background:rgba(16,185,129,0.06); border:1.5px solid rgba(16,185,129,0.35); border-radius:18px; padding:18px 20px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981; box-shadow:0 0 10px #10b981;"></span>
-                <span style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:var(--grn); letter-spacing:1px;">Connected Account</span>
-              </div>
-              <span id="qualityBadge" style="font-size:11px; background:rgba(16,185,129,0.2); color:var(--grn); padding:3px 10px; border-radius:100px; font-weight:800;">Quality: HIGH</span>
-            </div>
-
-            <div style="margin-bottom:14px;">
-              <div id="activePhoneDisplay" style="font-size:22px; font-weight:900; color:#fff; font-family:var(--font-mono); letter-spacing:0.5px;">+91 99665 59211</div>
-              <div id="verifiedBusinessName" style="font-size:13px; color:var(--txt-secondary); margin-top:3px; font-weight:600;">Verified WhatsApp Business</div>
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              <button type="button" class="btn" onclick="openInbox()" style="width:100%; background:rgba(139,92,246,0.2); border:1px solid rgba(139,92,246,0.5); color:#fff;">
-                📬 Open Live Inbox (<span id="card01InboxBadge">0</span> Replies)
-              </button>
-              <button type="button" class="btn btn-danger" onclick="doLogout()" style="width:100%;">
-                🔴 Logout Web Session
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- CARD 02: UPLOAD ASSETS (Excel & Media - Image or PDF) -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-num">02</div>
-            <div>
-              <div class="card-title">Upload Contacts & Media</div>
-              <div class="card-subtitle">Excel sheet & Image (JPG/PNG) or PDF Document</div>
-            </div>
-          </div>
-
-          <label class="lbl">Excel Contact List (.xlsx / .xls)</label>
-          <div class="upload-zone" id="exZ">
-            <input type="file" id="exI" accept=".xlsx,.xls" onchange="upEx(event)">
-            <div class="upload-icon">
-              <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-            </div>
-            <div class="upload-title">Drop Excel File Here</div>
-            <div class="upload-sub">Validates names, phone numbers, and duplicates</div>
-          </div>
-          <div class="file-badge" id="exB" style="display:none; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              <span id="exN">No file selected</span>
-            </div>
-            <button type="button" onclick="rmEx(event)" title="Remove Excel file" style="background:transparent; border:none; cursor:pointer; color:#f43f5e; padding:2px 4px;">✕</button>
-          </div>
-
-          <!-- Recipient List Validation Box -->
-          <div id="recPrevBox" style="display:none; margin-top:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <span id="recSummaryText" style="font-size:12px; font-weight:700; color:var(--grn);">0 Contacts Loaded</span>
-              <span id="recDedupText" style="font-size:11px; color:var(--txt-muted);">Validation clean</span>
-            </div>
-            <div id="recListPreview" style="font-size:11.5px; font-family:var(--font-mono); color:var(--txt-secondary); max-height:90px; overflow-y:auto; line-height:1.6;"></div>
-          </div>
-
-          <div style="height:14px;"></div>
-
-          <label class="lbl">Media Attachment (JPG, PNG, or PDF)</label>
-          <div class="upload-zone" id="imZ">
-            <input type="file" id="imI" accept="image/jpeg,image/png,image/jpg,application/pdf" onchange="upMedia(event)">
-            
-            <div class="upload-default" id="imDef">
-              <div class="upload-icon">
-                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-              </div>
-              <div class="upload-title">Upload Image or PDF Document</div>
-              <div class="upload-sub">Supports JPG, PNG, and PDF files</div>
-            </div>
-
-            <!-- Image Preview Overlay -->
-            <div class="upload-preview-inside" id="ipw">
-              <img id="ipv" alt="Attachment Preview">
-              <button type="button" onclick="rmMedia(event)" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;">✕</button>
-            </div>
-
-            <!-- PDF Document Preview Overlay -->
-            <div class="pdf-preview-box" id="pdfPrevBox">
-              <div style="width:36px;height:36px;border-radius:8px;background:#ef4444;color:#fff;display:grid;place-items:center;font-weight:900;font-size:12px;">PDF</div>
-              <div style="flex:1;min-width:0;">
-                <div id="pdfFilenameDisplay" style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">document.pdf</div>
-                <div style="font-size:11px;color:var(--txt-muted);">PDF Document Attachment</div>
-              </div>
-              <button type="button" onclick="rmMedia(event)" style="background:transparent;border:none;color:#f43f5e;font-size:16px;cursor:pointer;">✕</button>
-            </div>
-          </div>
-
-          <div class="file-badge" id="imB" style="display:none;">
-            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            <span id="imN">No attachment</span>
-          </div>
-        </div>
-
-        <!-- CARD 03: COMPOSE MESSAGE -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-num">03</div>
-            <div>
-              <div class="card-title">Compose Message</div>
-              <div class="card-subtitle">Dynamic tag <code style="background:rgba(139,92,246,0.2);padding:2px 6px;border-radius:4px;color:#c084fc;font-family:var(--font-mono);font-size:11px;">{{name}}</code> supported</div>
-            </div>
-          </div>
-
-          <label class="lbl" for="msgI">Message Template Content</label>
-          <textarea id="msgI" class="inp" placeholder="Hello {{name}},&#10;&#10;Thank you for reaching out to us! Here is your requested update.&#10;&#10;Best regards,&#10;Insurance Services" oninput="schedSave()"></textarea>
-          
-          <div id="savedI" style="font-size:11.5px; color:var(--grn); margin-top:8px; display:none; align-items:center; gap:6px;">
-            ✓ Changes saved
-          </div>
-        </div>
-
+      <!-- MODE TOGGLE TABS (Clearly Visible Options) -->
+      <div class="mode-switch-wrap">
+        <button type="button" id="tabBtnSingle" class="mode-tab-btn active" onclick="switchSendingMode('single')">
+          <svg style="width:16px;height:16px;fill:currentColor;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          Single Person
+        </button>
+        <button type="button" id="tabBtnBulk" class="mode-tab-btn" onclick="switchSendingMode('bulk')">
+          <svg style="width:16px;height:16px;fill:currentColor;" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+          Excel Bulk
+        </button>
       </div>
 
-      <!-- CARD 04: LAUNCH & RATE-LIMITED DISPATCH -->
-      <div class="launch-card" id="launch-section">
-        <div class="card-header" style="margin-bottom: 20px;">
-          <div class="card-num">04</div>
+      <!-- ─── OPTION 1: SINGLE PERSON MESSAGING VIEW ─── -->
+      <div id="singlePersonView" class="card" style="max-width:760px; margin:0 auto;">
+        <div class="card-header">
+          <div class="card-num">01</div>
           <div>
-            <div class="card-title">Launch Campaign Engine</div>
-            <div class="card-subtitle">Official Meta Cloud API dispatch with controlled rate-limiting & batch pauses</div>
+            <div class="card-title">Send to Single Person</div>
+            <div class="card-subtitle">Send directly to one person without uploading an Excel file.</div>
           </div>
         </div>
 
-        <div class="stats-summary-grid">
-          <div class="stat-box">
-            <div class="stat-label">Contacts Sheet</div>
-            <div class="stat-val" id="stE" style="color:var(--txt-muted);">Not uploaded</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Media Attachment</div>
-            <div class="stat-val" id="stI" style="color:var(--txt-muted);">None (Text only)</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">WhatsApp Status</div>
-            <div class="stat-val log-err" id="stC">Not configured</div>
+        <!-- Phone & Country Code -->
+        <div style="margin-bottom:16px;">
+          <label class="lbl">Country Code and Phone Number</label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <select id="singleCountryCode" class="inp" style="width:150px; flex-shrink:0;">
+              <option value="91" selected>🇮🇳 India (+91)</option>
+              <option value="1">🇺🇸 US / CA (+1)</option>
+              <option value="44">🇬🇧 UK (+44)</option>
+              <option value="971">🇦🇪 UAE (+971)</option>
+              <option value="966">🇸🇦 Saudi (+966)</option>
+              <option value="61">🇦🇺 Australia (+61)</option>
+              <option value="65">🇸🇬 Singapore (+65)</option>
+              <option value="49">🇩🇪 Germany (+49)</option>
+              <option value="33">🇫🇷 France (+33)</option>
+              <option value="other">Other (+)</option>
+            </select>
+            <input type="text" id="singlePhoneInp" class="inp" style="flex:1; min-width:200px;" placeholder="Enter WhatsApp number (e.g. 9876543210 or +919876543210)">
           </div>
         </div>
 
-        <button class="btn-launch" id="btnL" onclick="doLaunch()" disabled>
-          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-          Launch Bulk Campaign Now
+        <!-- Recipient Name (Optional) -->
+        <div style="margin-bottom:16px;">
+          <label class="lbl">Recipient Name (Optional)</label>
+          <input type="text" id="singleNameInp" class="inp" placeholder="e.g. Rahul Sharma">
+        </div>
+
+        <!-- Message Body -->
+        <div style="margin-bottom:16px;">
+          <label class="lbl">Message / Caption</label>
+          <textarea id="singleMsgInp" class="inp" placeholder="Type message or caption here..."></textarea>
+        </div>
+
+        <!-- Attachment Options (Add Image & Add PDF) -->
+        <div style="margin-bottom:20px;">
+          <label class="lbl">Attachment Options</label>
+          <div class="attachment-btn-group">
+            <label class="btn-attach" for="singleImgFile">
+              <svg style="width:18px;height:18px;fill:var(--pur);" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+              <span>Add Image (JPG, JPEG, PNG)</span>
+            </label>
+            <label class="btn-attach" for="singlePdfFile">
+              <svg style="width:18px;height:18px;fill:#ef4444;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+              <span>Add PDF (PDF Document)</span>
+            </label>
+          </div>
+
+          <!-- Hidden File Inputs -->
+          <input type="file" id="singleImgFile" accept="image/jpeg,image/png,image/jpg" style="display:none;" onchange="handleSingleFileSelect(event, 'image')">
+          <input type="file" id="singlePdfFile" accept="application/pdf" style="display:none;" onchange="handleSingleFileSelect(event, 'document')">
+
+          <!-- Attachment Preview & Remove Bar -->
+          <div id="singleAttachCard" class="attached-preview-card">
+            <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+              <img id="singleAttachImgThumb" class="img-thumb-preview" style="display:none;" alt="Thumbnail">
+              <div id="singleAttachPdfBadge" class="pdf-badge-tag" style="display:none;">PDF</div>
+              <div style="min-width:0;">
+                <div id="singleAttachFilename" style="font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">filename.jpg</div>
+                <div id="singleAttachFilesize" style="font-size:11px; color:var(--txt-muted);">150 KB</div>
+              </div>
+            </div>
+            <button type="button" class="btn-remove-attachment" onclick="removeSingleAttachment()">
+              ✕ Remove Attachment
+            </button>
+          </div>
+        </div>
+
+        <!-- Optional Approved Template Input -->
+        <div style="margin-bottom:20px;">
+          <label class="lbl">Approved Template Name (Required if outside 24-hr window)</label>
+          <input type="text" id="singleTplInp" class="inp" placeholder="e.g. campaign_update (Leave empty for direct chat)">
+          <div style="font-size:11px; color:var(--txt-muted); margin-top:4px;">
+            💡 Outside the active 24-hour customer window, Meta requires an approved Message Template.
+          </div>
+        </div>
+
+        <!-- Single Send Button -->
+        <button type="button" id="btnSingleSend" class="btn btn-primary" onclick="sendSingleMessage()" style="width:100%; padding:16px;">
+          <svg style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          Send to Entered Recipient
         </button>
 
-        <!-- LIVE LOG FEED -->
-        <div class="console-log" id="clog">
-          <div class="console-bar">
-            <div class="dot-red"></div>
-            <div class="dot-yellow"></div>
-            <div class="dot-green"></div>
-            <span class="console-label">LIVE EXECUTION TERMINAL</span>
+        <!-- Real Meta API Response / Error Box -->
+        <div id="singleStatusBox" style="display:none; margin-top:16px; padding:14px; border-radius:14px; font-size:13px; line-height:1.5;"></div>
+      </div>
+
+      <!-- ─── OPTION 2: BULK EXCEL MESSAGING VIEW ─── -->
+      <div id="bulkExcelView" style="display:none;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px; margin-bottom:24px;">
+          
+          <!-- Bulk Step A: Upload Excel File -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-num">01</div>
+              <div>
+                <div class="card-title">Upload Excel Contacts</div>
+                <div class="card-subtitle">Recipients spreadsheet (.xlsx / .xls)</div>
+              </div>
+            </div>
+
+            <label class="lbl">Contact List Spreadsheet</label>
+            <div class="upload-zone" id="exZ">
+              <input type="file" id="exI" accept=".xlsx,.xls" onchange="upEx(event)">
+              <div class="upload-icon">
+                <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+              </div>
+              <div class="upload-title">Drop Excel File Here</div>
+              <div class="upload-sub">Validates names, phone numbers, and duplicates</div>
+            </div>
+
+            <div class="file-badge" id="exB" style="display:none; justify-content:space-between; align-items:center; margin-top:12px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <span id="exN">No file selected</span>
+              </div>
+              <button type="button" onclick="rmEx(event)" style="background:transparent; border:none; cursor:pointer; color:#f43f5e; padding:2px 4px;">✕</button>
+            </div>
+
+            <!-- Contacts Validation Preview Box -->
+            <div id="recPrevBox" style="display:none; margin-top:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span id="recSummaryText" style="font-size:12px; font-weight:700; color:var(--grn);">0 Contacts Loaded</span>
+                <span id="recDedupText" style="font-size:11px; color:var(--txt-muted);">Validation clean</span>
+              </div>
+              <div id="recListPreview" style="font-size:11.5px; font-family:var(--font-mono); color:var(--txt-secondary); max-height:100px; overflow-y:auto; line-height:1.6;"></div>
+            </div>
           </div>
-          <div class="console-body" id="cfeed"></div>
+
+          <!-- Bulk Step B: Message & Attachments -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-num">02</div>
+              <div>
+                <div class="card-title">Compose & Attach Media</div>
+                <div class="card-subtitle">Personalize message & attach Image or PDF</div>
+              </div>
+            </div>
+
+            <label class="lbl" for="msgI">Message Template (Uses <code style="color:#c084fc;">{{name}}</code>)</label>
+            <textarea id="msgI" class="inp" placeholder="Hello {{name}},&#10;&#10;Thank you for reaching out to us! Here is your requested update.&#10;&#10;Best regards,&#10;Insurance Services" oninput="schedSave()"></textarea>
+            
+            <div id="savedI" style="font-size:11px; color:var(--grn); margin:6px 0 12px; display:none;">
+              ✓ Template text auto-saved
+            </div>
+
+            <!-- Bulk Attachment Options -->
+            <label class="lbl" style="margin-top:10px;">Campaign Attachment</label>
+            <div class="attachment-btn-group">
+              <label class="btn-attach" for="bulkImgFile">
+                <svg style="width:18px;height:18px;fill:var(--pur);" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                <span>Add Image</span>
+              </label>
+              <label class="btn-attach" for="bulkPdfFile">
+                <svg style="width:18px;height:18px;fill:#ef4444;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                <span>Add PDF</span>
+              </label>
+            </div>
+
+            <input type="file" id="bulkImgFile" accept="image/jpeg,image/png,image/jpg" style="display:none;" onchange="handleBulkFileSelect(event, 'image')">
+            <input type="file" id="bulkPdfFile" accept="application/pdf" style="display:none;" onchange="handleBulkFileSelect(event, 'document')">
+
+            <div id="bulkAttachCard" class="attached-preview-card">
+              <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                <img id="bulkAttachImgThumb" class="img-thumb-preview" style="display:none;" alt="Thumbnail">
+                <div id="bulkAttachPdfBadge" class="pdf-badge-tag" style="display:none;">PDF</div>
+                <div style="min-width:0;">
+                  <div id="bulkAttachFilename" style="font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">filename.jpg</div>
+                  <div id="bulkAttachFilesize" style="font-size:11px; color:var(--txt-muted);">150 KB</div>
+                </div>
+              </div>
+              <button type="button" class="btn-remove-attachment" onclick="removeBulkAttachment()">
+                ✕ Remove Attachment
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bulk Launch Engine Card -->
+        <div class="launch-card" id="launch-section">
+          <div class="card-header" style="margin-bottom:16px;">
+            <div class="card-num">03</div>
+            <div>
+              <div class="card-title">Launch Campaign Engine</div>
+              <div class="card-subtitle">Official Meta Cloud API controlled dispatch with rate-limiting & batch pauses</div>
+            </div>
+          </div>
+
+          <div class="stats-summary-grid">
+            <div class="stat-box">
+              <div class="stat-label">Contacts Sheet</div>
+              <div class="stat-val" id="stE" style="color:var(--txt-muted);">Not uploaded</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Media Attachment</div>
+              <div class="stat-val" id="stI" style="color:var(--txt-muted);">None (Text only)</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">WhatsApp Status</div>
+              <div class="stat-val log-err" id="stC">Not configured</div>
+            </div>
+          </div>
+
+          <button class="btn-launch" id="btnL" onclick="doLaunch()" disabled>
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            Launch Bulk Campaign Now
+          </button>
+
+          <!-- LIVE LOG FEED -->
+          <div class="console-log" id="clog">
+            <div class="console-bar">
+              <div class="dot-red"></div>
+              <div class="dot-yellow"></div>
+              <div class="dot-green"></div>
+              <span class="console-label">LIVE EXECUTION TERMINAL</span>
+            </div>
+            <div class="console-body" id="cfeed"></div>
+          </div>
         </div>
       </div>
 
+    </section>
+
+    <!-- ======================================================================== -->
+    <!-- SETTINGS & META CLOUD API CONFIGURATION -->
+    <!-- ======================================================================== -->
+    <section id="settings-section" style="margin-top:50px;">
+      <div class="section-header">
+        <div>
+          <div class="section-tag">// Configuration</div>
+          <h2 class="section-title">Meta Cloud API Credentials</h2>
+          <p class="section-desc">Connect your registered WhatsApp Business Phone ID and Permanent System User Token.</p>
+        </div>
+      </div>
+
+      <div class="card" style="max-width:760px; margin:0 auto;">
+        <div id="metaConfigPanel">
+          <div style="font-size:12.5px; color:var(--txt-secondary); margin-bottom:14px; line-height:1.5;">
+            Credentials are securely verified directly against Meta's Graph API and stored in your persistent backend database.
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label class="lbl" for="metaPhoneId">Phone Number ID</label>
+            <input type="text" id="metaPhoneId" class="inp" placeholder="e.g. 1337215722817983">
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label class="lbl" for="metaToken">Permanent Access Token (System User Token)</label>
+            <input type="password" id="metaToken" class="inp" placeholder="EAAG...">
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+            <div>
+              <label class="lbl" for="metaWabaId">WABA ID</label>
+              <input type="text" id="metaWabaId" class="inp" placeholder="e.g. 1704639724550656">
+            </div>
+            <div>
+              <label class="lbl" for="metaTplName">Template Name</label>
+              <input type="text" id="metaTplName" class="inp" placeholder="campaign_update">
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary" id="btnSaveMeta" onclick="saveMetaConfig()" style="width:100%; padding:14px;">
+            Authorize & Verify Meta API
+          </button>
+
+          <!-- Error Details Display -->
+          <div id="metaErrorBox" style="display:none; margin-top:14px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:12px; padding:14px; font-size:12.5px; line-height:1.5;">
+            <div style="font-weight:800; color:#f43f5e; margin-bottom:4px;" id="metaErrorCodeTitle">Meta API Error</div>
+            <div style="color:#ffffff;" id="metaErrorMsgText">Error validating access token.</div>
+            <div style="color:var(--txt-secondary); margin-top:6px;" id="metaErrorAdviceText">Please generate a Permanent System User Token in Meta Business Suite.</div>
+          </div>
+        </div>
+
+        <div id="connInfo" style="display:none; background:rgba(16,185,129,0.06); border:1.5px solid rgba(16,185,129,0.35); border-radius:18px; padding:18px 20px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981; box-shadow:0 0 10px #10b981;"></span>
+              <span style="font-size:11.5px; font-weight:800; text-transform:uppercase; color:var(--grn); letter-spacing:1px;">Active WhatsApp Account</span>
+            </div>
+            <span id="qualityBadge" style="font-size:11px; background:rgba(16,185,129,0.2); color:var(--grn); padding:3px 10px; border-radius:100px; font-weight:800;">Quality: HIGH</span>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <div id="activePhoneDisplay" style="font-size:22px; font-weight:900; color:#fff; font-family:var(--font-mono); letter-spacing:0.5px;">+91 99665 59211</div>
+            <div id="verifiedBusinessName" style="font-size:13px; color:var(--txt-secondary); margin-top:3px; font-weight:600;">Insurance Company</div>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-danger" onclick="doLogout()" style="flex:1;">
+              🔴 Logout Web Session
+            </button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- FOOTER -->
-    <footer style="margin-top:50px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:12.5px; color:var(--txt-muted);">
+    <footer style="margin-top:60px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:12.5px; color:var(--txt-muted);">
       <div>WhatsApp Campaign Engine · Official Meta WhatsApp Cloud API</div>
       <div>High-Performance Persistent Messaging Platform</div>
     </footer>
@@ -1343,80 +1340,7 @@
   <div class="toast" id="toast"></div>
 
   <!-- ============================================================================ -->
-  <!-- MODAL 1: SEND SINGLE MESSAGE (Requirement 1 & 6) -->
-  <!-- ============================================================================ -->
-  <div id="singleMsgModal" class="modal-overlay">
-    <div class="modal-container" style="max-width: 620px;">
-      <div style="padding:20px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:grid; place-items:center;">
-            <svg style="width:16px;height:16px;fill:#fff;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-          </div>
-          <div>
-            <h3 style="font-size:17px; font-weight:800; color:#fff;">Send Direct WhatsApp Message</h3>
-            <p style="font-size:12px; color:var(--txt-muted);">1-to-1 dispatch with optional PDF/image attachment</p>
-          </div>
-        </div>
-        <button onclick="closeSingleMsgModal()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
-      </div>
-
-      <div style="padding:22px 24px; overflow-y:auto; flex:1;">
-        <!-- Phone & Country Code Row -->
-        <div style="margin-bottom:14px;">
-          <label class="lbl">Recipient Phone Number (With Country Code)</label>
-          <div style="display:flex; gap:10px;">
-            <select id="singleCountryCode" class="inp" style="width:140px; flex-shrink:0;">
-              <option value="91" selected>🇮🇳 India (+91)</option>
-              <option value="1">🇺🇸 US/CA (+1)</option>
-              <option value="44">🇬🇧 UK (+44)</option>
-              <option value="971">🇦🇪 UAE (+971)</option>
-              <option value="966">🇸🇦 Saudi (+966)</option>
-              <option value="61">🇦🇺 Australia (+61)</option>
-              <option value="65">🇸🇬 Singapore (+65)</option>
-              <option value="49">🇩🇪 Germany (+49)</option>
-              <option value="33">🇫🇷 France (+33)</option>
-              <option value="custom">Other Country</option>
-            </select>
-            <input type="text" id="singlePhoneInp" class="inp" placeholder="e.g. 9966559211 or +919966559211">
-          </div>
-        </div>
-
-        <div style="margin-bottom:14px;">
-          <label class="lbl">Recipient Name (Optional)</label>
-          <input type="text" id="singleNameInp" class="inp" placeholder="e.g. Rahul Sharma">
-        </div>
-
-        <div style="margin-bottom:14px;">
-          <label class="lbl">Message Text / Caption</label>
-          <textarea id="singleTextInp" class="inp" style="min-height:90px;" placeholder="Type your WhatsApp message here..."></textarea>
-        </div>
-
-        <!-- Optional Attachment File -->
-        <div style="margin-bottom:14px;">
-          <label class="lbl">Attach Media (Optional - JPG, PNG, or PDF)</label>
-          <input type="file" id="singleMediaInp" class="inp" accept="image/jpeg,image/png,application/pdf" style="padding:8px 12px;">
-        </div>
-
-        <div style="margin-bottom:16px;">
-          <label class="lbl">Approved Template Name (Required if outside 24-hr window)</label>
-          <input type="text" id="singleTplInp" class="inp" placeholder="Leave empty for direct message, or e.g. campaign_update">
-          <div style="font-size:11px; color:var(--txt-muted); margin-top:4px;">
-            ℹ️ Meta WhatsApp policy: Messages initiated to contacts outside the 24-hr window require an approved template.
-          </div>
-        </div>
-
-        <button type="button" id="btnSendSingle" onclick="dispatchSingleMessage()" class="btn btn-primary" style="width:100%; padding:14px;">
-          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-          Send WhatsApp Message Now
-        </button>
-
-        <div id="singleSendResult" style="display:none; margin-top:14px; padding:12px; border-radius:10px; font-size:12.5px;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================================================ -->
-  <!-- MODAL 2: LIVE 2-WAY INBOX (Requirement 3 & 4) -->
+  <!-- MODAL: LIVE 2-WAY INBOX (Requirement 3 & 4) -->
   <!-- ============================================================================ -->
   <div id="inboxModal" class="modal-overlay">
     <div class="modal-container">
@@ -1448,7 +1372,7 @@
   </div>
 
   <!-- ============================================================================ -->
-  <!-- MODAL 3: DELIVERY REPORTS & CSV DOWNLOAD (Requirements 7 & 8) -->
+  <!-- MODAL: DELIVERY REPORTS & CSV DOWNLOAD -->
   <!-- ============================================================================ -->
   <div id="reportsModal" class="modal-overlay">
     <div class="modal-container" style="max-width: 900px;">
@@ -1470,9 +1394,7 @@
         </div>
       </div>
 
-      <div id="reportsBody" style="padding:20px 24px; overflow-y:auto; flex:1;">
-        <!-- Populated via loadDeliveryReports() -->
-      </div>
+      <div id="reportsBody" style="padding:20px 24px; overflow-y:auto; flex:1;"></div>
     </div>
   </div>
 
@@ -1491,24 +1413,21 @@
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       <span>Home</span>
     </a>
-    <a href="javascript:void(0)" onclick="openSingleMsgModal()" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-      <span>Send</span>
+    <a href="javascript:void(0)" onclick="switchSendingMode('single')" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span>Single</span>
+    </a>
+    <a href="javascript:void(0)" onclick="switchSendingMode('bulk')" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      <span>Bulk</span>
     </a>
     <a href="javascript:void(0)" onclick="openInbox()" class="mobile-nav-item active-accent">
-      <div style="position:relative;display:inline-block;">
-        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-        <span id="bottomNavBadge" class="mobile-nav-badge" style="display:none;">0</span>
-      </div>
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
       <span>Inbox</span>
     </a>
     <a href="javascript:void(0)" onclick="openReportsModal()" class="mobile-nav-item">
       <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
       <span>Reports</span>
-    </a>
-    <a href="#engine" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-      <span>Settings</span>
     </a>
   </nav>
 
@@ -1520,6 +1439,12 @@
     let sT = null;
     let activeRecipientsCount = 0;
     let activeSenderPhone = '';
+
+    // Selected attachment files in memory
+    let singleSelectedFile = null;
+    let singleSelectedType = null; // 'image' or 'document'
+    let bulkSelectedFile = null;
+    let bulkSelectedType = null;
 
     const $ = id => document.getElementById(id);
 
@@ -1551,155 +1476,109 @@
       setTimeout(() => e.classList.remove('on'), 3500);
     }
 
-    // Browser Notifications API
-    function requestNotificationPermission() {
-      if ('Notification' in window) {
-        Notification.requestPermission().then(perm => {
-          if (perm === 'granted') toast('Browser notifications enabled! ✓', 'ok_');
-          else toast('Notifications were not granted.', '');
-        });
+    function formatFileSize(bytes) {
+      if (!bytes) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // ─── MODE SWITCHING: SINGLE PERSON vs. BULK EXCEL ───
+    function switchSendingMode(mode) {
+      const singleView = $('singlePersonView');
+      const bulkView = $('bulkExcelView');
+      const btnSingle = $('tabBtnSingle');
+      const btnBulk = $('tabBtnBulk');
+
+      if (mode === 'single') {
+        singleView.style.display = 'block';
+        bulkView.style.display = 'none';
+        btnSingle.classList.add('active');
+        btnBulk.classList.remove('active');
       } else {
-        toast('Browser notifications not supported.', '');
+        singleView.style.display = 'none';
+        bulkView.style.display = 'block';
+        btnBulk.classList.add('active');
+        btnSingle.classList.remove('active');
+        fetchRecipientsPreview();
+      }
+
+      const sendSec = $('send-section');
+      if (sendSec) {
+        sendSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
-    // ─── 1. STATUS & META CONFIGURATION ───
-    async function poll() {
-      try {
-        const r = await apiFetch('/api/status');
-        const d = await r.json();
+    // ─── ATTACHMENT HANDLING: SINGLE PERSON ───
+    function handleSingleFileSelect(event, fileType) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-        const badge = $('cbadge');
-        const dot_ = $('dot');
-        const lbl = $('clbl');
-        const sc = $('stC');
-        const bl = $('btnL');
-        const tbDisc = $('topbarDisconnectBtn');
-        const errBox = $('metaErrorBox');
-
-        if (d.connected) {
-          ok = true;
-          activeSenderPhone = d.phone;
-          dot_.className = 'dot on';
-          lbl.textContent = 'Meta API · +' + d.phone;
-          badge.className = 'conn-badge live';
-          sc.textContent = 'Connected ✓ (+' + d.phone + ')';
-          sc.className = 'stat-val log-ok';
-          if (activeRecipientsCount > 0) bl.disabled = false;
-
-          $('connInfo').style.display = 'block';
-          $('metaConfigPanel').style.display = 'none';
-          $('activePhoneDisplay').textContent = '+' + d.phone;
-          if ($('verifiedBusinessName')) $('verifiedBusinessName').textContent = d.verifiedName || 'WhatsApp Business Profile';
-          if ($('qualityBadge')) $('qualityBadge').textContent = 'Quality: ' + (d.qualityRating || 'GREEN');
-          if (tbDisc) tbDisc.style.display = 'inline-flex';
-          if (errBox) errBox.style.display = 'none';
-        } else {
-          ok = false;
-          activeSenderPhone = '';
-          dot_.className = 'dot';
-          lbl.textContent = d.configured ? 'Meta API · Error' : 'Meta API · Setup Needed';
-          badge.className = 'conn-badge';
-          
-          // Clear, unmasked error diagnostic
-          if (d.configured && d.error) {
-            sc.textContent = `Error ${d.code || ''}: ${d.error}`;
-            sc.className = 'stat-val log-err';
-            if (errBox) {
-              errBox.style.display = 'block';
-              $('metaErrorCodeTitle').textContent = `Meta API Error (${d.code || 'Diagnostic'}):`;
-              $('metaErrorMsgText').textContent = d.error;
-              $('metaErrorAdviceText').textContent = d.advice || 'Please verify token and Phone Number ID in Meta Developers Console.';
-            }
-          } else {
-            sc.textContent = 'Not configured';
-            sc.className = 'stat-val log-err';
-            if (errBox) errBox.style.display = 'none';
-          }
-
-          bl.disabled = true;
-          $('connInfo').style.display = 'none';
-          $('metaConfigPanel').style.display = 'block';
-          if (tbDisc) tbDisc.style.display = 'none';
-        }
-      } catch (e) {
-        console.warn('Status poll exception:', e);
-      }
-    }
-
-    async function saveMetaConfig() {
-      const phoneId = $('metaPhoneId').value.trim();
-      const token = $('metaToken').value.trim();
-      const wabaId = $('metaWabaId').value.trim();
-      const tplName = $('metaTplName').value.trim();
-
-      if (!phoneId || !token) {
-        toast('Phone Number ID and Access Token are required!', 'err_');
+      // Validate size (max 25MB)
+      if (file.size > 25 * 1024 * 1024) {
+        toast('File too large! Max file size is 25MB.', 'err_');
         return;
       }
 
-      const b = $('btnSaveMeta');
-      b.disabled = true;
-      b.textContent = 'Verifying with Meta API...';
+      singleSelectedFile = file;
+      singleSelectedType = fileType;
 
-      try {
-        const r = await apiFetch('/api/config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phoneNumberId: phoneId, token, wabaId, templateName: tplName })
-        });
-        const d = await r.json();
-        if (d.success) {
-          toast(d.message, d.verified ? 'ok_' : 'err_');
-          await poll();
-        } else {
-          toast(d.error || 'Failed to save configuration', 'err_');
-        }
-      } catch (e) {
-        toast('Connection error: ' + e.message, 'err_');
-      } finally {
-        b.disabled = false;
-        b.textContent = 'Authorize & Save Credentials';
+      const card = $('singleAttachCard');
+      const thumb = $('singleAttachImgThumb');
+      const pdfBadge = $('singleAttachPdfBadge');
+      const nameEl = $('singleAttachFilename');
+      const sizeEl = $('singleAttachFilesize');
+
+      card.style.display = 'flex';
+      nameEl.textContent = file.name;
+      sizeEl.textContent = formatFileSize(file.size);
+
+      if (fileType === 'document' || file.name.toLowerCase().endsWith('.pdf')) {
+        singleSelectedType = 'document';
+        thumb.style.display = 'none';
+        pdfBadge.style.display = 'block';
+      } else {
+        singleSelectedType = 'image';
+        pdfBadge.style.display = 'none';
+        thumb.style.display = 'block';
+        thumb.src = URL.createObjectURL(file);
       }
+
+      toast(`Attached ${singleSelectedType.toUpperCase()}: ${file.name}`, 'ok_');
     }
 
-    async function doLogout() {
-      if (!confirm('Log out of this web application? Your WhatsApp Business connection will remain securely connected for background messaging.')) return;
-      try {
-        await apiFetch('/api/logout', { method: 'POST' });
-        localStorage.removeItem('wa_session_id');
-        toast('Logged out of web application. WhatsApp connection preserved.', 'ok_');
-        poll();
-      } catch (err) {
-        toast('Logout error: ' + err.message, 'err_');
+    function removeSingleAttachment() {
+      singleSelectedFile = null;
+      singleSelectedType = null;
+      $('singleAttachCard').style.display = 'none';
+      $('singleImgFile').value = '';
+      $('singlePdfFile').value = '';
+      toast('Attachment removed', '');
+    }
+
+    // ─── DISPATCH SINGLE PERSON MESSAGE ───
+    async function sendSingleMessage() {
+      if (!ok) {
+        toast('Please configure your Meta WhatsApp credentials in Settings first!', 'err_');
+        $('settings-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
       }
-    }
 
-    // ─── 2. SINGLE DIRECT MESSAGING ───
-    function openSingleMsgModal() {
-      $('singleMsgModal').style.display = 'flex';
-      $('singleSendResult').style.display = 'none';
-    }
-
-    function closeSingleMsgModal() {
-      $('singleMsgModal').style.display = 'none';
-    }
-
-    async function dispatchSingleMessage() {
       const countryCode = $('singleCountryCode').value;
       const phoneRaw = $('singlePhoneInp').value.trim();
       const name = $('singleNameInp').value.trim();
-      const text = $('singleTextInp').value.trim();
+      const text = $('singleMsgInp').value.trim();
       const tpl = $('singleTplInp').value.trim();
-      const mediaInput = $('singleMediaInp');
 
       if (!phoneRaw) {
-        toast('Please enter a recipient phone number', 'err_');
+        toast('Please enter a WhatsApp phone number!', 'err_');
+        $('singlePhoneInp').focus();
         return;
       }
 
-      const btn = $('btnSendSingle');
-      const resBox = $('singleSendResult');
+      const btn = $('btnSingleSend');
+      const resBox = $('singleStatusBox');
       btn.disabled = true;
       btn.textContent = 'Sending message...';
       resBox.style.display = 'none';
@@ -1710,8 +1589,8 @@
       fd.append('recipientName', name);
       fd.append('text', text);
       if (tpl) fd.append('templateName', tpl);
-      if (mediaInput.files && mediaInput.files[0]) {
-        fd.append('mediaFile', mediaInput.files[0]);
+      if (singleSelectedFile) {
+        fd.append('mediaFile', singleSelectedFile);
       }
 
       try {
@@ -1728,8 +1607,8 @@
           resBox.style.color = '#10b981';
           resBox.innerHTML = `✓ <b>Message Sent Successfully!</b><br>Recipient: +${d.recipient}<br>Meta Message ID: <code>${d.messageId}</code>`;
           toast('WhatsApp message sent! ✓', 'ok_');
-          $('singleTextInp').value = '';
-          mediaInput.value = '';
+          $('singleMsgInp').value = '';
+          removeSingleAttachment();
           fetchInbox();
         } else {
           resBox.style.background = 'rgba(244,63,94,0.12)';
@@ -1745,11 +1624,73 @@
         resBox.textContent = 'Network error: ' + err.message;
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Send WhatsApp Message Now';
+        btn.textContent = 'Send to Entered Recipient';
       }
     }
 
-    // ─── 3. ASSETS (EXCEL & MEDIA UPLOADS) ───
+    // ─── ATTACHMENT HANDLING: BULK EXCEL ───
+    async function handleBulkFileSelect(event, fileType) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 25 * 1024 * 1024) {
+        toast('File too large! Max file size is 25MB.', 'err_');
+        return;
+      }
+
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        toast('Uploading attachment to session...', '');
+        const r = await apiFetch('/api/upload/media', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.success) {
+          bulkSelectedFile = file;
+          bulkSelectedType = d.type;
+
+          const card = $('bulkAttachCard');
+          const thumb = $('bulkAttachImgThumb');
+          const pdfBadge = $('bulkAttachPdfBadge');
+          const nameEl = $('bulkAttachFilename');
+          const sizeEl = $('bulkAttachFilesize');
+
+          card.style.display = 'flex';
+          nameEl.textContent = file.name;
+          sizeEl.textContent = formatFileSize(file.size);
+
+          if (d.type === 'document' || file.name.toLowerCase().endsWith('.pdf')) {
+            thumb.style.display = 'none';
+            pdfBadge.style.display = 'block';
+          } else {
+            pdfBadge.style.display = 'none';
+            thumb.style.display = 'block';
+            thumb.src = URL.createObjectURL(file);
+          }
+
+          $('stI').textContent = file.name;
+          $('stI').style.color = 'var(--grn)';
+          toast(`Bulk media attached: ${file.name}`, 'ok_');
+        }
+      } catch {
+        toast('Failed to upload attachment', 'err_');
+      }
+    }
+
+    async function removeBulkAttachment() {
+      try {
+        await apiFetch('/api/delete-media', { method: 'DELETE' });
+        bulkSelectedFile = null;
+        bulkSelectedType = null;
+        $('bulkAttachCard').style.display = 'none';
+        $('bulkImgFile').value = '';
+        $('bulkPdfFile').value = '';
+        $('stI').textContent = 'None (Text only)';
+        $('stI').style.color = 'var(--txt-muted)';
+        toast('Bulk attachment removed', '');
+      } catch {}
+    }
+
+    // ─── EXCEL HANDLING & VALIDATION ───
     async function fetchRecipientsPreview() {
       try {
         const r = await apiFetch('/api/recipients');
@@ -1788,6 +1729,7 @@
           pBox.style.display = 'none';
           stE.textContent = 'Not uploaded';
           stE.style.color = 'var(--txt-muted)';
+          $('btnL').disabled = true;
         }
       } catch (err) {}
     }
@@ -1826,98 +1768,17 @@
       } catch { toast('Error removing file', 'err_'); }
     }
 
-    // Media upload supporting JPG, PNG, and PDF
-    async function upMedia(e) {
-      const f = e.target.files[0]; if (!f) return;
-      const fd = new FormData(); fd.append('file', f);
-      try {
-        toast('Uploading media attachment...', '');
-        const r = await apiFetch('/api/upload/media', { method: 'POST', body: fd });
-        const d = await r.json();
-        if (d.success) {
-          $('imN').textContent = f.name;
-          $('imB').style.display = 'flex';
-          $('stI').textContent = f.name;
-          $('stI').style.color = 'var(--grn)';
-          $('imZ').style.borderColor = 'var(--grn)';
-
-          if (d.type === 'document' || f.name.toLowerCase().endsWith('.pdf')) {
-            $('imDef').style.display = 'none';
-            $('ipw').style.display = 'none';
-            $('pdfPrevBox').style.display = 'flex';
-            $('pdfFilenameDisplay').textContent = f.name;
-          } else {
-            $('imDef').style.display = 'none';
-            $('pdfPrevBox').style.display = 'none';
-            $('ipv').src = URL.createObjectURL(f);
-            $('ipw').style.display = 'block';
-          }
-          toast('Media attached: ' + f.name, 'ok_');
-        }
-      } catch { toast('Upload failed', 'err_'); }
-    }
-
-    async function rmMedia(e) {
-      if (e) e.stopPropagation();
-      try {
-        await apiFetch('/api/delete-media', { method: 'DELETE' });
-        $('ipv').src = '';
-        $('ipw').style.display = 'none';
-        $('pdfPrevBox').style.display = 'none';
-        $('imDef').style.display = 'flex';
-        $('imB').style.display = 'none';
-        $('imI').value = '';
-        $('imZ').style.borderColor = '';
-        $('stI').textContent = 'None (Text only)';
-        $('stI').style.color = 'var(--txt-muted)';
-        toast('Media removed', 'ok_');
-      } catch { toast('Error removing media', 'err_'); }
-    }
-
     function schedSave() { clearTimeout(sT); sT = setTimeout(savMsg, 900); }
     async function savMsg() {
       const m = $('msgI').value;
       try {
         await apiFetch('/api/save-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: m }) });
-        const i = $('savedI'); i.style.display = 'flex'; setTimeout(() => i.style.display = 'none', 2500);
+        const i = $('savedI'); i.style.display = 'block'; setTimeout(() => i.style.display = 'none', 2500);
       } catch {}
     }
     async function loadMsg() { try { const r = await apiFetch('/api/get-message'); const d = await r.json(); if (d.message) $('msgI').value = d.message; } catch {} }
 
-    async function checkFilesStatus() {
-      try {
-        const r = await apiFetch('/api/files-status');
-        const d = await r.json();
-        if (d.excelExists) {
-          $('exN').textContent = 'recipients.xlsx';
-          $('exB').style.display = 'flex';
-          $('exZ').style.borderColor = 'var(--grn)';
-          await fetchRecipientsPreview();
-        }
-        if (d.mediaExists) {
-          $('stI').textContent = d.mediaFilename || 'campaign_media';
-          $('stI').style.color = 'var(--grn)';
-          $('imN').textContent = d.mediaFilename || 'campaign_media';
-          $('imB').style.display = 'flex';
-          if (d.mediaType === 'document') {
-            $('imDef').style.display = 'none';
-            $('ipw').style.display = 'none';
-            $('pdfPrevBox').style.display = 'flex';
-            $('pdfFilenameDisplay').textContent = d.mediaFilename;
-          } else {
-            const imR = await apiFetch('/api/preview-image');
-            const imD = await imR.json();
-            if (imD.image) {
-              $('ipv').src = imD.image;
-              $('imDef').style.display = 'none';
-              $('ipw').style.display = 'block';
-            }
-          }
-        }
-      } catch {}
-    }
-
-    // ─── 4. BULK LAUNCH WITH CONTROLLED RATE-LIMITING ───
+    // ─── BULK CAMPAIGN DISPATCH ───
     function doLaunch() {
       if (!ok) { toast('Please configure and authorize official Meta Cloud API first!', 'err_'); return; }
       if (activeRecipientsCount <= 0) {
@@ -1976,37 +1837,133 @@
       });
     }
 
-    // ─── 5. TWO-WAY INBOX & PERSISTENT CHAT HISTORY ───
-    let knownUnreadCount = 0;
+    // ─── STATUS & CONFIG ───
+    async function poll() {
+      try {
+        const r = await apiFetch('/api/status');
+        const d = await r.json();
 
+        const badge = $('cbadge');
+        const dot_ = $('dot');
+        const lbl = $('clbl');
+        const sc = $('stC');
+        const bl = $('btnL');
+        const tbDisc = $('topbarDisconnectBtn');
+        const errBox = $('metaErrorBox');
+
+        if (d.connected) {
+          ok = true;
+          activeSenderPhone = d.phone;
+          dot_.className = 'dot on';
+          lbl.textContent = 'Meta API · +' + d.phone;
+          badge.className = 'conn-badge live';
+          sc.textContent = 'Connected ✓ (+' + d.phone + ')';
+          sc.className = 'stat-val log-ok';
+          if (activeRecipientsCount > 0) bl.disabled = false;
+
+          $('connInfo').style.display = 'block';
+          $('metaConfigPanel').style.display = 'none';
+          $('activePhoneDisplay').textContent = '+' + d.phone;
+          if ($('verifiedBusinessName')) $('verifiedBusinessName').textContent = d.verifiedName || 'WhatsApp Business Profile';
+          if ($('qualityBadge')) $('qualityBadge').textContent = 'Quality: ' + (d.qualityRating || 'GREEN');
+          if (tbDisc) tbDisc.style.display = 'inline-flex';
+          if (errBox) errBox.style.display = 'none';
+        } else {
+          ok = false;
+          activeSenderPhone = '';
+          dot_.className = 'dot';
+          lbl.textContent = d.configured ? 'Meta API · Error' : 'Meta API · Setup Needed';
+          badge.className = 'conn-badge';
+          
+          if (d.configured && d.error) {
+            sc.textContent = `Error ${d.code || ''}: ${d.error}`;
+            sc.className = 'stat-val log-err';
+            if (errBox) {
+              errBox.style.display = 'block';
+              $('metaErrorCodeTitle').textContent = `Meta API Error (${d.code || 'Diagnostic'}):`;
+              $('metaErrorMsgText').textContent = d.error;
+              $('metaErrorAdviceText').textContent = d.advice || 'Please verify token and Phone Number ID in Meta Developers Console.';
+            }
+          } else {
+            sc.textContent = 'Not configured';
+            sc.className = 'stat-val log-err';
+            if (errBox) errBox.style.display = 'none';
+          }
+
+          bl.disabled = true;
+          $('connInfo').style.display = 'none';
+          $('metaConfigPanel').style.display = 'block';
+          if (tbDisc) tbDisc.style.display = 'none';
+        }
+      } catch (e) {}
+    }
+
+    async function saveMetaConfig() {
+      const phoneId = $('metaPhoneId').value.trim();
+      const token = $('metaToken').value.trim();
+      const wabaId = $('metaWabaId').value.trim();
+      const tplName = $('metaTplName').value.trim();
+
+      if (!phoneId || !token) {
+        toast('Phone Number ID and Access Token are required!', 'err_');
+        return;
+      }
+
+      const b = $('btnSaveMeta');
+      b.disabled = true;
+      b.textContent = 'Verifying with Meta API...';
+
+      try {
+        const r = await apiFetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumberId: phoneId, token, wabaId, templateName: tplName })
+        });
+        const d = await r.json();
+        if (d.success) {
+          toast(d.message, d.verified ? 'ok_' : 'err_');
+          await poll();
+        } else {
+          toast(d.error || 'Failed to save configuration', 'err_');
+        }
+      } catch (e) {
+        toast('Connection error: ' + e.message, 'err_');
+      } finally {
+        b.disabled = false;
+        b.textContent = 'Authorize & Verify Meta API';
+      }
+    }
+
+    async function doLogout() {
+      if (!confirm('Log out of this web application? Your WhatsApp Business connection will remain securely connected for background messaging.')) return;
+      try {
+        await apiFetch('/api/logout', { method: 'POST' });
+        localStorage.removeItem('wa_session_id');
+        toast('Logged out of web application. WhatsApp connection preserved.', 'ok_');
+        poll();
+      } catch (err) {
+        toast('Logout error: ' + err.message, 'err_');
+      }
+    }
+
+    // ─── 2-WAY INBOX ───
     async function fetchInbox() {
       try {
         const res = await apiFetch('/api/inbox');
         const data = await res.json();
         const convs = data.conversations || [];
+        const count = convs.length;
         const totalUnread = convs.reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
-        // Notify user if new incoming unread messages arrived
-        if (totalUnread > knownUnreadCount && knownUnreadCount >= 0) {
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('New WhatsApp Message Received', {
-              body: `You have ${totalUnread} unread customer message(s).`,
-              icon: '/favicon.ico'
-            });
-          }
-        }
-        knownUnreadCount = totalUnread;
-
-        // Update all badges
-        const count = convs.length;
-        ['inboxBadge', 'topbarInboxBadge', 'mobileFabBadge', 'bottomNavBadge', 'heroInboxBadge'].forEach(id => {
+        ['inboxBadge', 'topbarInboxBadge', 'mobileFabBadge'].forEach(id => {
           const el = $(id);
           if (el) {
             el.textContent = totalUnread > 0 ? totalUnread : count;
             el.style.display = count > 0 ? (id.includes('mobile') ? 'flex' : 'inline-block') : 'none';
           }
         });
-        if ($('card01InboxBadge')) $('card01InboxBadge').textContent = count;
+
+        if ($('heroInboxCount')) $('heroInboxCount').textContent = count;
 
         const list = $('inboxList');
         if (!list) return;
@@ -2016,7 +1973,7 @@
             <div style="text-align:center;padding:48px 20px;color:var(--txt-muted);">
               <div style="font-size:36px;margin-bottom:12px;">📬</div>
               <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">No WhatsApp Conversations Yet</div>
-              <div style="font-size:13px;max-width:380px;margin:0 auto;line-height:1.5;">When candidates respond or send a message to your WhatsApp Business number, their chat and replies appear here instantly!</div>
+              <div style="font-size:13px;max-width:380px;margin:0 auto;line-height:1.5;">Incoming replies and messages will appear here in real time!</div>
             </div>`;
           return;
         }
@@ -2027,7 +1984,7 @@
           const time = new Date(c.last_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date(c.last_timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
           const windowBadge = c.is_window_active
             ? `<span style="font-size:10px; background:rgba(16,185,129,0.18); color:var(--grn); padding:2px 7px; border-radius:100px; font-weight:700;">🟢 24h Window Active (${c.window_time_left} left)</span>`
-            : `<span style="font-size:10px; background:rgba(244,63,94,0.18); color:#f43f5e; padding:2px 7px; border-radius:100px; font-weight:700;">🔴 24h Window Expired (Template Required)</span>`;
+            : `<span style="font-size:10px; background:rgba(244,63,94,0.18); color:#f43f5e; padding:2px 7px; border-radius:100px; font-weight:700;">🔴 24h Window Expired</span>`;
 
           return `
             <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:14px;">
@@ -2044,12 +2001,10 @@
                 <div>${windowBadge}</div>
               </div>
 
-              <!-- Message History Container -->
-              <div id="thread_${safePhone}" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:14px; padding:12px 14px; max-height:220px; overflow-y:auto; margin-bottom:12px;">
+              <div id="thread_${safePhone}" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:14px; padding:12px 14px; max-height:200px; overflow-y:auto; margin-bottom:12px;">
                 <div style="font-size:13px; color:#cbd5e1;">${c.last_message || ''}</div>
               </div>
 
-              <!-- Reply Form -->
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <input type="text" id="replyInp_${safePhone}" onkeydown="if(event.key==='Enter') sendInboxReply('${safePhone}')" placeholder="Type WhatsApp reply to +${safePhone}..." style="flex:1; min-width:200px; background:#06050b; border:1px solid rgba(255,255,255,0.18); border-radius:10px; padding:10px 14px; color:#fff; font-size:13px; outline:none;" />
                 <button onclick="sendInboxReply('${safePhone}')" class="btn btn-primary" style="padding:10px 18px; font-size:13px;">
@@ -2057,39 +2012,6 @@
                 </button>
               </div>
             </div>`;
-        }).join('');
-      } catch (e) {
-        console.warn('Inbox fetch error:', e);
-      }
-    }
-
-    async function loadThread(phone) {
-      try {
-        const r = await apiFetch(`/api/inbox/messages/${phone}`);
-        const d = await r.json();
-        const threadBox = $('thread_' + phone);
-        if (!threadBox || !d.messages) return;
-
-        threadBox.innerHTML = d.messages.map(m => {
-          const isOut = m.direction === 'outgoing';
-          const t = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          if (isOut) {
-            return `
-              <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
-                <div style="background:linear-gradient(135deg,rgba(139,92,246,0.35),rgba(6,182,212,0.3)); border:1px solid rgba(139,92,246,0.45); border-radius:12px 12px 2px 12px; padding:8px 12px; max-width:85%; color:#fff;">
-                  <div style="font-size:13px;">${m.body}</div>
-                  <div style="font-size:10px; color:rgba(255,255,255,0.6); text-align:right; margin-top:2px;">You · ${t} ✓✓ (${m.status})</div>
-                </div>
-              </div>`;
-          } else {
-            return `
-              <div style="display:flex; justify-content:flex-start; margin-bottom:6px;">
-                <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px 12px 12px 2px; padding:8px 12px; max-width:85%; color:#e2e8f0;">
-                  <div style="font-size:13px;">${m.body}</div>
-                  <div style="font-size:10px; color:var(--txt-muted); margin-top:2px;">${t}</div>
-                </div>
-              </div>`;
-          }
         }).join('');
       } catch (e) {}
     }
@@ -2119,22 +2041,10 @@
       }
     }
 
-    function openInbox() {
-      $('inboxModal').style.display = 'flex';
-      fetchInbox();
-    }
-    function closeInbox() {
-      $('inboxModal').style.display = 'none';
-    }
-
-    // ─── 6. DELIVERY REPORTS & AUDIT LOGS ───
-    async function openReportsModal() {
-      $('reportsModal').style.display = 'flex';
-      loadDeliveryReports();
-    }
-    function closeReportsModal() {
-      $('reportsModal').style.display = 'none';
-    }
+    function openInbox() { $('inboxModal').style.display = 'flex'; fetchInbox(); }
+    function closeInbox() { $('inboxModal').style.display = 'none'; }
+    function openReportsModal() { $('reportsModal').style.display = 'flex'; loadDeliveryReports(); }
+    function closeReportsModal() { $('reportsModal').style.display = 'none'; }
 
     async function loadDeliveryReports() {
       const b = $('reportsBody');
@@ -2179,8 +2089,16 @@
       }
     }
 
-    // Modal background click & escape listeners
-    ['singleMsgModal', 'inboxModal', 'reportsModal'].forEach(id => {
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') toast('Browser notifications enabled! ✓', 'ok_');
+        });
+      }
+    }
+
+    // Modal click & escape listeners
+    ['inboxModal', 'reportsModal'].forEach(id => {
       const el = $(id);
       if (el) {
         el.addEventListener('click', function(e) {
@@ -2191,14 +2109,46 @@
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
-        ['singleMsgModal', 'inboxModal', 'reportsModal'].forEach(id => {
+        ['inboxModal', 'reportsModal'].forEach(id => {
           const el = $(id);
           if (el) el.style.display = 'none';
         });
       }
     });
 
-    // Initial Load & Heartbeats
+    // Check files & initial state
+    async function checkFilesStatus() {
+      try {
+        const r = await apiFetch('/api/files-status');
+        const d = await r.json();
+        if (d.excelExists) {
+          $('exN').textContent = 'recipients.xlsx';
+          $('exB').style.display = 'flex';
+          $('exZ').style.borderColor = 'var(--grn)';
+          await fetchRecipientsPreview();
+        }
+        if (d.mediaExists) {
+          $('stI').textContent = d.mediaFilename || 'campaign_media';
+          $('stI').style.color = 'var(--grn)';
+          const card = $('bulkAttachCard');
+          const thumb = $('bulkAttachImgThumb');
+          const pdfBadge = $('bulkAttachPdfBadge');
+          card.style.display = 'flex';
+          $('bulkAttachFilename').textContent = d.mediaFilename;
+          if (d.mediaType === 'document') {
+            thumb.style.display = 'none';
+            pdfBadge.style.display = 'block';
+          } else {
+            pdfBadge.style.display = 'none';
+            thumb.style.display = 'block';
+            const imR = await apiFetch('/api/preview-image');
+            const imD = await imR.json();
+            if (imD.image) thumb.src = imD.image;
+          }
+        }
+      } catch {}
+    }
+
     loadMsg();
     checkFilesStatus();
     poll();
