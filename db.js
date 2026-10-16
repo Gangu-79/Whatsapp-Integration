@@ -231,7 +231,8 @@ async function getConversations(targetPhoneId = null) {
 
 async function getMessagesForContact(phone) {
   const clean = String(phone).replace(/\D/g, '');
-  return memoryStore.messages.filter(m => m.phone === clean);
+  const msgs = memoryStore.messages.filter(m => m.phone === clean);
+  return msgs.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
 }
 
 async function saveIncomingMessage({ id, phone, name, text, type = 'text', mediaUrl = null, mediaId = null, targetPhoneId = null, timestamp = null }) {
@@ -267,10 +268,6 @@ async function saveIncomingMessage({ id, phone, name, text, type = 'text', media
     timestamp: msgTime
   });
 
-  if (memoryStore.messages.length > 2000) {
-    memoryStore.messages = memoryStore.messages.slice(-2000);
-  }
-
   scheduleSave();
   return { id: msgId, phone: cleanPhone, text, timestamp: msgTime };
 }
@@ -305,10 +302,6 @@ async function saveOutgoingReply({ id, phone, text, type = 'text', mediaUrl = nu
     target_phone_id: targetPhoneId,
     timestamp: now
   });
-
-  if (memoryStore.messages.length > 2000) {
-    memoryStore.messages = memoryStore.messages.slice(-2000);
-  }
 
   scheduleSave();
   return { id: msgId, metaMessageId, status };

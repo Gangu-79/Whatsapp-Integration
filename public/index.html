@@ -796,6 +796,229 @@
       to { transform: scale(1); opacity: 1; }
     }
 
+    /* ─── WHATSAPP WEB STYLE 2-COLUMN INBOX ─── */
+    .inbox-wrapper {
+      display: flex;
+      height: 100%;
+      flex: 1;
+      overflow: hidden;
+      background: #090714;
+    }
+
+    .inbox-sidebar {
+      width: 340px;
+      flex-shrink: 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      background: rgba(13, 11, 26, 0.95);
+    }
+
+    .inbox-search-box {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .inbox-contacts-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+    }
+
+    .contact-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .contact-item.active {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .contact-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .contact-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .contact-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2px;
+    }
+
+    .contact-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contact-time {
+      font-size: 10.5px;
+      color: var(--txt-muted);
+      flex-shrink: 0;
+      margin-left: 6px;
+    }
+
+    .contact-preview-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--txt-secondary);
+    }
+
+    .contact-last-msg {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+
+    .contact-unread-badge {
+      background: #10b981;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 100px;
+      min-width: 17px;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    /* Right Chat Panel */
+    .inbox-chat-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #090714;
+      position: relative;
+    }
+
+    .chat-header {
+      padding: 12px 18px;
+      background: rgba(13, 11, 26, 0.95);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .chat-messages-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.05), transparent 40%),
+                  radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.05), transparent 40%),
+                  #070611;
+    }
+
+    .msg-row {
+      display: flex;
+      width: 100%;
+    }
+
+    .msg-row.incoming {
+      justify-content: flex-start;
+    }
+
+    .msg-row.outgoing {
+      justify-content: flex-end;
+    }
+
+    .msg-bubble {
+      max-width: 78%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      position: relative;
+      word-break: break-word;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    .msg-bubble.incoming {
+      background: #1c182f;
+      color: #f1f5f9;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-bubble.outgoing {
+      background: linear-gradient(135deg, #7c3aed, #0284c7);
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+      font-size: 10.5px;
+      color: rgba(255, 255, 255, 0.65);
+      margin-top: 4px;
+    }
+
+    .chat-footer-bar {
+      padding: 12px 18px;
+      background: rgba(13, 11, 26, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    @media screen and (max-width: 760px) {
+      .inbox-wrapper {
+        flex-direction: column;
+      }
+      .inbox-sidebar {
+        width: 100% !important;
+        height: 100% !important;
+      }
+      .inbox-chat-panel {
+        width: 100% !important;
+        height: 100% !important;
+      }
+      .hide-mobile-chat {
+        display: none !important;
+      }
+    }
+
     /* Mobile Floating Action Button (FAB) */
     .mobile-fab-inbox {
       display: none;
@@ -1235,10 +1458,9 @@
         <a href="#hero" class="nav-link active">Home</a>
         <a href="javascript:void(0)" onclick="switchSendingMode('single')" class="nav-link">Single Message</a>
         <a href="javascript:void(0)" onclick="switchSendingMode('bulk')" class="nav-link">Bulk Excel</a>
-        <a href="javascript:void(0)" onclick="openInbox()" class="nav-link" id="navInbox">Inbox <span id="inboxBadge" style="display:none;background:#10b981;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:4px;">0</span></a>
+        <a href="javascript:void(0)" onclick="openInbox()" class="nav-link" id="navInbox">Inbox & Chat <span id="inboxBadge" style="display:none;background:#10b981;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:4px;">0</span></a>
         <a href="javascript:void(0)" onclick="openReportsModal()" class="nav-link">Reports</a>
         <a href="#settings-section" class="nav-link">Meta API</a>
-        <a href="#backup-section" class="nav-link">Backup & Recovery</a>
       </nav>
 
       <div class="top-right">
@@ -1250,23 +1472,15 @@
           <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
           <span>Reports</span>
         </button>
-        <button id="topbarInboxBtn" onclick="openInbox()" class="btn-topbar-inbox" title="View Live WhatsApp Inbox & Replies">
+        <button id="topbarInboxBtn" onclick="openInbox()" class="btn-topbar-inbox" style="background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.45); color:#10b981;" title="Open Live WhatsApp Inbox & Chat">
           <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-          <span>Inbox</span>
+          <span>Live Inbox</span>
           <span id="topbarInboxBadge" class="inbox-count-badge" style="display:none;">0</span>
-        </button>
-        <button id="topbarUserBtn" onclick="openAuthModal()" class="btn-topbar-inbox" style="background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.45); color:#c084fc;" title="User Login & Registration">
-          <span id="topbarUserIcon">👤</span>
-          <span id="topbarUserName">Login / Register</span>
         </button>
         <div class="conn-badge" id="cbadge">
           <div class="dot" id="dot"></div>
           <span id="clbl">Checking...</span>
         </div>
-        <button id="topbarDisconnectBtn" onclick="doLogout()" style="display:none; background:rgba(244,63,94,0.18); border:1px solid rgba(244,63,94,0.45); color:#f43f5e; font-size:12px; font-weight:700; padding:7px 15px; border-radius:100px; cursor:pointer; align-items:center; gap:6px; transition:all 0.2s;" title="Logout Web Session">
-          <svg style="width:12px;height:12px;fill:currentColor;" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-          Logout
-        </button>
       </div>
     </header>
   </div>
@@ -1735,56 +1949,6 @@
       </div>
     </section>
 
-    <!-- ======================================================================== -->
-    <!-- MESSAGE STORAGE & DATABASE BACKUP / RECOVERY (Requirement 7) -->
-    <!-- ======================================================================== -->
-    <section id="backup-section" style="margin-top:50px;">
-      <div class="section-header">
-        <div>
-          <div class="section-tag">// Data Safety</div>
-          <h2 class="section-title">Message Storage & Backup</h2>
-          <p class="section-desc">Securely store incoming customer chats, bulk logs, and credentials. Export or restore backups at any time.</p>
-        </div>
-      </div>
-
-      <div class="card" style="max-width:820px; margin:0 auto;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;" class="backup-grid">
-          <!-- Export Card -->
-          <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
-            <div>
-              <div style="width:40px; height:40px; border-radius:12px; background:rgba(139,92,246,0.15); display:grid; place-items:center; margin-bottom:12px;">
-                <span style="font-size:20px;">📥</span>
-              </div>
-              <h3 style="font-size:16px; font-weight:800; color:#fff; margin-bottom:6px;">Export Full Backup</h3>
-              <p style="font-size:12.5px; color:var(--txt-secondary); line-height:1.5; margin-bottom:16px;">
-                Download an instant JSON archive containing your configured WhatsApp credentials, customer contacts, conversation histories, and delivery logs.
-              </p>
-            </div>
-            <a href="/api/backup/export" class="btn btn-primary" style="text-decoration:none; text-align:center; padding:12px; font-weight:700;">
-              Download JSON Backup
-            </a>
-          </div>
-
-          <!-- Restore Card -->
-          <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07); border-radius:18px; padding:20px; display:flex; flex-direction:column; justify-content:space-between;">
-            <div>
-              <div style="width:40px; height:40px; border-radius:12px; background:rgba(6,182,212,0.15); display:grid; place-items:center; margin-bottom:12px;">
-                <span style="font-size:20px;">📤</span>
-              </div>
-              <h3 style="font-size:16px; font-weight:800; color:#fff; margin-bottom:6px;">Restore from Backup</h3>
-              <p style="font-size:12.5px; color:var(--txt-secondary); line-height:1.5; margin-bottom:14px;">
-                Restore previous chats, recipients, and campaign records from an existing backup JSON file with zero data loss.
-              </p>
-              <input type="file" id="backupFileInput" accept=".json,application/json" style="font-size:12px; color:var(--txt-secondary); margin-bottom:14px; width:100%;">
-            </div>
-            <button type="button" class="btn" id="btnRestoreBackup" onclick="restoreBackupFile()" style="background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:var(--grn); font-weight:700; padding:12px;">
-              Restore Database
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- FOOTER -->
     <footer style="margin-top:60px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:12.5px; color:var(--txt-muted);">
       <div>WhatsApp Campaign Engine · Official Meta WhatsApp Cloud API</div>
@@ -1796,33 +1960,84 @@
   <div class="toast" id="toast"></div>
 
   <!-- ============================================================================ -->
-  <!-- MODAL: LIVE 2-WAY INBOX (Requirement 3 & 4) -->
+  <!-- MODAL: LIVE 2-WAY WHATSAPP INBOX & COMPLETE CHAT THREAD (Full History & Replies) -->
   <!-- ============================================================================ -->
   <div id="inboxModal" class="modal-overlay">
-    <div class="modal-container">
-      <div style="padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02);">
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#06b6d4); display:grid; place-items:center;">
-            <svg style="width:18px;height:18px;fill:#fff;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+    <div class="modal-container" style="max-width: 1040px; height: 88vh; padding: 0;">
+      <!-- Modal Header -->
+      <div style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(13,11,26,0.95); flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #06b6d4); display: grid; place-items: center;">
+            <svg style="width: 18px; height: 18px; fill: #fff;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
           </div>
           <div>
-            <h3 style="font-size:17.5px; font-weight:800; color:#fff;">WhatsApp Live Inbox</h3>
-            <p style="font-size:12px; color:var(--txt-muted);">Two-way customer messages, delivery receipts, and fast replies</p>
+            <h3 style="font-size: 16px; font-weight: 800; color: #fff;">WhatsApp Live Communication Hub</h3>
+            <p style="font-size: 11.5px; color: var(--txt-muted);">Persistent chat history · Direct client replies · Zero messages lost</p>
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <button onclick="requestNotificationPermission()" class="btn" style="background:rgba(255,255,255,0.06); color:var(--txt-secondary); font-size:12px; padding:6px 12px; border-radius:100px;">
-            🔔 Enable Notifications
-          </button>
-          <button onclick="fetchInbox()" class="btn" style="background:rgba(255,255,255,0.06); color:var(--txt-secondary); font-size:12px; padding:6px 12px; border-radius:100px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="fetchInbox()" class="btn" style="background: rgba(255,255,255,0.06); color: var(--txt-secondary); font-size: 12px; padding: 6px 14px; border-radius: 100px;">
             ⟳ Refresh
           </button>
-          <button onclick="closeInbox()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+          <button onclick="closeInbox()" style="background: transparent; border: none; color: #fff; font-size: 20px; cursor: pointer; padding: 4px 8px;">✕</button>
         </div>
       </div>
 
-      <div id="inboxList" style="padding:20px 24px; overflow-y:auto; flex:1;">
-        <!-- Populated via fetchInbox() -->
+      <!-- 2-Panel Chat Body -->
+      <div class="inbox-wrapper">
+        <!-- Left Sidebar: Conversations List -->
+        <div class="inbox-sidebar" id="inboxSidebar">
+          <div class="inbox-search-box">
+            <input type="text" id="inboxSearchInput" oninput="filterInboxContacts()" placeholder="🔍 Search customer or number..." style="width: 100%; background: #06050b; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; padding: 9px 12px; color: #fff; font-size: 12.5px; outline: none;">
+          </div>
+          <div class="inbox-contacts-scroll" id="inboxContactsList">
+            <!-- Populated via renderInboxContacts() -->
+          </div>
+        </div>
+
+        <!-- Right Panel: Active Conversation Thread -->
+        <div class="inbox-chat-panel" id="inboxChatPanel">
+          <!-- Empty State (When no contact is selected yet) -->
+          <div id="chatEmptyState" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; color: var(--txt-muted);">
+            <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(16,185,129,0.1); border: 1px dashed rgba(16,185,129,0.3); display: grid; place-items: center; margin-bottom: 16px; font-size: 32px;">
+              💬
+            </div>
+            <h4 style="font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 6px;">Select a Customer Conversation</h4>
+            <p style="font-size: 13px; max-width: 360px; line-height: 1.5;">Click any contact on the left to read their entire message history and send instant replies directly from your browser without needing WhatsApp on mobile.</p>
+          </div>
+
+          <!-- Active Chat View -->
+          <div id="chatActiveView" style="display: none; flex-direction: column; height: 100%; flex: 1;">
+            <!-- Chat Header -->
+            <div class="chat-header">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="btnBackToContacts" onclick="deselectInboxContact()" style="display: none; background: rgba(255,255,255,0.08); border: none; color: #fff; font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 8px; cursor: pointer;">
+                  ← Back
+                </button>
+                <div class="contact-avatar" id="activeChatAvatar" style="width: 36px; height: 36px; font-size: 14px;">C</div>
+                <div>
+                  <div style="font-size: 14.5px; font-weight: 800; color: #fff;" id="activeChatName">Customer Name</div>
+                  <div style="font-size: 11.5px; color: var(--txt-secondary); font-family: var(--font-mono);" id="activeChatPhone">+91 00000 00000</div>
+                </div>
+              </div>
+              <div id="activeChatWindowBadge" style="font-size: 11px;"></div>
+            </div>
+
+            <!-- Messages Stream (Full History - Never deleted) -->
+            <div class="chat-messages-area" id="chatMessagesContainer">
+              <!-- Populated via fetchActiveChatMessages() -->
+            </div>
+
+            <!-- Reply Bar -->
+            <div class="chat-footer-bar">
+              <input type="text" id="chatReplyInput" onkeydown="if(event.key==='Enter') sendActiveChatReply()" placeholder="Type a WhatsApp reply... (Press Enter to send)" style="flex: 1; background: #06050b; border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 11px 16px; color: #fff; font-size: 13.5px; outline: none;">
+              <button id="btnSendActiveReply" onclick="sendActiveChatReply()" class="btn btn-primary" style="padding: 11px 20px; font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+                <span>Send</span>
+                <svg style="width: 14px; height: 14px; fill: currentColor;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1851,95 +2066,6 @@
       </div>
 
       <div id="reportsBody" style="padding:20px 24px; overflow-y:auto; flex:1;"></div>
-    </div>
-  </div>
-
-  <!-- ============================================================================ -->
-  <!-- MODAL: USER REGISTRATION & LOGIN (Requirement 2) -->
-  <!-- ============================================================================ -->
-  <div id="authModal" class="modal-overlay">
-    <div class="modal-container" style="max-width: 480px;">
-      <div style="padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#ec4899); display:grid; place-items:center;">
-            <span style="font-size:18px;">👤</span>
-          </div>
-          <div>
-            <h3 style="font-size:17.5px; font-weight:800; color:#fff;" id="authModalTitle">User Account</h3>
-            <p style="font-size:12px; color:var(--txt-muted);" id="authModalSubtitle">Sign in or register to manage your campaigns</p>
-          </div>
-        </div>
-        <button onclick="closeAuthModal()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
-      </div>
-
-      <div style="padding:22px 24px;">
-        <!-- Logged In State Card -->
-        <div id="authLoggedInView" style="display:none; text-align:center; padding:10px 0;">
-          <div style="width:54px; height:54px; border-radius:50%; background:rgba(16,185,129,0.18); border:2px solid var(--grn); display:grid; place-items:center; margin:0 auto 12px; font-size:24px;">
-            ✓
-          </div>
-          <h4 style="font-size:18px; font-weight:800; color:#fff;" id="profileUsername">admin</h4>
-          <p style="font-size:12.5px; color:var(--txt-secondary); margin-top:2px;" id="profileFullName">Administrator</p>
-          <span style="display:inline-block; font-size:11px; font-weight:800; background:rgba(139,92,246,0.2); color:#c084fc; padding:3px 10px; border-radius:100px; margin:8px 0 16px;">
-            Role: <span id="profileRole">admin</span> · Active Session
-          </span>
-          <div style="font-size:12px; color:var(--txt-muted); margin-bottom:18px; line-height:1.5;">
-            You are securely logged in. Message dispatching and inbox are synchronized with your account.
-          </div>
-          <button type="button" class="btn btn-danger" onclick="doUserLogout()" style="width:100%; padding:12px;">
-            Sign Out
-          </button>
-        </div>
-
-        <!-- Logged Out State View (Tabs: Login / Register) -->
-        <div id="authLoggedOutView">
-          <div style="display:flex; gap:6px; background:rgba(255,255,255,0.04); padding:4px; border-radius:100px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.08);">
-            <button type="button" id="authTabLogin" onclick="switchAuthTab('login')" style="flex:1; padding:8px; border-radius:100px; border:none; background:rgba(255,255,255,0.12); color:#fff; font-weight:700; font-size:13px; cursor:pointer;">
-              Sign In
-            </button>
-            <button type="button" id="authTabRegister" onclick="switchAuthTab('register')" style="flex:1; padding:8px; border-radius:100px; border:none; background:transparent; color:var(--txt-secondary); font-weight:700; font-size:13px; cursor:pointer;">
-              Create Account
-            </button>
-          </div>
-
-          <!-- Login Form -->
-          <form id="loginForm" onsubmit="handleLoginSubmit(event)">
-            <div style="margin-bottom:14px;">
-              <label class="lbl" for="loginUser">Username</label>
-              <input type="text" id="loginUser" class="inp" placeholder="admin" required autocomplete="username">
-            </div>
-            <div style="margin-bottom:18px;">
-              <label class="lbl" for="loginPass">Password</label>
-              <input type="password" id="loginPass" class="inp" placeholder="••••••••" required autocomplete="current-password">
-            </div>
-            <button type="submit" class="btn btn-primary" id="btnLoginSubmit" style="width:100%; padding:13px; font-weight:800;">
-              Sign In
-            </button>
-            <div style="font-size:11.5px; color:var(--txt-muted); text-align:center; margin-top:12px;">
-              Default Administrator: <code>admin</code> / <code>admin123</code>
-            </div>
-          </form>
-
-          <!-- Register Form -->
-          <form id="registerForm" onsubmit="handleRegisterSubmit(event)" style="display:none;">
-            <div style="margin-bottom:12px;">
-              <label class="lbl" for="regName">Full Name</label>
-              <input type="text" id="regName" class="inp" placeholder="e.g. Alex Smith" required autocomplete="name">
-            </div>
-            <div style="margin-bottom:12px;">
-              <label class="lbl" for="regUser">Username</label>
-              <input type="text" id="regUser" class="inp" placeholder="e.g. alex" required autocomplete="username">
-            </div>
-            <div style="margin-bottom:18px;">
-              <label class="lbl" for="regPass">Password</label>
-              <input type="password" id="regPass" class="inp" placeholder="At least 6 characters" required autocomplete="new-password">
-            </div>
-            <button type="submit" class="btn btn-primary" id="btnRegisterSubmit" style="width:100%; padding:13px; font-weight:800;">
-              Create Free Account
-            </button>
-          </form>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -2061,139 +2187,7 @@
       } catch (e) {}
     }
 
-    // ─── USER AUTHENTICATION & SESSIONS (Requirement 2) ───
     let currentUser = null;
-
-    function openAuthModal() {
-      $('authModal').classList.add('on');
-      checkAuthStatus();
-    }
-
-    function closeAuthModal() {
-      $('authModal').classList.remove('on');
-    }
-
-    function switchAuthTab(tab) {
-      const tabLog = $('authTabLogin');
-      const tabReg = $('authTabRegister');
-      const formLog = $('loginForm');
-      const formReg = $('registerForm');
-      if (tab === 'login') {
-        tabLog.style.background = 'rgba(255,255,255,0.12)';
-        tabLog.style.color = '#fff';
-        tabReg.style.background = 'transparent';
-        tabReg.style.color = 'var(--txt-secondary)';
-        formLog.style.display = 'block';
-        formReg.style.display = 'none';
-      } else {
-        tabReg.style.background = 'rgba(255,255,255,0.12)';
-        tabReg.style.color = '#fff';
-        tabLog.style.background = 'transparent';
-        tabLog.style.color = 'var(--txt-secondary)';
-        formReg.style.display = 'block';
-        formLog.style.display = 'none';
-      }
-    }
-
-    async function checkAuthStatus() {
-      try {
-        const r = await apiFetch('/api/auth/me');
-        const d = await r.json();
-        const loggedInView = $('authLoggedInView');
-        const loggedOutView = $('authLoggedOutView');
-        const topUserIcon = $('topbarUserIcon');
-        const topUserName = $('topbarUserName');
-
-        if (d.authenticated && d.user) {
-          currentUser = d.user;
-          loggedInView.style.display = 'block';
-          loggedOutView.style.display = 'none';
-          $('profileUsername').textContent = d.user.username;
-          $('profileFullName').textContent = d.user.name || d.user.username;
-          $('profileRole').textContent = d.user.role || 'user';
-          if (topUserName) topUserName.textContent = d.user.name || d.user.username;
-          if (topUserIcon) topUserIcon.textContent = '👤';
-        } else {
-          currentUser = null;
-          loggedInView.style.display = 'none';
-          loggedOutView.style.display = 'block';
-          if (topUserName) topUserName.textContent = 'Login / Register';
-        }
-      } catch (e) {}
-    }
-
-    async function handleLoginSubmit(event) {
-      event.preventDefault();
-      const username = $('loginUser').value.trim();
-      const password = $('loginPass').value;
-      const btn = $('btnLoginSubmit');
-      btn.disabled = true;
-      btn.textContent = 'Signing in...';
-
-      try {
-        const r = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-        const d = await r.json();
-        if (d.success && d.token) {
-          localStorage.setItem('wa_auth_token', d.token);
-          toast(`Welcome back, ${d.user.name || d.user.username}!`, 'ok_');
-          await checkAuthStatus();
-          setTimeout(() => closeAuthModal(), 500);
-        } else {
-          toast(d.error || 'Login failed', 'err_');
-        }
-      } catch (e) {
-        toast('Login network error: ' + e.message, 'err_');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
-      }
-    }
-
-    async function handleRegisterSubmit(event) {
-      event.preventDefault();
-      const name = $('regName').value.trim();
-      const username = $('regUser').value.trim();
-      const password = $('regPass').value;
-      const btn = $('btnRegisterSubmit');
-      btn.disabled = true;
-      btn.textContent = 'Creating account...';
-
-      try {
-        const r = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, username, password })
-        });
-        const d = await r.json();
-        if (d.success && d.token) {
-          localStorage.setItem('wa_auth_token', d.token);
-          toast(`Account created! Welcome, ${name || username}.`, 'ok_');
-          await checkAuthStatus();
-          setTimeout(() => closeAuthModal(), 500);
-        } else {
-          toast(d.error || 'Registration failed', 'err_');
-        }
-      } catch (e) {
-        toast('Registration error: ' + e.message, 'err_');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Create Free Account';
-      }
-    }
-
-    async function doUserLogout() {
-      try {
-        await apiFetch('/api/auth/logout', { method: 'POST' });
-      } catch (e) {}
-      localStorage.removeItem('wa_auth_token');
-      currentUser = null;
-      toast('Signed out successfully.', 'ok_');
-      checkAuthStatus();
-    }
 
     function toast(m, t = '') {
       const e = $('toast');
@@ -2837,14 +2831,46 @@
       }
     }
 
-    // ─── 2-WAY INBOX ───
+    // ─── 2-WAY WHATSAPP WEB STYLE INBOX & LIVE CHAT (Full History & Direct Replies) ───
+    let activeChatPhone = null;
+    let allConversations = [];
+    let inboxPollingTimer = null;
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatChatTime(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatChatDateLabel(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+
+      if (d.toDateString() === today.toDateString()) return 'Today';
+      if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
     async function fetchInbox() {
       try {
         const res = await apiFetch('/api/inbox');
         const data = await res.json();
-        const convs = data.conversations || [];
-        const count = convs.length;
-        const totalUnread = convs.reduce((acc, c) => acc + (c.unread_count || 0), 0);
+        allConversations = data.conversations || [];
+        const count = allConversations.length;
+        const totalUnread = allConversations.reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
         // Sound Notification on new incoming messages
         if (totalUnread > lastInboxTotal && lastInboxTotal !== 0) {
@@ -2863,84 +2889,282 @@
 
         if ($('heroInboxCount')) $('heroInboxCount').textContent = count;
 
-        const list = $('inboxList');
-        if (!list) return;
+        renderInboxContacts();
 
-        if (convs.length === 0) {
-          list.innerHTML = `
-            <div style="text-align:center;padding:48px 20px;color:var(--txt-muted);">
-              <div style="font-size:36px;margin-bottom:12px;">📬</div>
-              <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">No WhatsApp Conversations Yet</div>
-              <div style="font-size:13px;max-width:380px;margin:0 auto;line-height:1.5;">Incoming replies and messages will appear here in real time!</div>
+        // If a chat conversation is currently open, refresh its message thread
+        if (activeChatPhone && $('inboxModal') && $('inboxModal').style.display !== 'none') {
+          fetchActiveChatMessages(activeChatPhone, true);
+        }
+      } catch (e) {
+        console.error('[Inbox Error]', e);
+      }
+    }
+
+    function renderInboxContacts(listToRender = null) {
+      const listEl = $('inboxContactsList');
+      if (!listEl) return;
+
+      const items = listToRender !== null ? listToRender : allConversations;
+
+      if (items.length === 0) {
+        listEl.innerHTML = `
+          <div style="text-align:center;padding:36px 14px;color:var(--txt-muted);">
+            <div style="font-size:32px;margin-bottom:8px;">📬</div>
+            <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">No Conversations Found</div>
+            <div style="font-size:12px;line-height:1.4;">When customers send messages or replies, they will appear here in real time.</div>
+          </div>`;
+        return;
+      }
+
+      listEl.innerHTML = items.map(c => {
+        const safePhone = c.phone;
+        const name = escapeHtml(c.contact_name || ('+' + safePhone));
+        const initial = (c.contact_name ? c.contact_name.charAt(0) : '+').toUpperCase();
+        const isActive = activeChatPhone === safePhone ? 'active' : '';
+        const timeStr = formatChatTime(c.last_timestamp);
+        const lastMsg = escapeHtml(c.last_message || 'No messages');
+        const unreadBadge = (c.unread_count && c.unread_count > 0)
+          ? `<span class="contact-unread-badge">${c.unread_count}</span>`
+          : '';
+        const windowDot = c.is_window_active
+          ? `<span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block;box-shadow:0 0 6px #10b981;" title="24h Care Window Active"></span>`
+          : `<span style="width:7px;height:7px;border-radius:50%;background:#f43f5e;display:inline-block;" title="Window Expired"></span>`;
+
+        return `
+          <div class="contact-item ${isActive}" onclick="selectInboxContact('${safePhone}')">
+            <div class="contact-avatar">${initial}</div>
+            <div class="contact-info">
+              <div class="contact-header-row">
+                <span class="contact-name">${name}</span>
+                <span class="contact-time">${timeStr}</span>
+              </div>
+              <div class="contact-preview-row">
+                <span class="contact-last-msg">${lastMsg}</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  ${windowDot}
+                  ${unreadBadge}
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function filterInboxContacts() {
+      const q = ($('inboxSearchInput')?.value || '').trim().toLowerCase();
+      if (!q) {
+        renderInboxContacts();
+        return;
+      }
+      const filtered = allConversations.filter(c => {
+        const name = (c.contact_name || '').toLowerCase();
+        const phone = (c.phone || '').toLowerCase();
+        const msg = (c.last_message || '').toLowerCase();
+        return name.includes(q) || phone.includes(q) || msg.includes(q);
+      });
+      renderInboxContacts(filtered);
+    }
+
+    function selectInboxContact(phone) {
+      activeChatPhone = phone;
+      const conv = allConversations.find(c => c.phone === phone);
+      const contactName = conv?.contact_name || ('+' + phone);
+
+      $('chatEmptyState').style.display = 'none';
+      $('chatActiveView').style.display = 'flex';
+      $('activeChatName').textContent = contactName;
+      $('activeChatPhone').textContent = '+' + phone;
+      $('activeChatAvatar').textContent = (contactName ? contactName.charAt(0) : '+').toUpperCase();
+
+      const badgeEl = $('activeChatWindowBadge');
+      if (badgeEl) {
+        if (conv?.is_window_active) {
+          badgeEl.innerHTML = `<span style="background:rgba(16,185,129,0.18); color:var(--grn); padding:3px 9px; border-radius:100px; font-weight:700; font-size:11px;">🟢 24h Window Active (${conv.window_time_left} left)</span>`;
+        } else {
+          badgeEl.innerHTML = `<span style="background:rgba(244,63,94,0.18); color:#f43f5e; padding:3px 9px; border-radius:100px; font-weight:700; font-size:11px;" title="Replies will use approved Meta template">🔴 Window Expired (Auto-Template Reply)</span>`;
+        }
+      }
+
+      // Responsive mobile view switching
+      if (window.innerWidth <= 760) {
+        $('inboxSidebar').classList.add('hide-mobile-chat');
+        $('inboxChatPanel').classList.remove('hide-mobile-chat');
+        $('btnBackToContacts').style.display = 'inline-block';
+      }
+
+      // Highlight selected contact in sidebar
+      renderInboxContacts();
+
+      // Zero unread count locally for UI responsiveness
+      if (conv) conv.unread_count = 0;
+
+      fetchActiveChatMessages(phone, false);
+
+      setTimeout(() => {
+        const inp = $('chatReplyInput');
+        if (inp) inp.focus();
+      }, 100);
+    }
+
+    function deselectInboxContact() {
+      activeChatPhone = null;
+      if (window.innerWidth <= 760) {
+        $('inboxSidebar').classList.remove('hide-mobile-chat');
+        $('inboxChatPanel').classList.add('hide-mobile-chat');
+        $('btnBackToContacts').style.display = 'none';
+      }
+      $('chatActiveView').style.display = 'none';
+      $('chatEmptyState').style.display = 'flex';
+      renderInboxContacts();
+    }
+
+    let isFetchingMessages = false;
+    async function fetchActiveChatMessages(phone, keepScroll = false) {
+      if (!phone || isFetchingMessages) return;
+      isFetchingMessages = true;
+      const box = $('chatMessagesContainer');
+      if (!keepScroll && box) {
+        box.innerHTML = '<div style="color:var(--txt-muted);text-align:center;padding:30px;font-size:13px;">Loading message history...</div>';
+      }
+
+      try {
+        const res = await apiFetch('/api/inbox/messages/' + encodeURIComponent(phone));
+        const data = await res.json();
+        if (data.phone !== activeChatPhone) return; // Discard if user switched contact
+        const msgs = data.messages || [];
+
+        if (msgs.length === 0) {
+          box.innerHTML = `
+            <div style="text-align:center;padding:40px 20px;color:var(--txt-muted);margin:auto;">
+              <div style="font-size:32px;margin-bottom:8px;">💬</div>
+              <div style="font-size:14px;font-weight:700;color:#fff;">No message history yet</div>
+              <div style="font-size:12px;margin-top:4px;">Type a message below to start chatting with this customer!</div>
             </div>`;
           return;
         }
 
-        list.innerHTML = convs.map(c => {
-          const safePhone = c.phone;
-          const contactName = c.contact_name || ('+' + safePhone);
-          const time = new Date(c.last_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date(c.last_timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
-          const windowBadge = c.is_window_active
-            ? `<span style="font-size:10px; background:rgba(16,185,129,0.18); color:var(--grn); padding:2px 7px; border-radius:100px; font-weight:700;">🟢 24h Window Active (${c.window_time_left} left)</span>`
-            : `<span style="font-size:10px; background:rgba(244,63,94,0.18); color:#f43f5e; padding:2px 7px; border-radius:100px; font-weight:700;">🔴 24h Window Expired</span>`;
+        let prevDateLabel = '';
+        let html = '';
 
-          return `
-            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:14px;">
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#8b5cf6,#3b82f6); display:grid; place-items:center; font-weight:800; font-size:13px; color:#fff;">
-                    ${contactName.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div style="font-size:14.5px; font-weight:700; color:#fff;">${contactName}</div>
-                    <div style="font-size:11.5px; color:var(--txt-secondary); font-family:var(--font-mono);">+${safePhone} · <span style="color:var(--txt-muted);">${time}</span></div>
-                  </div>
+        msgs.forEach(m => {
+          const dateLabel = formatChatDateLabel(m.timestamp);
+          if (dateLabel !== prevDateLabel) {
+            html += `<div style="align-self:center; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); padding:3px 12px; border-radius:100px; font-size:11px; color:var(--txt-muted); margin:8px 0;">${dateLabel}</div>`;
+            prevDateLabel = dateLabel;
+          }
+
+          const isOutgoing = m.direction === 'outgoing';
+          const time = formatChatTime(m.timestamp);
+          const safeBody = escapeHtml(m.body || '').replace(/\n/g, '<br>');
+
+          let statusIcon = '';
+          if (isOutgoing) {
+            const st = (m.status || '').toLowerCase();
+            if (st === 'read') {
+              statusIcon = '<span style="color:#22d3ee;font-weight:900;" title="Read">✓✓</span>';
+            } else if (st === 'delivered') {
+              statusIcon = '<span style="color:rgba(255,255,255,0.7);" title="Delivered">✓✓</span>';
+            } else if (st === 'sent') {
+              statusIcon = '<span style="color:rgba(255,255,255,0.6);" title="Sent">✓</span>';
+            } else if (st === 'failed') {
+              const errStr = escapeHtml(m.error_message || 'Delivery failed');
+              statusIcon = `<span style="color:#f43f5e;font-weight:900;" title="${errStr}">✕</span>`;
+            } else {
+              statusIcon = '<span style="color:rgba(255,255,255,0.6);">✓</span>';
+            }
+          }
+
+          let mediaPreview = '';
+          if (m.type === 'image' && m.media_url) {
+            mediaPreview = `<div style="margin-bottom:6px;"><img src="${escapeHtml(m.media_url)}" style="max-width:240px;border-radius:10px;display:block;" /></div>`;
+          }
+
+          html += `
+            <div class="msg-row ${isOutgoing ? 'outgoing' : 'incoming'}">
+              <div class="msg-bubble ${isOutgoing ? 'outgoing' : 'incoming'}">
+                ${!isOutgoing ? `<div style="font-size:11px;font-weight:700;color:#c084fc;margin-bottom:3px;">${escapeHtml(m.sender_name || 'Customer')}</div>` : ''}
+                ${mediaPreview}
+                <div style="font-size:13.5px;line-height:1.5;">${safeBody}</div>
+                <div class="msg-meta">
+                  <span>${time}</span>
+                  ${statusIcon}
                 </div>
-                <div>${windowBadge}</div>
-              </div>
-
-              <div id="thread_${safePhone}" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:14px; padding:12px 14px; max-height:200px; overflow-y:auto; margin-bottom:12px;">
-                <div style="font-size:13px; color:#cbd5e1;">${c.last_message || ''}</div>
-              </div>
-
-              <div class="reply-input-row" style="display:flex; gap:8px; flex-wrap:wrap;">
-                <input type="text" id="replyInp_${safePhone}" onkeydown="if(event.key==='Enter') sendInboxReply('${safePhone}')" placeholder="Type WhatsApp reply to +${safePhone}..." style="flex:1; min-width:200px; background:#06050b; border:1px solid rgba(255,255,255,0.18); border-radius:10px; padding:10px 14px; color:#fff; font-size:13px; outline:none;" />
-                <button onclick="sendInboxReply('${safePhone}')" class="btn btn-primary" style="padding:10px 18px; font-size:13px;">
-                  Send Reply
-                </button>
               </div>
             </div>`;
-        }).join('');
-      } catch (e) {}
-    }
-
-    async function sendInboxReply(phone) {
-      const inp = $('replyInp_' + phone);
-      if (!inp || !inp.value.trim()) return toast('Please type a reply message', 'err_');
-      const text = inp.value.trim();
-
-      try {
-        toast('Sending reply via Meta Cloud API...', '');
-        const res = await apiFetch('/api/inbox/reply', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: phone, message: text })
         });
-        const d = await res.json();
-        if (d.success) {
-          toast('Reply sent successfully! ✓', 'ok_');
-          inp.value = '';
-          fetchInbox();
-        } else {
-          toast(`Meta Error (${d.code || ''}): ${d.explanation || d.error}`, 'err_');
+
+        // Auto-scroll logic: if user was near bottom or not keepScroll
+        const wasNearBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 80;
+        box.innerHTML = html;
+
+        if (!keepScroll || wasNearBottom) {
+          box.scrollTop = box.scrollHeight;
         }
-      } catch (e) {
-        toast('Failed to send reply: ' + e.message, 'err_');
+      } catch (err) {
+        console.error('[Fetch Messages Error]:', err);
+      } finally {
+        isFetchingMessages = false;
       }
     }
 
-    function openInbox() { $('inboxModal').style.display = 'flex'; fetchInbox(); }
-    function closeInbox() { $('inboxModal').style.display = 'none'; }
+    async function sendActiveChatReply() {
+      if (!activeChatPhone) return toast('Please select a contact to reply to', 'err_');
+      const inp = $('chatReplyInput');
+      const text = inp.value.trim();
+      if (!text) return toast('Please type a reply message', 'err_');
+
+      const btn = $('btnSendActiveReply');
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+
+      try {
+        const res = await apiFetch('/api/inbox/reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: activeChatPhone, message: text })
+        });
+        const d = await res.json();
+        if (d.success) {
+          inp.value = '';
+          toast('Reply sent successfully! ✓', 'ok_');
+          playNotificationChime();
+          await fetchActiveChatMessages(activeChatPhone, false);
+          fetchInbox();
+        } else {
+          toast(`Meta API Error (${d.code || ''}): ${d.explanation || d.error}`, 'err_');
+        }
+      } catch (e) {
+        toast('Failed to send reply: ' + e.message, 'err_');
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        inp.focus();
+      }
+    }
+
+    function openInbox() {
+      $('inboxModal').style.display = 'flex';
+      if (window.innerWidth <= 760 && !activeChatPhone) {
+        $('inboxSidebar').classList.remove('hide-mobile-chat');
+        $('inboxChatPanel').classList.add('hide-mobile-chat');
+        $('btnBackToContacts').style.display = 'none';
+      }
+      fetchInbox();
+      if (inboxPollingTimer) clearInterval(inboxPollingTimer);
+      inboxPollingTimer = setInterval(() => {
+        if ($('inboxModal').style.display !== 'none') {
+          fetchInbox();
+        }
+      }, 3500);
+    }
+
+    function closeInbox() {
+      $('inboxModal').style.display = 'none';
+      if (inboxPollingTimer) {
+        clearInterval(inboxPollingTimer);
+        inboxPollingTimer = null;
+      }
+    }
     function openReportsModal() { $('reportsModal').style.display = 'flex'; loadDeliveryReports(); }
     function closeReportsModal() { $('reportsModal').style.display = 'none'; }
 
@@ -3110,7 +3334,7 @@
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
-        ['inboxModal', 'reportsModal', 'authModal'].forEach(id => {
+        ['inboxModal', 'reportsModal'].forEach(id => {
           const el = $(id);
           if (el) {
             el.classList.remove('on');
@@ -3154,7 +3378,6 @@
     }
 
     updateSoundUi();
-    checkAuthStatus();
     loadMsg();
     checkFilesStatus();
     poll();

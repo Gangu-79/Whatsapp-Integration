@@ -864,6 +864,17 @@ app.get('/api/stream-campaign', async (req, res) => {
         const metaId = idMatch ? idMatch[1].trim() : null;
         if (currentRecipientPhone) {
           db.logCampaignRecipient(campaignId, currentRecipientPhone, currentRecipientName || 'Customer', 'sent', metaId).catch(() => {});
+          let campaignMsgBody = 'Campaign message dispatched';
+          try {
+            if (fs.existsSync(msgPath)) campaignMsgBody = fs.readFileSync(msgPath, 'utf8').trim();
+            else if (cfg.templateName) campaignMsgBody = `Template: ${cfg.templateName}`;
+          } catch (e) {}
+          db.saveOutgoingReply({
+            phone: currentRecipientPhone,
+            text: campaignMsgBody,
+            metaMessageId: metaId,
+            status: 'sent'
+          }).catch(() => {});
         }
       }
 
@@ -999,11 +1010,10 @@ app.post('/api/webhook', async (req, res) => {
   res.sendStatus(404);
 });
 
-// API: Get Inbox Conversations (Persistent SQLite)
+// API: Get Inbox Conversations (Persistent Store)
 app.get('/api/inbox', async (req, res) => {
   try {
-    const cfg = await getEffectiveConfig(req);
-    const conversations = await db.getConversations(cfg.phoneNumberId || null);
+    const conversations = await db.getConversations();
     res.json({
       success: true,
       count: conversations.length,
@@ -1060,7 +1070,7 @@ app.post('/api/inbox/reply', async (req, res) => {
     }
 
     // Send reply via Meta Cloud API
-    const result = await metaApi.sendMessage({
+    let result = await metaApi.sendMessage({
       token: cfg.token,
       phoneNumberId: cfg.phoneNumberId,
       to: cleanPhone,
@@ -1068,6 +1078,19 @@ app.post('/api/inbox/reply', async (req, res) => {
       templateName: templateName || null,
       templateLang: cfg.templateLang
     });
+
+    // Auto-fallback: If 24-hr window expired, automatically retry with configured template to re-engage contact
+    if (!result.success && result.code === 131047 && cfg.templateName && !templateName) {
+      console.log(`[Inbox Reply] 24-hr window expired for +${cleanPhone}. Retrying with template '${cfg.templateName}'...`);
+      result = await metaApi.sendMessage({
+        token: cfg.token,
+        phoneNumberId: cfg.phoneNumberId,
+        to: cleanPhone,
+        text: message.trim(),
+        templateName: cfg.templateName,
+        templateLang: cfg.templateLang
+      });
+    }
 
     if (result.success) {
       // Save outgoing reply to SQLite database immediately
