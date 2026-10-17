@@ -600,34 +600,22 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
     const conv = convs.find(c => c.phone === cleanPhone);
     const isWindowActive = conv ? conv.is_window_active : false;
 
-    // Template selection and validation
+    // Template selection and validation (optional: only if explicit template requested)
     let effectiveTemplate = (templateName && templateName.trim()) ? templateName.trim() : null;
     let effectiveLang = (templateLang && templateLang.trim()) ? templateLang.trim() : (cfg.templateLang || 'en_US');
+    let varCount = null;
 
-    // Rule: Inside active 24h window, freeform messages are permitted without template.
-    // Rule: Outside active 24h window, Meta strictly requires an approved template!
-    if (!isWindowActive && !effectiveTemplate) {
-      return res.status(400).json({
-        success: false,
-        code: 131047,
-        error: `24-Hour Customer Care Window Closed for +${cleanPhone}.`,
-        explanation: `Outside the active 24-hour window, Meta strictly requires an approved WhatsApp Message Template (created in WhatsApp Manager). Freeform messages cannot be delivered. Please select or enter an approved template name, or send "Hi" from WhatsApp on +${cleanPhone} to your business number (+${cfg.phoneNumberId}) to activate direct chat.`,
-        windowClosed: true
-      });
-    }
-
-    // Proactively validate template if specified
+    // Validate template only if caller explicitly specified a template
     if (effectiveTemplate) {
       if (effectiveTemplate.toLowerCase() === 'hello_world') {
         return res.status(400).json({
           success: false,
           code: 131058,
           error: "Meta API Error (131058): 'hello_world' templates can only be sent from Public Test Numbers.",
-          explanation: "Your registered number is a live production number. Please use an approved template created in Meta WhatsApp Manager or send direct messages within the active 24-hr customer window."
+          explanation: "Your registered number is a live production number. Please send a direct customized message or use an approved template created in Meta WhatsApp Manager."
         });
       }
 
-      let varCount = null;
       // Pre-validate against WABA if WABA ID is configured
       if (cfg.wabaId) {
         const val = await metaApi.validateTemplate({

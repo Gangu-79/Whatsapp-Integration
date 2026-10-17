@@ -1615,55 +1615,18 @@
               ✕ Remove Attachment
             </button>
           </div>
-        </div>
-
-        <!-- WhatsApp Message Template Selector & 24-hr Window Policy -->
-        <div style="margin-bottom:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
-            <label class="lbl" style="margin-bottom:0; font-weight:800;">
-              WhatsApp Outreach Mode / Template
-            </label>
-            <button type="button" onclick="fetchMetaTemplates(true)" id="btnRefreshTpls" class="btn" style="background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.35); color:#22d3ee; padding:4px 10px; font-size:11.5px; border-radius:8px;">
-              🔄 Refresh Meta Templates
-            </button>
-          </div>
-
-          <div style="margin-bottom:10px;">
-            <select id="singleTplSelect" class="inp" onchange="onSingleTplSelectChange()">
-              <option value="">💬 Direct Chat / Free-form (Inside active 24-hr customer window)</option>
-              <option value="__custom__">✏️ Enter Custom Template Name Manually...</option>
-            </select>
-          </div>
-
-          <!-- Manual / Custom Template Entry Row (Shown when custom or when typing) -->
-          <div id="singleCustomTplRow" style="display:none; margin-top:10px;">
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <div style="flex:1; min-width:200px;">
-                <label class="lbl" style="font-size:11px;">Template Name (from Meta WhatsApp Manager)</label>
-                <input type="text" id="singleTplInp" class="inp" placeholder="e.g. campaign_update" oninput="onSingleTplInput()">
-              </div>
-              <div style="width:130px;">
-                <label class="lbl" style="font-size:11px;">Language Code</label>
-                <input type="text" id="singleTplLangInp" class="inp" value="en_US" placeholder="en_US">
-              </div>
-            </div>
-          </div>
-
-          <!-- Live Dynamic Warning Box for hello_world -->
-          <div id="singleHelloWorldWarning" style="display:none; margin-top:10px; background:rgba(244,63,94,0.14); border:1px solid rgba(244,63,94,0.4); border-radius:10px; padding:10px 12px; font-size:12px; color:#fca5a5; line-height:1.5;">
-            <strong>⚠️ Meta API Error (131058) Prevention:</strong> The sample <code>hello_world</code> template is only allowed on Meta sandbox test numbers. Because you have registered a real production business number (+91 99665 59281), Meta will reject <code>hello_world</code>. Please select an approved template or leave blank for direct chat within the 24-hr window.
-          </div>
-
-          <!-- Policy Explanation Note -->
-          <div id="singlePolicyNote" style="font-size:11.5px; color:var(--txt-muted); margin-top:8px; line-height:1.6;">
-            💡 <strong>Meta 24-Hour Policy:</strong> If recipient messaged your business in the last 24h, select <em>Direct Chat</em> for free-form messaging. If starting a new conversation outside 24h, select an <em>Approved Template</em> from your WhatsApp Business Account.
+        <!-- Customized Direct Message Note -->
+        <div style="margin-bottom:20px; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.22); border-radius:12px; padding:12px 16px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:18px;">💬</span>
+          <div style="font-size:12.5px; color:#e2e8f0; line-height:1.5;">
+            <strong>Customized Direct Messaging</strong> — Your customized message above will be delivered directly to the recipient without any template.
           </div>
         </div>
 
         <!-- Single Send Button -->
-        <button type="button" id="btnSingleSend" class="btn btn-primary" onclick="sendSingleMessage()" style="width:100%; padding:16px;">
+        <button type="button" id="btnSingleSend" class="btn btn-primary" onclick="sendSingleMessage()" style="width:100%; padding:16px; font-size:15px; font-weight:800;">
           <svg style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-          Send to Entered Recipient
+          Send Customized Message
         </button>
 
         <!-- Real Meta API Response / Error Box -->
@@ -2406,43 +2369,10 @@
       }
     }
 
-    function onSingleTplSelectChange() {
-      const sel = $('singleTplSelect');
-      const customRow = $('singleCustomTplRow');
-      const hwWarn = $('singleHelloWorldWarning');
-      const val = sel.value;
+    function onSingleTplSelectChange() {}
+    function onSingleTplInput() {}
 
-      if (val === '__custom__') {
-        customRow.style.display = 'block';
-        $('singleTplInp').focus();
-      } else {
-        customRow.style.display = 'none';
-        if (val) {
-          const opt = sel.selectedOptions[0];
-          if (opt && opt.dataset.lang && $('singleTplLangInp')) {
-            $('singleTplLangInp').value = opt.dataset.lang;
-          }
-        }
-      }
-
-      if (val && val.toLowerCase() === 'hello_world') {
-        hwWarn.style.display = 'block';
-      } else {
-        hwWarn.style.display = 'none';
-      }
-    }
-
-    function onSingleTplInput() {
-      const val = ($('singleTplInp').value || '').trim();
-      const hwWarn = $('singleHelloWorldWarning');
-      if (val.toLowerCase() === 'hello_world') {
-        hwWarn.style.display = 'block';
-      } else {
-        hwWarn.style.display = 'none';
-      }
-    }
-
-    // ─── DISPATCH SINGLE PERSON MESSAGE ───
+    // ─── DISPATCH SINGLE PERSON CUSTOMIZED MESSAGE ───
     async function sendSingleMessage() {
       if (!ok) {
         toast('Please configure your Meta WhatsApp credentials in Settings first!', 'err_');
@@ -2455,43 +2385,22 @@
       const name = $('singleNameInp').value.trim();
       const text = $('singleMsgInp').value.trim();
 
-      // Determine template and language
-      let tpl = '';
-      let tplLang = 'en_US';
-      const selVal = $('singleTplSelect') ? $('singleTplSelect').value : '';
-      const manualInput = $('singleTplInp') ? $('singleTplInp').value.trim() : '';
-      const manualLang = $('singleTplLangInp') ? $('singleTplLangInp').value.trim() : 'en_US';
-
-      // If user selected a template from the dropdown (approved or in review)
-      if (selVal && selVal !== '__custom__') {
-        tpl = selVal;
-        const selectedOpt = $('singleTplSelect').selectedOptions[0];
-        if (selectedOpt && selectedOpt.dataset.lang) {
-          tplLang = selectedOpt.dataset.lang;
-        }
-      } else if (manualInput) {
-        // User typed a template name into the manual input box!
-        tpl = manualInput;
-        tplLang = manualLang || 'en_US';
-      }
-
-      // Pre-check for hello_world
-      if (tpl && tpl.toLowerCase() === 'hello_world') {
-        $('singleHelloWorldWarning').style.display = 'block';
-        toast("Meta Error (131058): 'hello_world' is a sandbox test template and cannot be sent from your registered production number (+91 99665 59281).", 'err_');
-        return;
-      }
-
       if (!phoneRaw) {
         toast('Please enter a WhatsApp phone number!', 'err_');
         $('singlePhoneInp').focus();
         return;
       }
 
+      if (!text && !singleSelectedFile) {
+        toast('Please type a message or attach a file to send!', 'err_');
+        $('singleMsgInp').focus();
+        return;
+      }
+
       const btn = $('btnSingleSend');
       const resBox = $('singleStatusBox');
       btn.disabled = true;
-      btn.textContent = 'Sending message...';
+      btn.textContent = 'Sending customized message...';
       resBox.style.display = 'none';
 
       const fd = new FormData();
@@ -2499,10 +2408,6 @@
       fd.append('countryCode', countryCode);
       fd.append('recipientName', name);
       fd.append('text', text);
-      if (tpl) {
-        fd.append('templateName', tpl);
-        fd.append('templateLang', tplLang);
-      }
       if (singleSelectedFile) {
         fd.append('mediaFile', singleSelectedFile);
       }
@@ -2520,8 +2425,8 @@
           resBox.style.border = '1px solid rgba(16,185,129,0.4)';
           resBox.style.color = '#10b981';
           resBox.innerHTML = `
-            <div style="font-weight:800; font-size:14px; margin-bottom:4px;">✓ Message Accepted by Meta Cloud API</div>
-            <div>Recipient: <b>+${d.recipient}</b></div>
+            <div style="font-weight:800; font-size:14px; margin-bottom:4px;">✓ Customized Message Sent via Meta Cloud API</div>
+            <div>Delivered to: <b>+${d.recipient}</b></div>
             <div style="font-size:11px; font-family:var(--font-mono); color:var(--txt-secondary); margin-top:3px;">Meta Message ID: ${d.messageId}</div>
             <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
               <button type="button" onclick="openReportsModal()" class="btn" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); padding:6px 14px; font-size:12px; border-radius:8px; color:#fff;">
@@ -2537,7 +2442,15 @@
           resBox.style.background = 'rgba(244,63,94,0.12)';
           resBox.style.border = '1px solid rgba(244,63,94,0.4)';
           resBox.style.color = '#f43f5e';
-          resBox.innerHTML = `✗ <b>Meta API Error (${d.code || ''})</b><br>${d.explanation || d.error}<br>${d.details || ''}`;
+          
+          let adviceText = d.explanation || d.error || 'Failed to send message';
+          if (d.code === 131047) {
+            adviceText = `<strong>24-Hour Customer Window Expired (Error 131047):</strong><br>
+              Meta WhatsApp Cloud API policy requires the customer to send at least one inbound message to your business number (<strong>+91 99665 59281</strong>) to open the 24-hour conversation window.<br><br>
+              💡 <em>Quick Fix:</em> Have the recipient send a message (e.g., <strong>"Hi"</strong>) from WhatsApp to your business number. Once received, you can send unlimited customized messages!`;
+          }
+          
+          resBox.innerHTML = `✗ <b>Meta API Error (${d.code || ''})</b><br><div style="margin-top:6px; line-height:1.6;">${adviceText}</div>`;
           toast(d.explanation || d.error || 'Failed to send message', 'err_');
         }
       } catch (err) {
@@ -2547,7 +2460,7 @@
         resBox.textContent = 'Network error: ' + err.message;
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Send to Entered Recipient';
+        btn.textContent = 'Send Customized Message';
       }
     }
 
