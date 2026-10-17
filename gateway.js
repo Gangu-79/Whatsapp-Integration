@@ -290,6 +290,34 @@ app.get('/api/meta/templates', async (req, res) => {
   }
 });
 
+// API: Fetch WhatsApp Business Profile details (websites, about, description, email)
+app.get('/api/meta/profile', async (req, res) => {
+  try {
+    const cfg = await getEffectiveConfig(req);
+    if (!cfg.token || !cfg.phoneNumberId) {
+      return res.status(400).json({ success: false, error: 'Meta Cloud API not configured' });
+    }
+    const result = await metaApi.getBusinessProfile(cfg.token, cfg.phoneNumberId);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// API: Remove website URL from WhatsApp Business Profile
+app.post('/api/meta/profile/remove-website', async (req, res) => {
+  try {
+    const cfg = await getEffectiveConfig(req);
+    if (!cfg.token || !cfg.phoneNumberId) {
+      return res.status(400).json({ success: false, error: 'Meta Cloud API not configured' });
+    }
+    const result = await metaApi.removeProfileWebsites(cfg.token, cfg.phoneNumberId);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // API: Save/Update Meta Cloud API credentials permanently in SQLite and session
 app.post('/api/config', async (req, res) => {
   try {

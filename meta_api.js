@@ -721,6 +721,85 @@ async function dispatchCampaignBatch({
   return { total, sent, failed };
 }
 
+/**
+ * Query Meta Graph API for WhatsApp Business Profile details (websites, about, description, email).
+ */
+async function getBusinessProfile(token, phoneNumberId) {
+  if (!token || !phoneNumberId) {
+    return { success: false, error: 'Missing Token or Phone Number ID' };
+  }
+
+  try {
+    const url = `${GRAPH_BASE_URL}/${phoneNumberId}/whatsapp_business_profile?fields=about,address,description,email,profile_picture_url,websites,vertical`;
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 12000
+    });
+
+    const profile = response.data?.data?.[0] || {};
+    return {
+      success: true,
+      profile: {
+        about: profile.about || '',
+        address: profile.address || '',
+        description: profile.description || '',
+        email: profile.email || '',
+        websites: Array.isArray(profile.websites) ? profile.websites : [],
+        vertical: profile.vertical || '',
+        profilePictureUrl: profile.profile_picture_url || ''
+      }
+    };
+  } catch (err) {
+    const errorObj = err.response?.data?.error || {};
+    return {
+      success: false,
+      error: errorObj.message || err.message,
+      code: errorObj.code || 500
+    };
+  }
+}
+
+/**
+ * Remove website URL(s) from WhatsApp Business Profile via official Meta Cloud API.
+ * Keeps business name, phone number, and all other profile fields completely untouched.
+ */
+async function removeProfileWebsites(token, phoneNumberId) {
+  if (!token || !phoneNumberId) {
+    return { success: false, error: 'Missing Token or Phone Number ID' };
+  }
+
+  try {
+    const url = `${GRAPH_BASE_URL}/${phoneNumberId}/whatsapp_business_profile`;
+    const response = await axios.post(
+      url,
+      {
+        messaging_product: 'whatsapp',
+        websites: []
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 12000
+      }
+    );
+
+    return {
+      success: true,
+      message: 'Website URL removed from WhatsApp Business Profile successfully.',
+      data: response.data
+    };
+  } catch (err) {
+    const errorObj = err.response?.data?.error || {};
+    return {
+      success: false,
+      error: errorObj.message || err.message,
+      code: errorObj.code || 500
+    };
+  }
+}
+
 module.exports = {
   GRAPH_API_VERSION,
   GRAPH_BASE_URL,
@@ -732,6 +811,8 @@ module.exports = {
   validateTemplate,
   uploadMedia,
   sendMessage,
-  dispatchCampaignBatch
+  dispatchCampaignBatch,
+  getBusinessProfile,
+  removeProfileWebsites
 };
 
