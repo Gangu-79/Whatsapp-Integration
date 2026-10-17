@@ -336,22 +336,23 @@ async function sendMessage({
       type: 'template',
       template: {
         name: templateName.trim(),
-        language: { code: templateLang || 'en_US' },
-        components: []
+        language: { code: templateLang || 'en_US' }
       }
     };
+
+    const components = [];
 
     // Header component if media attachment is present
     if (mediaId) {
       if (mediaType === 'document') {
-        payload.template.components.push({
+        components.push({
           type: 'header',
           parameters: [
             { type: 'document', document: { id: mediaId, filename: filename || 'attachment.pdf' } }
           ]
         });
       } else {
-        payload.template.components.push({
+        components.push({
           type: 'header',
           parameters: [
             { type: 'image', image: { id: mediaId } }
@@ -360,14 +361,18 @@ async function sendMessage({
       }
     }
 
-    // Body component with dynamic name variable if present
-    if (recipientName && recipientName.trim()) {
-      payload.template.components.push({
+    // Body component with dynamic name variable if present (skip for hello_world which has no variables)
+    if (recipientName && recipientName.trim() && templateName.trim() !== 'hello_world') {
+      components.push({
         type: 'body',
         parameters: [
           { type: 'text', text: recipientName.trim() }
         ]
       });
+    }
+
+    if (components.length > 0) {
+      payload.template.components = components;
     }
   }
   // Case 2: Document / PDF Message (within 24hr window)

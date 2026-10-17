@@ -530,8 +530,18 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
       mediaFilename = uploadRes.filename;
     }
 
-    const effectiveTemplate = (templateName && templateName.trim()) ? templateName.trim() : null;
-    const effectiveLang = (templateLang && templateLang.trim()) ? templateLang.trim() : cfg.templateLang;
+    // Check if recipient is within active 24-hr customer care window
+    const convs = await db.getConversations();
+    const conv = convs.find(c => c.phone === cleanPhone);
+    const isWindowActive = conv ? conv.is_window_active : false;
+
+    // Outside 24h window, Meta strictly requires an approved template (e.g. hello_world or configured template)
+    let effectiveTemplate = (templateName && templateName.trim()) ? templateName.trim() : null;
+    if (!effectiveTemplate && !isWindowActive) {
+      effectiveTemplate = cfg.templateName || 'hello_world';
+    }
+
+    const effectiveLang = (templateLang && templateLang.trim()) ? templateLang.trim() : (cfg.templateLang || 'en_US');
 
     // Send via Meta API
     const result = await metaApi.sendMessage({
@@ -1094,26 +1104,38 @@ app.post('/api/inbox/reply', async (req, res) => {
       return res.status(403).json({ success: false, error: 'This contact has opted out of WhatsApp messages.' });
     }
 
+    // Check if recipient is within active 24-hr customer care window
+    const convs = await db.getConversations();
+    const conv = convs.find(c => c.phone === cleanPhone);
+    const isWindowActive = conv ? conv.is_window_active : false;
+
+    // If outside 24h window and no template specified, auto-use configured template or default 'hello_world'
+    let effectiveTemplate = templateName || null;
+    if (!effectiveTemplate && !isWindowActive) {
+      effectiveTemplate = cfg.templateName || 'hello_world';
+    }
+
     // Send reply via Meta Cloud API
     let result = await metaApi.sendMessage({
       token: cfg.token,
       phoneNumberId: cfg.phoneNumberId,
       to: cleanPhone,
       text: message.trim(),
-      templateName: templateName || null,
-      templateLang: cfg.templateLang
+      templateName: effectiveTemplate,
+      templateLang: cfg.templateLang || 'en_US'
     });
 
-    // Auto-fallback: If 24-hr window expired, automatically retry with configured template to re-engage contact
-    if (!result.success && result.code === 131047 && cfg.templateName && !templateName) {
-      console.log(`[Inbox Reply] 24-hr window expired for +${cleanPhone}. Retrying with template '${cfg.templateName}'...`);
+    // Auto-fallback: If 24-hr window expired, automatically retry with template
+    if (!result.success && result.code === 131047 && !templateName) {
+      const fallbackTpl = cfg.templateName || 'hello_world';
+      console.log(`[Inbox Reply] 24-hr window expired for +${cleanPhone}. Retrying with template '${fallbackTpl}'...`);
       result = await metaApi.sendMessage({
         token: cfg.token,
         phoneNumberId: cfg.phoneNumberId,
         to: cleanPhone,
         text: message.trim(),
-        templateName: cfg.templateName,
-        templateLang: cfg.templateLang
+        templateName: fallbackTpl,
+        templateLang: cfg.templateLang || 'en_US'
       });
     }
 
