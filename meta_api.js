@@ -309,9 +309,8 @@ async function fetchApprovedTemplates(token, wabaId) {
     });
 
     const list = response.data?.data || [];
-    const approved = list.filter(t => t.status === 'APPROVED');
     
-    const mapped = approved.map(t => {
+    const mapTemplate = (t) => {
       const headerComp = (t.components || []).find(c => c.type === 'HEADER');
       const bodyComp = (t.components || []).find(c => c.type === 'BODY');
       const hasMediaHeader = headerComp && ['IMAGE', 'DOCUMENT', 'VIDEO'].includes(headerComp.format);
@@ -331,14 +330,18 @@ async function fetchApprovedTemplates(token, wabaId) {
         variableCount,
         bodyText
       };
-    });
+    };
+
+    const allMapped = list.map(mapTemplate);
+    const approved = allMapped.filter(t => t.status === 'APPROVED' && t.name.toLowerCase() !== 'hello_world');
 
     return {
       success: true,
       wabaId: wabaId.trim(),
-      templates: mapped,
-      totalCount: list.length,
-      approvedCount: mapped.length
+      templates: approved,
+      allTemplates: allMapped,
+      totalCount: allMapped.length,
+      approvedCount: approved.length
     };
   } catch (err) {
     const errData = err.response?.data?.error || {};
@@ -346,7 +349,8 @@ async function fetchApprovedTemplates(token, wabaId) {
       success: false,
       code: errData.code || 500,
       error: errData.message || err.message,
-      templates: []
+      templates: [],
+      allTemplates: []
     };
   }
 }
@@ -377,6 +381,20 @@ async function validateTemplate({ token, wabaId, templateName, templateLang }) {
     return { valid: true, warning: `Could not verify template status with Meta WABA: ${res.error}` };
   }
 
+  // Check if template exists under any status in the WABA
+  const anyMatch = (res.allTemplates || []).find(t => t.name.toLowerCase() === cleanName.toLowerCase());
+  if (anyMatch && anyMatch.status !== 'APPROVED') {
+    const statusMsg = anyMatch.status === 'IN_REVIEW' || anyMatch.status === 'PENDING'
+      ? `Template '${cleanName}' is currently 'IN REVIEW' by Meta. Meta only delivers messages using 'APPROVED' templates. Meta usually approves new templates within 1-5 minutes. Please wait for Meta's review or test via direct chat (inside the active 24-hr window).`
+      : `Template '${cleanName}' has status '${anyMatch.status}' in Meta WhatsApp Manager. Only 'APPROVED' templates can be delivered.`;
+    return {
+      valid: false,
+      code: 132001,
+      error: statusMsg,
+      status: anyMatch.status
+    };
+  }
+
   const match = res.templates.find(t => t.name.toLowerCase() === cleanName.toLowerCase());
   if (!match) {
     return {
@@ -386,18 +404,16 @@ async function validateTemplate({ token, wabaId, templateName, templateLang }) {
     };
   }
 
+  // Auto-resolve language: if template language is 'en' and user passed 'en_US' (or vice versa), adopt template's actual language
+  let effectiveLanguage = match.language;
   if (templateLang && match.language !== templateLang) {
     const langMatch = res.templates.find(t => t.name.toLowerCase() === cleanName.toLowerCase() && t.language === templateLang);
-    if (!langMatch) {
-      return {
-        valid: false,
-        code: 132001,
-        error: `Template '${cleanName}' is approved in '${match.language}', but not in requested language '${templateLang}'. Please select language '${match.language}'.`
-      };
+    if (langMatch) {
+      effectiveLanguage = langMatch.language;
     }
   }
 
-  return { valid: true, template: match };
+  return { valid: true, template: { ...match, language: effectiveLanguage } };
 }
 
 /**

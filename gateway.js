@@ -99,8 +99,7 @@ async function getEffectiveConfig(req) {
 
   const token = (sessionRow?.token || diskCfg?.token || globalToken || process.env.WHATSAPP_TOKEN || '').trim();
   const phoneNumberId = (sessionRow?.phone_number_id || diskCfg?.phoneNumberId || globalPhoneId || process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
-  const wabaId = (sessionRow?.waba_id || diskCfg?.wabaId || globalWabaId || process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '').trim();
-  const templateName = (sessionRow?.template_name || diskCfg?.templateName || globalTemplate || process.env.WHATSAPP_TEMPLATE_NAME || 'campaign_update').trim();
+  const templateName = (sessionRow?.template_name || diskCfg?.templateName || globalTemplate || process.env.WHATSAPP_TEMPLATE_NAME || '').trim();
   const templateLang = (sessionRow?.template_lang || diskCfg?.templateLang || globalLang || process.env.WHATSAPP_TEMPLATE_LANG || 'en_US').trim();
 
   return { token, phoneNumberId, wabaId, templateName, templateLang };
@@ -282,7 +281,8 @@ app.get('/api/meta/templates', async (req, res) => {
       wabaId: cfg.wabaId,
       totalCount: result.totalCount,
       approvedCount: result.approvedCount,
-      templates: result.templates
+      templates: result.templates,
+      allTemplates: result.allTemplates || []
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message, templates: [] });
@@ -578,17 +578,13 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
     // Rule: Inside active 24h window, freeform messages are permitted without template.
     // Rule: Outside active 24h window, Meta strictly requires an approved template!
     if (!isWindowActive && !effectiveTemplate) {
-      if (cfg.templateName && cfg.templateName.toLowerCase() !== 'hello_world') {
-        effectiveTemplate = cfg.templateName;
-      } else {
-        return res.status(400).json({
-          success: false,
-          code: 131047,
-          error: `24-Hour Customer Care Window Closed for +${cleanPhone}.`,
-          explanation: `Outside the active 24-hour window, Meta strictly requires an approved WhatsApp Message Template (created in WhatsApp Manager). Freeform messages cannot be delivered. Please select or enter an approved template name.`,
-          windowClosed: true
-        });
-      }
+      return res.status(400).json({
+        success: false,
+        code: 131047,
+        error: `24-Hour Customer Care Window Closed for +${cleanPhone}.`,
+        explanation: `Outside the active 24-hour window, Meta strictly requires an approved WhatsApp Message Template (created in WhatsApp Manager). Freeform messages cannot be delivered. Please select or enter an approved template name, or send "Hi" from WhatsApp on +${cleanPhone} to your business number (+${cfg.phoneNumberId}) to activate direct chat.`,
+        windowClosed: true
+      });
     }
 
     // Proactively validate template if specified

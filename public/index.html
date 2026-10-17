@@ -2325,29 +2325,50 @@
         const sel = $('singleTplSelect');
         if (!sel) return;
 
-        if (d.success && d.templates && d.templates.length > 0) {
-          metaApprovedTemplates = d.templates;
+        if (d.success) {
+          metaApprovedTemplates = d.templates || [];
+          const allTpls = d.allTemplates || [];
+          const inReview = allTpls.filter(t => t.status !== 'APPROVED' && t.name.toLowerCase() !== 'hello_world');
+
+          let groupsHtml = '';
+          if (metaApprovedTemplates.length > 0) {
+            groupsHtml += `
+              <optgroup label="✅ Approved Meta Templates (${metaApprovedTemplates.length})">
+                ${metaApprovedTemplates.map(t => `
+                  <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language)}" data-vars="${t.variableCount}">
+                    📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)} · ${escapeHtml(t.category)})
+                  </option>
+                `).join('')}
+              </optgroup>
+            `;
+          }
+
+          if (inReview.length > 0) {
+            groupsHtml += `
+              <optgroup label="⏳ In Review by Meta (${inReview.length})">
+                ${inReview.map(t => `
+                  <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language)}" style="color:#f59e0b;">
+                    ⏳ ${escapeHtml(t.name)} (${escapeHtml(t.language)} · In Review)
+                  </option>
+                `).join('')}
+              </optgroup>
+            `;
+          }
+
           sel.innerHTML = `
             <option value="">💬 Direct Chat / Free-form (Inside active 24-hr customer window)</option>
-            <optgroup label="Approved Meta Business Templates (${d.approvedCount})">
-              ${d.templates.map(t => `
-                <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language)}" data-vars="${t.variableCount}">
-                  📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)} · ${escapeHtml(t.category)})
-                </option>
-              `).join('')}
-            </optgroup>
+            ${groupsHtml}
             <option value="__custom__">✏️ Enter Custom Template Name Manually...</option>
           `;
-          if (manual) toast(`Loaded ${d.approvedCount} approved templates from Meta WABA! ✓`, 'ok_');
-        } else {
-          metaApprovedTemplates = [];
-          sel.innerHTML = `
-            <option value="">💬 Direct Chat / Free-form (Inside active 24-hr customer window)</option>
-            <option value="__custom__">✏️ Enter Custom Template Name Manually...</option>
-          `;
+
           if (manual) {
-            toast(d.message || 'No approved templates found in WABA.', '');
-            $('singleCustomTplRow').style.display = 'block';
+            if (metaApprovedTemplates.length > 0) {
+              toast(`Loaded ${metaApprovedTemplates.length} approved templates from Meta WABA! ✓`, 'ok_');
+            } else if (inReview.length > 0) {
+              toast(`Found ${inReview.length} template(s) currently In Review by Meta.`, '');
+            } else {
+              toast('No templates found in WABA.', '');
+            }
           }
         }
       } catch (e) {
@@ -2413,15 +2434,20 @@
       let tpl = '';
       let tplLang = 'en_US';
       const selVal = $('singleTplSelect') ? $('singleTplSelect').value : '';
-      if (selVal === '__custom__') {
-        tpl = $('singleTplInp') ? $('singleTplInp').value.trim() : '';
-        tplLang = $('singleTplLangInp') ? $('singleTplLangInp').value.trim() || 'en_US' : 'en_US';
-      } else if (selVal) {
+      const manualInput = $('singleTplInp') ? $('singleTplInp').value.trim() : '';
+      const manualLang = $('singleTplLangInp') ? $('singleTplLangInp').value.trim() : 'en_US';
+
+      // If user selected a template from the dropdown (approved or in review)
+      if (selVal && selVal !== '__custom__') {
         tpl = selVal;
         const selectedOpt = $('singleTplSelect').selectedOptions[0];
         if (selectedOpt && selectedOpt.dataset.lang) {
           tplLang = selectedOpt.dataset.lang;
         }
+      } else if (manualInput) {
+        // User typed a template name into the manual input box!
+        tpl = manualInput;
+        tplLang = manualLang || 'en_US';
       }
 
       // Pre-check for hello_world
