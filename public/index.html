@@ -1615,12 +1615,38 @@
               ✕ Remove Attachment
             </button>
           </div>
-        <!-- Customized Direct Message Note -->
-        <div style="margin-bottom:20px; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.22); border-radius:12px; padding:12px 16px; display:flex; align-items:center; gap:10px;">
+        </div>
+
+        <!-- Customized Direct Message Banner (Active Default) -->
+        <div style="margin-bottom:14px; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.22); border-radius:12px; padding:12px 16px; display:flex; align-items:center; gap:10px;">
           <span style="font-size:18px;">💬</span>
           <div style="font-size:12.5px; color:#e2e8f0; line-height:1.5;">
-            <strong>Customized Direct Messaging</strong> — Your customized message above will be delivered directly to the recipient without any template.
+            <strong>Customized Direct Messaging Mode</strong> — Your message above will be delivered directly from your registered number (+91 99665 59281) without any template requirement.
           </div>
+        </div>
+
+        <!-- Optional Meta Template (Collapsed by default, completely optional) -->
+        <div style="margin-bottom:20px;">
+          <details id="singleOptionalTplDetails" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:10px 14px;">
+            <summary style="font-size:12px; font-weight:700; color:var(--txt-secondary); cursor:pointer; user-select:none; display:flex; align-items:center; justify-content:space-between;">
+              <span>⚙️ Optional: Use WhatsApp Template instead</span>
+              <span style="font-size:11px; color:#10b981; font-weight:600;">Default: None (Direct Message)</span>
+            </summary>
+            <div style="margin-top:12px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label class="lbl" style="font-size:11.5px; margin-bottom:0;">Approved Template (Optional)</label>
+                <button type="button" onclick="fetchMetaTemplates(true)" id="btnRefreshTpls" class="btn" style="background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.35); color:#22d3ee; padding:3px 8px; font-size:11px; border-radius:6px;">
+                  🔄 Refresh Templates
+                </button>
+              </div>
+              <select id="singleOptionalTplSelect" class="inp" style="font-size:12.5px;">
+                <option value="">None (Send Pure Customized Message)</option>
+              </select>
+              <div style="font-size:11px; color:var(--txt-muted); margin-top:6px; line-height:1.5;">
+                💡 Leave as "None" to send your direct customized message. Only choose an approved template if starting a new conversation outside Meta's 24-hr window.
+              </div>
+            </div>
+          </details>
         </div>
 
         <!-- Single Send Button -->
@@ -2310,44 +2336,44 @@
       try {
         const r = await apiFetch('/api/meta/templates');
         const d = await r.json();
-        const sel = $('singleTplSelect');
-        if (!sel) return;
+        const sel = $('singleOptionalTplSelect');
 
         if (d.success) {
           metaApprovedTemplates = d.templates || [];
           const allTpls = d.allTemplates || [];
           const inReview = allTpls.filter(t => t.status !== 'APPROVED' && t.name.toLowerCase() !== 'hello_world');
 
-          let groupsHtml = '';
-          if (metaApprovedTemplates.length > 0) {
-            groupsHtml += `
-              <optgroup label="✅ Approved Meta Templates (${metaApprovedTemplates.length})">
-                ${metaApprovedTemplates.map(t => `
-                  <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language)}" data-vars="${t.variableCount}">
-                    📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)} · ${escapeHtml(t.category)})
-                  </option>
-                `).join('')}
-              </optgroup>
+          if (sel) {
+            let groupsHtml = '';
+            if (metaApprovedTemplates.length > 0) {
+              groupsHtml += `
+                <optgroup label="✅ Approved Meta Templates (${metaApprovedTemplates.length})">
+                  ${metaApprovedTemplates.map(t => `
+                    <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language)}" data-vars="${t.variableCount}">
+                      📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)} · ${escapeHtml(t.category)})
+                    </option>
+                  `).join('')}
+                </optgroup>
+              `;
+            }
+
+            if (inReview.length > 0) {
+              groupsHtml += `
+                <optgroup label="⏳ In Review by Meta (${inReview.length})">
+                  ${inReview.map(t => `
+                    <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language)}" style="color:#f59e0b;">
+                      ⏳ ${escapeHtml(t.name)} (${escapeHtml(t.language)} · In Review)
+                    </option>
+                  `).join('')}
+                </optgroup>
+              `;
+            }
+
+            sel.innerHTML = `
+              <option value="">None (Send Pure Customized Message)</option>
+              ${groupsHtml}
             `;
           }
-
-          if (inReview.length > 0) {
-            groupsHtml += `
-              <optgroup label="⏳ In Review by Meta (${inReview.length})">
-                ${inReview.map(t => `
-                  <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language)}" style="color:#f59e0b;">
-                    ⏳ ${escapeHtml(t.name)} (${escapeHtml(t.language)} · In Review)
-                  </option>
-                `).join('')}
-              </optgroup>
-            `;
-          }
-
-          sel.innerHTML = `
-            <option value="">💬 Direct Chat / Free-form (Inside active 24-hr customer window)</option>
-            ${groupsHtml}
-            <option value="__custom__">✏️ Enter Custom Template Name Manually...</option>
-          `;
 
           if (manual) {
             if (metaApprovedTemplates.length > 0) {
@@ -2364,7 +2390,7 @@
       } finally {
         if (manual && btn) {
           btn.disabled = false;
-          btn.textContent = '🔄 Refresh Meta Templates';
+          btn.textContent = '🔄 Refresh Templates';
         }
       }
     }
@@ -2403,11 +2429,23 @@
       btn.textContent = 'Sending customized message...';
       resBox.style.display = 'none';
 
+      // Check optional template selection
+      const optTplSel = $('singleOptionalTplSelect');
+      const optTpl = (optTplSel && optTplSel.value) ? optTplSel.value.trim() : '';
+      let optLang = 'en_US';
+      if (optTpl && optTplSel.selectedOptions[0]?.dataset?.lang) {
+        optLang = optTplSel.selectedOptions[0].dataset.lang;
+      }
+
       const fd = new FormData();
       fd.append('to', phoneRaw);
       fd.append('countryCode', countryCode);
       fd.append('recipientName', name);
       fd.append('text', text);
+      if (optTpl) {
+        fd.append('templateName', optTpl);
+        fd.append('templateLang', optLang);
+      }
       if (singleSelectedFile) {
         fd.append('mediaFile', singleSelectedFile);
       }
