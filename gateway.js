@@ -535,10 +535,10 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
     const conv = convs.find(c => c.phone === cleanPhone);
     const isWindowActive = conv ? conv.is_window_active : false;
 
-    // Outside 24h window, Meta strictly requires an approved template (e.g. hello_world or configured template)
+    // Outside 24h window, Meta requires an approved template if configured
     let effectiveTemplate = (templateName && templateName.trim()) ? templateName.trim() : null;
-    if (!effectiveTemplate && !isWindowActive) {
-      effectiveTemplate = cfg.templateName || 'hello_world';
+    if (!effectiveTemplate && !isWindowActive && cfg.templateName) {
+      effectiveTemplate = cfg.templateName;
     }
 
     const effectiveLang = (templateLang && templateLang.trim()) ? templateLang.trim() : (cfg.templateLang || 'en_US');
@@ -1109,10 +1109,10 @@ app.post('/api/inbox/reply', async (req, res) => {
     const conv = convs.find(c => c.phone === cleanPhone);
     const isWindowActive = conv ? conv.is_window_active : false;
 
-    // If outside 24h window and no template specified, auto-use configured template or default 'hello_world'
+    // If outside 24h window and no template specified, use configured template if set
     let effectiveTemplate = templateName || null;
-    if (!effectiveTemplate && !isWindowActive) {
-      effectiveTemplate = cfg.templateName || 'hello_world';
+    if (!effectiveTemplate && !isWindowActive && cfg.templateName) {
+      effectiveTemplate = cfg.templateName;
     }
 
     // Send reply via Meta Cloud API
@@ -1125,10 +1125,10 @@ app.post('/api/inbox/reply', async (req, res) => {
       templateLang: cfg.templateLang || 'en_US'
     });
 
-    // Auto-fallback: If 24-hr window expired, automatically retry with template
-    if (!result.success && result.code === 131047 && !templateName) {
-      const fallbackTpl = cfg.templateName || 'hello_world';
-      console.log(`[Inbox Reply] 24-hr window expired for +${cleanPhone}. Retrying with template '${fallbackTpl}'...`);
+    // Auto-fallback: If 24-hr window expired, retry with configured template if present
+    if (!result.success && result.code === 131047 && !templateName && cfg.templateName) {
+      const fallbackTpl = cfg.templateName;
+      console.log(`[Inbox Reply] 24-hr window expired for +${cleanPhone}. Retrying with configured template '${fallbackTpl}'...`);
       result = await metaApi.sendMessage({
         token: cfg.token,
         phoneNumberId: cfg.phoneNumberId,

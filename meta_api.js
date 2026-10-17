@@ -441,6 +441,8 @@ async function sendMessage({
       explanation = 'Meta WhatsApp Account Restricted: Account has sending restrictions in Meta Business Suite.';
     } else if (errorCode === 100) {
       explanation = `Invalid parameter or phone number format (+${cleanPhone}).`;
+    } else if (errorCode === 131058) {
+      explanation = "Meta Error (131058): The 'hello_world' sample template can only be sent from Meta sandbox test numbers. Since you are using your real registered business number, leave the Template field BLANK to send direct messages within the active 24-hr window, or use a custom template created in WhatsApp Manager.";
     } else if (errorCode === 200 || errorCode === 10) {
       explanation = 'Meta Error (200): API Access Blocked / Permission Denied. Ensure your System User has Full Control over the WhatsApp Account in Meta Business Suite, and verify payment method in Billing & Payments.';
     }
