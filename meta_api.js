@@ -76,6 +76,7 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
     const errorUserTitle = errorObj.error_user_title || null;
     const errorUserMsg = errorObj.error_user_msg || null;
     const fbtraceId = errorObj.fbtrace_id || null;
+    const errorSubcode = errorObj.error_subcode || null;
 
     let userAdvice = errorUserMsg ? `${errorUserMsg}. ` : 'Check your Access Token and Phone Number ID in Meta Developers Console.';
     let rootCauses = [];
@@ -434,7 +435,8 @@ async function sendMessage({
   filename = 'document.pdf',
   templateName = null,
   templateLang = 'en_US',
-  recipientName = ''
+  recipientName = '',
+  variableCount = null
 }) {
   const cleanPhone = cleanPhoneNumber(to);
   if (!isValidE164(cleanPhone)) {
@@ -497,14 +499,28 @@ async function sendMessage({
       }
     }
 
-    // Body component with dynamic name variable if present (skip for hello_world which has no variables)
-    if (recipientName && recipientName.trim() && templateName.trim() !== 'hello_world') {
-      components.push({
-        type: 'body',
-        parameters: [
-          { type: 'text', text: recipientName.trim() }
-        ]
-      });
+    // Body component with dynamic variables
+    if (templateName.trim() !== 'hello_world') {
+      const bodyParams = [];
+      if (variableCount === 0) {
+        // Template has 0 variables - no body parameters
+      } else if (variableCount === 1) {
+        const val1 = (recipientName && recipientName.trim()) ? recipientName.trim() : (text && text.trim() ? text.trim() : 'Customer');
+        bodyParams.push({ type: 'text', text: val1 });
+      } else if (variableCount === 2) {
+        const val1 = (recipientName && recipientName.trim()) ? recipientName.trim() : 'Customer';
+        const val2 = (text && text.trim()) ? text.trim() : 'Notification';
+        bodyParams.push({ type: 'text', text: val1 }, { type: 'text', text: val2 });
+      } else if (recipientName && recipientName.trim()) {
+        bodyParams.push({ type: 'text', text: recipientName.trim() });
+      }
+
+      if (bodyParams.length > 0) {
+        components.push({
+          type: 'body',
+          parameters: bodyParams
+        });
+      }
     }
 
     if (components.length > 0) {

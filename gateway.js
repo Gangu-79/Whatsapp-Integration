@@ -99,6 +99,7 @@ async function getEffectiveConfig(req) {
 
   const token = (sessionRow?.token || diskCfg?.token || globalToken || process.env.WHATSAPP_TOKEN || '').trim();
   const phoneNumberId = (sessionRow?.phone_number_id || diskCfg?.phoneNumberId || globalPhoneId || process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
+  const wabaId = (sessionRow?.waba_id || diskCfg?.wabaId || globalWabaId || process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '').trim();
   const templateName = (sessionRow?.template_name || diskCfg?.templateName || globalTemplate || process.env.WHATSAPP_TEMPLATE_NAME || '').trim();
   const templateLang = (sessionRow?.template_lang || diskCfg?.templateLang || globalLang || process.env.WHATSAPP_TEMPLATE_LANG || 'en_US').trim();
 
@@ -598,6 +599,7 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
         });
       }
 
+      let varCount = null;
       // Pre-validate against WABA if WABA ID is configured
       if (cfg.wabaId) {
         const val = await metaApi.validateTemplate({
@@ -617,6 +619,9 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
         if (val.template && val.template.language) {
           effectiveLang = val.template.language;
         }
+        if (val.template && typeof val.template.variableCount === 'number') {
+          varCount = val.template.variableCount;
+        }
       }
     }
 
@@ -631,7 +636,8 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
       filename: mediaFilename,
       templateName: effectiveTemplate,
       templateLang: effectiveLang,
-      recipientName: recipientName || ''
+      recipientName: recipientName || '',
+      variableCount: varCount
     });
 
     // Save outgoing message to database
