@@ -1617,12 +1617,46 @@
           </div>
         </div>
 
-        <!-- Optional Approved Template Input -->
-        <div style="margin-bottom:20px;">
-          <label class="lbl">Approved Template Name (Required if outside 24-hr window)</label>
-          <input type="text" id="singleTplInp" class="inp" placeholder="e.g. campaign_update (Leave empty for direct chat)">
-          <div style="font-size:11px; color:var(--txt-muted); margin-top:4px;">
-            💡 Outside the active 24-hour customer window, Meta requires an approved Message Template.
+        <!-- WhatsApp Message Template Selector & 24-hr Window Policy -->
+        <div style="margin-bottom:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+            <label class="lbl" style="margin-bottom:0; font-weight:800;">
+              WhatsApp Outreach Mode / Template
+            </label>
+            <button type="button" onclick="fetchMetaTemplates(true)" id="btnRefreshTpls" class="btn" style="background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.35); color:#22d3ee; padding:4px 10px; font-size:11.5px; border-radius:8px;">
+              🔄 Refresh Meta Templates
+            </button>
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <select id="singleTplSelect" class="inp" onchange="onSingleTplSelectChange()">
+              <option value="">💬 Direct Chat / Free-form (Inside active 24-hr customer window)</option>
+              <option value="__custom__">✏️ Enter Custom Template Name Manually...</option>
+            </select>
+          </div>
+
+          <!-- Manual / Custom Template Entry Row (Shown when custom or when typing) -->
+          <div id="singleCustomTplRow" style="display:none; margin-top:10px;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:200px;">
+                <label class="lbl" style="font-size:11px;">Template Name (from Meta WhatsApp Manager)</label>
+                <input type="text" id="singleTplInp" class="inp" placeholder="e.g. campaign_update" oninput="onSingleTplInput()">
+              </div>
+              <div style="width:130px;">
+                <label class="lbl" style="font-size:11px;">Language Code</label>
+                <input type="text" id="singleTplLangInp" class="inp" value="en_US" placeholder="en_US">
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Dynamic Warning Box for hello_world -->
+          <div id="singleHelloWorldWarning" style="display:none; margin-top:10px; background:rgba(244,63,94,0.14); border:1px solid rgba(244,63,94,0.4); border-radius:10px; padding:10px 12px; font-size:12px; color:#fca5a5; line-height:1.5;">
+            <strong>⚠️ Meta API Error (131058) Prevention:</strong> The sample <code>hello_world</code> template is only allowed on Meta sandbox test numbers. Because you have registered a real production business number (+91 99665 59281), Meta will reject <code>hello_world</code>. Please select an approved template or leave blank for direct chat within the 24-hr window.
+          </div>
+
+          <!-- Policy Explanation Note -->
+          <div id="singlePolicyNote" style="font-size:11.5px; color:var(--txt-muted); margin-top:8px; line-height:1.6;">
+            💡 <strong>Meta 24-Hour Policy:</strong> If recipient messaged your business in the last 24h, select <em>Direct Chat</em> for free-form messaging. If starting a new conversation outside 24h, select an <em>Approved Template</em> from your WhatsApp Business Account.
           </div>
         </div>
 
@@ -2275,6 +2309,93 @@
       toast('Attachment removed', '');
     }
 
+    // ─── TEMPLATE MANAGEMENT & 24-HR WINDOW SUPPORT ───
+    let metaApprovedTemplates = [];
+
+    async function fetchMetaTemplates(manual = false) {
+      const btn = $('btnRefreshTpls');
+      if (manual && btn) {
+        btn.disabled = true;
+        btn.textContent = 'Fetching...';
+      }
+
+      try {
+        const r = await apiFetch('/api/meta/templates');
+        const d = await r.json();
+        const sel = $('singleTplSelect');
+        if (!sel) return;
+
+        if (d.success && d.templates && d.templates.length > 0) {
+          metaApprovedTemplates = d.templates;
+          sel.innerHTML = `
+            <option value="">💬 Direct Chat / Free-form (Inside active 24-hr customer window)</option>
+            <optgroup label="Approved Meta Business Templates (${d.approvedCount})">
+              ${d.templates.map(t => `
+                <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language)}" data-vars="${t.variableCount}">
+                  📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)} · ${escapeHtml(t.category)})
+                </option>
+              `).join('')}
+            </optgroup>
+            <option value="__custom__">✏️ Enter Custom Template Name Manually...</option>
+          `;
+          if (manual) toast(`Loaded ${d.approvedCount} approved templates from Meta WABA! ✓`, 'ok_');
+        } else {
+          metaApprovedTemplates = [];
+          sel.innerHTML = `
+            <option value="">💬 Direct Chat / Free-form (Inside active 24-hr customer window)</option>
+            <option value="__custom__">✏️ Enter Custom Template Name Manually...</option>
+          `;
+          if (manual) {
+            toast(d.message || 'No approved templates found in WABA.', '');
+            $('singleCustomTplRow').style.display = 'block';
+          }
+        }
+      } catch (e) {
+        if (manual) toast('Failed to fetch templates: ' + e.message, 'err_');
+      } finally {
+        if (manual && btn) {
+          btn.disabled = false;
+          btn.textContent = '🔄 Refresh Meta Templates';
+        }
+      }
+    }
+
+    function onSingleTplSelectChange() {
+      const sel = $('singleTplSelect');
+      const customRow = $('singleCustomTplRow');
+      const hwWarn = $('singleHelloWorldWarning');
+      const val = sel.value;
+
+      if (val === '__custom__') {
+        customRow.style.display = 'block';
+        $('singleTplInp').focus();
+      } else {
+        customRow.style.display = 'none';
+        if (val) {
+          const opt = sel.selectedOptions[0];
+          if (opt && opt.dataset.lang && $('singleTplLangInp')) {
+            $('singleTplLangInp').value = opt.dataset.lang;
+          }
+        }
+      }
+
+      if (val && val.toLowerCase() === 'hello_world') {
+        hwWarn.style.display = 'block';
+      } else {
+        hwWarn.style.display = 'none';
+      }
+    }
+
+    function onSingleTplInput() {
+      const val = ($('singleTplInp').value || '').trim();
+      const hwWarn = $('singleHelloWorldWarning');
+      if (val.toLowerCase() === 'hello_world') {
+        hwWarn.style.display = 'block';
+      } else {
+        hwWarn.style.display = 'none';
+      }
+    }
+
     // ─── DISPATCH SINGLE PERSON MESSAGE ───
     async function sendSingleMessage() {
       if (!ok) {
@@ -2287,7 +2408,28 @@
       const phoneRaw = $('singlePhoneInp').value.trim();
       const name = $('singleNameInp').value.trim();
       const text = $('singleMsgInp').value.trim();
-      const tpl = $('singleTplInp').value.trim();
+
+      // Determine template and language
+      let tpl = '';
+      let tplLang = 'en_US';
+      const selVal = $('singleTplSelect') ? $('singleTplSelect').value : '';
+      if (selVal === '__custom__') {
+        tpl = $('singleTplInp') ? $('singleTplInp').value.trim() : '';
+        tplLang = $('singleTplLangInp') ? $('singleTplLangInp').value.trim() || 'en_US' : 'en_US';
+      } else if (selVal) {
+        tpl = selVal;
+        const selectedOpt = $('singleTplSelect').selectedOptions[0];
+        if (selectedOpt && selectedOpt.dataset.lang) {
+          tplLang = selectedOpt.dataset.lang;
+        }
+      }
+
+      // Pre-check for hello_world
+      if (tpl && tpl.toLowerCase() === 'hello_world') {
+        $('singleHelloWorldWarning').style.display = 'block';
+        toast("Meta Error (131058): 'hello_world' is a sandbox test template and cannot be sent from your registered production number (+91 99665 59281).", 'err_');
+        return;
+      }
 
       if (!phoneRaw) {
         toast('Please enter a WhatsApp phone number!', 'err_');
@@ -2306,7 +2448,10 @@
       fd.append('countryCode', countryCode);
       fd.append('recipientName', name);
       fd.append('text', text);
-      if (tpl) fd.append('templateName', tpl);
+      if (tpl) {
+        fd.append('templateName', tpl);
+        fd.append('templateLang', tplLang);
+      }
       if (singleSelectedFile) {
         fd.append('mediaFile', singleSelectedFile);
       }
@@ -2627,6 +2772,9 @@
           if (tbDisc) tbDisc.style.display = 'inline-flex';
           if (errBox) errBox.style.display = 'none';
           if (fixerCard) fixerCard.style.display = 'none';
+          if (metaApprovedTemplates.length === 0) {
+            fetchMetaTemplates();
+          }
         } else {
           ok = false;
           activeSenderPhone = '';

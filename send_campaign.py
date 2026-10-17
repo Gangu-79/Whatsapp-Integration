@@ -244,6 +244,15 @@ def send_meta_message(token: str, phone_number_id: str, phone: str, text: str, m
         "Content-Type": "application/json"
     }
 
+    # Pre-check: Reject hello_world on registered production numbers
+    if template_name and template_name.strip().lower() == "hello_world":
+        return {
+            "success": False,
+            "code": 131058,
+            "error": "Hello World templates can only be sent from Public Test Numbers.",
+            "explanation": "Meta restricts 'hello_world' to test numbers. Please use an approved template created in Meta WhatsApp Manager."
+        }
+
     # If template_name is specified, send approved Meta Business Template
     if template_name and template_name.strip():
         payload = {
@@ -280,6 +289,9 @@ def send_meta_message(token: str, phone_number_id: str, phone: str, text: str, m
                     {"type": "text", "text": recipient_name.strip()}
                 ]
             })
+        # If no components were added, delete the key so Meta doesn't fail on empty components
+        if not payload["template"]["components"]:
+            del payload["template"]["components"]
     elif media_id and media_type == "document":
         # Standard document/PDF message (within 24hr customer service window)
         payload = {
@@ -329,7 +341,9 @@ def send_meta_message(token: str, phone_number_id: str, phone: str, text: str, m
             error_details = error_obj.get("error_data", {}).get("details", "")
 
             explanation = error_msg
-            if error_code == 131047:
+            if error_code == 131058:
+                explanation = "Hello World templates can only be sent from Public Test Numbers. Real registered numbers must use an approved template created in Meta WhatsApp Manager."
+            elif error_code == 131047:
                 explanation = "24-Hour Customer Window Expired: Outside 24hr window, Meta requires an approved message template."
             elif error_code == 132001:
                 explanation = f"Template '{template_name}' not found or not approved in language '{template_lang}'."

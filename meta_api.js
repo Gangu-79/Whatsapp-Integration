@@ -291,6 +291,116 @@ async function uploadMedia(token, phoneNumberId, filePath) {
 }
 
 /**
+ * Query Meta Graph API for all approved WhatsApp Message Templates belonging to the WABA.
+ */
+async function fetchApprovedTemplates(token, wabaId) {
+  if (!token) {
+    return { success: false, error: 'Meta access token is required to fetch templates.', templates: [] };
+  }
+  if (!wabaId) {
+    return { success: false, error: 'WhatsApp Business Account ID (WABA ID) is required to fetch templates.', templates: [] };
+  }
+
+  try {
+    const url = `${GRAPH_BASE_URL}/${wabaId.trim()}/message_templates?fields=name,status,language,category,components&limit=100`;
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 15000
+    });
+
+    const list = response.data?.data || [];
+    const approved = list.filter(t => t.status === 'APPROVED');
+    
+    const mapped = approved.map(t => {
+      const headerComp = (t.components || []).find(c => c.type === 'HEADER');
+      const bodyComp = (t.components || []).find(c => c.type === 'BODY');
+      const hasMediaHeader = headerComp && ['IMAGE', 'DOCUMENT', 'VIDEO'].includes(headerComp.format);
+      const mediaFormat = hasMediaHeader ? headerComp.format : null;
+      
+      const bodyText = bodyComp ? bodyComp.text || '' : '';
+      const varMatches = bodyText.match(/\{\{\d+\}\}/g) || [];
+      const variableCount = new Set(varMatches).size;
+
+      return {
+        name: t.name,
+        language: t.language,
+        category: t.category,
+        status: t.status,
+        hasMediaHeader,
+        mediaFormat,
+        variableCount,
+        bodyText
+      };
+    });
+
+    return {
+      success: true,
+      wabaId: wabaId.trim(),
+      templates: mapped,
+      totalCount: list.length,
+      approvedCount: mapped.length
+    };
+  } catch (err) {
+    const errData = err.response?.data?.error || {};
+    return {
+      success: false,
+      code: errData.code || 500,
+      error: errData.message || err.message,
+      templates: []
+    };
+  }
+}
+
+/**
+ * Validate that a template exists and is APPROVED in Meta WABA.
+ */
+async function validateTemplate({ token, wabaId, templateName, templateLang }) {
+  if (!templateName || !templateName.trim()) {
+    return { valid: false, error: 'Template name is required.' };
+  }
+
+  const cleanName = templateName.trim();
+  if (cleanName.toLowerCase() === 'hello_world') {
+    return {
+      valid: false,
+      code: 131058,
+      error: "The 'hello_world' template is only allowed on Meta sandbox test numbers (Error 131058). Please use an approved template created in Meta WhatsApp Manager."
+    };
+  }
+
+  if (!wabaId || !token) {
+    return { valid: true, warning: 'WABA ID not configured; skipping WABA pre-validation.' };
+  }
+
+  const res = await fetchApprovedTemplates(token, wabaId);
+  if (!res.success) {
+    return { valid: true, warning: `Could not verify template status with Meta WABA: ${res.error}` };
+  }
+
+  const match = res.templates.find(t => t.name.toLowerCase() === cleanName.toLowerCase());
+  if (!match) {
+    return {
+      valid: false,
+      code: 132001,
+      error: `Template '${cleanName}' was not found among APPROVED templates in WhatsApp Business Account (${wabaId}). Please verify the template name in Meta WhatsApp Manager.`
+    };
+  }
+
+  if (templateLang && match.language !== templateLang) {
+    const langMatch = res.templates.find(t => t.name.toLowerCase() === cleanName.toLowerCase() && t.language === templateLang);
+    if (!langMatch) {
+      return {
+        valid: false,
+        code: 132001,
+        error: `Template '${cleanName}' is approved in '${match.language}', but not in requested language '${templateLang}'. Please select language '${match.language}'.`
+      };
+    }
+  }
+
+  return { valid: true, template: match };
+}
+
+/**
  * Send an official WhatsApp message via Meta Cloud API.
  * Handles:
  * - Approved Template Message (Outbound bulk outside 24h window)
@@ -316,6 +426,16 @@ async function sendMessage({
       success: false,
       code: 400,
       error: `Invalid E.164 phone number: '${to}'. Must contain 10-15 digits.`
+    };
+  }
+
+  // Pre-check: Reject hello_world on registered production numbers
+  if (templateName && templateName.toLowerCase().trim() === 'hello_world') {
+    return {
+      success: false,
+      code: 131058,
+      error: "Meta API Error (131058): Hello World templates can only be sent from the Public Test Numbers.",
+      explanation: "Your registered number is a live production number. Meta restricts 'hello_world' to test numbers. Please choose an approved template created in Meta WhatsApp Manager or send direct messages within the active 24-hr customer window."
     };
   }
 
@@ -427,22 +547,27 @@ async function sendMessage({
   } catch (err) {
     const errorObj = err.response?.data?.error || {};
     const errorCode = errorObj.code || err.response?.status || 500;
-    const errorMsg = errorObj.message || err.message;
-    const errorDetails = errorObj.error_data?.details || '';
+    const rawErrorMsg = errorObj.message || err.message || '';
+    const rawErrorDetails = errorObj.error_data?.details || '';
+    // Redact any access tokens from error strings
+    const errorMsg = String(rawErrorMsg).replace(/EAAG[A-Za-z0-9_-]+/g, '[REDACTED_TOKEN]');
+    const errorDetails = String(rawErrorDetails).replace(/EAAG[A-Za-z0-9_-]+/g, '[REDACTED_TOKEN]');
 
     let explanation = errorMsg;
-    if (errorCode === 131047) {
-      explanation = '24-Hour Window Expired: Meta requires an approved Message Template (e.g. campaign_update) to initiate conversations with contacts outside the 24-hr window.';
+    if (errorCode === 131058) {
+      explanation = "Meta Error (131058): The 'hello_world' sample template can only be sent from Meta Public Test Numbers. Real registered production numbers must use an approved template created in Meta WhatsApp Manager or send direct messages within the active 24-hr customer window.";
+    } else if (errorCode === 131047) {
+      explanation = '24-Hour Window Expired: Outside the 24-hr customer service window, Meta strictly requires an approved Message Template. Freeform messages cannot be sent. Please choose an approved template.';
     } else if (errorCode === 132001) {
       explanation = `Template '${templateName}' does not exist or is not approved in language '${templateLang}'. Check Meta WhatsApp Manager > Message Templates.`;
+    } else if (errorCode === 132000) {
+      explanation = `Template variable/parameter mismatch for '${templateName}'. Please verify the required variables (e.g. {{1}}) and header media format match the template in WhatsApp Manager.`;
     } else if (errorCode === 130429) {
       explanation = 'Meta Rate Limit Reached: Cloud API rate limit exceeded. Please wait or throttle message dispatch speed.';
     } else if (errorCode === 131031) {
       explanation = 'Meta WhatsApp Account Restricted: Account has sending restrictions in Meta Business Suite.';
     } else if (errorCode === 100) {
       explanation = `Invalid parameter or phone number format (+${cleanPhone}).`;
-    } else if (errorCode === 131058) {
-      explanation = "Meta Error (131058): The 'hello_world' sample template can only be sent from Meta sandbox test numbers. Since you are using your real registered business number, leave the Template field BLANK to send direct messages within the active 24-hr window, or use a custom template created in WhatsApp Manager.";
     } else if (errorCode === 200 || errorCode === 10) {
       explanation = 'Meta Error (200): API Access Blocked / Permission Denied. Ensure your System User has Full Control over the WhatsApp Account in Meta Business Suite, and verify payment method in Billing & Payments.';
     }
@@ -571,6 +696,8 @@ module.exports = {
   isValidE164,
   verifyCredentials,
   deepDiagnoseCredentials,
+  fetchApprovedTemplates,
+  validateTemplate,
   uploadMedia,
   sendMessage,
   dispatchCampaignBatch

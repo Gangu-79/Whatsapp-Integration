@@ -253,6 +253,42 @@ app.get('/api/meta/diagnose', async (req, res) => {
   }
 });
 
+// API: Fetch Approved WhatsApp Message Templates from Meta Graph API
+app.get('/api/meta/templates', async (req, res) => {
+  try {
+    const cfg = await getEffectiveConfig(req);
+    if (!cfg.token || !cfg.wabaId) {
+      return res.json({
+        success: false,
+        configured: !!cfg.token && !!cfg.wabaId,
+        message: 'Permanent Access Token or WABA ID not configured. Please add your WABA ID in Meta API settings.',
+        templates: []
+      });
+    }
+
+    const result = await metaApi.fetchApprovedTemplates(cfg.token, cfg.wabaId);
+    if (!result.success) {
+      return res.json({
+        success: false,
+        error: result.error,
+        code: result.code,
+        message: `Meta API returned: ${result.error}`,
+        templates: []
+      });
+    }
+
+    res.json({
+      success: true,
+      wabaId: cfg.wabaId,
+      totalCount: result.totalCount,
+      approvedCount: result.approvedCount,
+      templates: result.templates
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message, templates: [] });
+  }
+});
+
 // API: Save/Update Meta Cloud API credentials permanently in SQLite and session
 app.post('/api/config', async (req, res) => {
   try {
@@ -535,13 +571,58 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
     const conv = convs.find(c => c.phone === cleanPhone);
     const isWindowActive = conv ? conv.is_window_active : false;
 
-    // Outside 24h window, Meta requires an approved template if configured
+    // Template selection and validation
     let effectiveTemplate = (templateName && templateName.trim()) ? templateName.trim() : null;
-    if (!effectiveTemplate && !isWindowActive && cfg.templateName) {
-      effectiveTemplate = cfg.templateName;
+    let effectiveLang = (templateLang && templateLang.trim()) ? templateLang.trim() : (cfg.templateLang || 'en_US');
+
+    // Rule: Inside active 24h window, freeform messages are permitted without template.
+    // Rule: Outside active 24h window, Meta strictly requires an approved template!
+    if (!isWindowActive && !effectiveTemplate) {
+      if (cfg.templateName && cfg.templateName.toLowerCase() !== 'hello_world') {
+        effectiveTemplate = cfg.templateName;
+      } else {
+        return res.status(400).json({
+          success: false,
+          code: 131047,
+          error: `24-Hour Customer Care Window Closed for +${cleanPhone}.`,
+          explanation: `Outside the active 24-hour window, Meta strictly requires an approved WhatsApp Message Template (created in WhatsApp Manager). Freeform messages cannot be delivered. Please select or enter an approved template name.`,
+          windowClosed: true
+        });
+      }
     }
 
-    const effectiveLang = (templateLang && templateLang.trim()) ? templateLang.trim() : (cfg.templateLang || 'en_US');
+    // Proactively validate template if specified
+    if (effectiveTemplate) {
+      if (effectiveTemplate.toLowerCase() === 'hello_world') {
+        return res.status(400).json({
+          success: false,
+          code: 131058,
+          error: "Meta API Error (131058): 'hello_world' templates can only be sent from Public Test Numbers.",
+          explanation: "Your registered number is a live production number. Please use an approved template created in Meta WhatsApp Manager or send direct messages within the active 24-hr customer window."
+        });
+      }
+
+      // Pre-validate against WABA if WABA ID is configured
+      if (cfg.wabaId) {
+        const val = await metaApi.validateTemplate({
+          token: cfg.token,
+          wabaId: cfg.wabaId,
+          templateName: effectiveTemplate,
+          templateLang: effectiveLang
+        });
+        if (!val.valid) {
+          return res.status(400).json({
+            success: false,
+            code: val.code || 132001,
+            error: val.error,
+            explanation: val.error
+          });
+        }
+        if (val.template && val.template.language) {
+          effectiveLang = val.template.language;
+        }
+      }
+    }
 
     // Send via Meta API
     const result = await metaApi.sendMessage({
@@ -1109,10 +1190,29 @@ app.post('/api/inbox/reply', async (req, res) => {
     const conv = convs.find(c => c.phone === cleanPhone);
     const isWindowActive = conv ? conv.is_window_active : false;
 
-    // If outside 24h window and no template specified, use configured template if set
+    // If outside 24h window and no template specified, require an approved template
     let effectiveTemplate = templateName || null;
-    if (!effectiveTemplate && !isWindowActive && cfg.templateName) {
-      effectiveTemplate = cfg.templateName;
+    if (!effectiveTemplate && !isWindowActive) {
+      if (cfg.templateName && cfg.templateName.toLowerCase() !== 'hello_world') {
+        effectiveTemplate = cfg.templateName;
+      } else {
+        return res.status(400).json({
+          success: false,
+          code: 131047,
+          error: `24-Hour Customer Care Window Closed for +${cleanPhone}.`,
+          explanation: 'Outside the active 24-hr window, Meta strictly requires an approved Message Template. You cannot send direct replies until the customer messages again or you dispatch an approved template.',
+          windowClosed: true
+        });
+      }
+    }
+
+    if (effectiveTemplate && effectiveTemplate.toLowerCase() === 'hello_world') {
+      return res.status(400).json({
+        success: false,
+        code: 131058,
+        error: "Meta API Error (131058): 'hello_world' templates can only be sent from Public Test Numbers.",
+        explanation: "Your registered number is a live production number. Please use an approved template created in Meta WhatsApp Manager."
+      });
     }
 
     // Send reply via Meta Cloud API
@@ -1124,20 +1224,6 @@ app.post('/api/inbox/reply', async (req, res) => {
       templateName: effectiveTemplate,
       templateLang: cfg.templateLang || 'en_US'
     });
-
-    // Auto-fallback: If 24-hr window expired, retry with configured template if present
-    if (!result.success && result.code === 131047 && !templateName && cfg.templateName) {
-      const fallbackTpl = cfg.templateName;
-      console.log(`[Inbox Reply] 24-hr window expired for +${cleanPhone}. Retrying with configured template '${fallbackTpl}'...`);
-      result = await metaApi.sendMessage({
-        token: cfg.token,
-        phoneNumberId: cfg.phoneNumberId,
-        to: cleanPhone,
-        text: message.trim(),
-        templateName: fallbackTpl,
-        templateLang: cfg.templateLang || 'en_US'
-      });
-    }
 
     if (result.success) {
       // Save outgoing reply to SQLite database immediately
