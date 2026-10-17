@@ -213,8 +213,12 @@ app.get('/api/status', async (req, res) => {
         error: verifyResult.error,
         code: verifyResult.code,
         subcode: verifyResult.subcode,
+        userMsg: verifyResult.userMsg,
+        userTitle: verifyResult.userTitle,
+        fbtraceId: verifyResult.fbtraceId,
         advice: verifyResult.advice,
-        message: `Meta API Error (${verifyResult.code}): ${verifyResult.error}`
+        rootCauses: verifyResult.rootCauses,
+        message: `Meta API Error (${verifyResult.code}): ${verifyResult.userMsg || verifyResult.error}`
       });
     }
   } catch (err) {
@@ -225,6 +229,27 @@ app.get('/api/status', async (req, res) => {
       error: err.message,
       message: 'Failed to verify Meta Cloud API status.'
     });
+  }
+});
+
+// API: Deep Multi-Step Meta API Diagnostics Probe
+app.get('/api/meta/diagnose', async (req, res) => {
+  try {
+    const cfg = await getEffectiveConfig(req);
+    if (!cfg.token || !cfg.phoneNumberId) {
+      return res.json({
+        success: false,
+        message: 'Meta Cloud API credentials not configured. Please add your Phone Number ID and Access Token.'
+      });
+    }
+
+    const diagnosis = await metaApi.deepDiagnoseCredentials(cfg.token, cfg.phoneNumberId, cfg.wabaId);
+    res.json({
+      success: true,
+      diagnosis
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

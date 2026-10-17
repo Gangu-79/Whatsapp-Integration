@@ -73,9 +73,11 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
     const errorCode = errorObj.code || err.response?.status || 500;
     const errorMsg = errorObj.message || err.message;
     const errorType = errorObj.type || 'ApiException';
-    const errorSubcode = errorObj.error_subcode || null;
+    const errorUserTitle = errorObj.error_user_title || null;
+    const errorUserMsg = errorObj.error_user_msg || null;
+    const fbtraceId = errorObj.fbtrace_id || null;
 
-    let userAdvice = 'Check your Access Token and Phone Number ID in Meta Developers Console.';
+    let userAdvice = errorUserMsg ? `${errorUserMsg}. ` : 'Check your Access Token and Phone Number ID in Meta Developers Console.';
     let rootCauses = [];
 
     if (errorCode === 190) {
@@ -85,7 +87,7 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
       userAdvice = 'Phone Number ID does not exist or does not belong to this Meta App/Business Portfolio.';
       rootCauses.push('Check that the Phone Number ID is 15-16 digits and matches the Phone Number ID in WhatsApp > API Setup.');
     } else if (errorCode === 200 || errorCode === 10) {
-      userAdvice = 'Meta API access is blocked or permission is denied by Meta Business Suite.';
+      userAdvice = errorUserMsg || 'Meta API access is blocked or permission is denied by Meta Business Suite.';
       rootCauses = [
         '1. Asset Not Assigned to System User: In Meta Business Suite -> Business Settings -> System Users -> Select your System User -> Click "Add Assets" -> Select "WhatsApp Accounts" -> Select your WABA -> Enable "Manage WhatsApp account (Full control)" -> Save Changes.',
         '2. Payment / Billing Method Verification: If you recently added or updated your payment card, Meta holds API traffic until the card is verified in Meta Business Suite -> Billing & Payments.',
@@ -98,6 +100,9 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
       valid: false,
       code: errorCode,
       subcode: errorSubcode,
+      userMsg: errorUserMsg,
+      userTitle: errorUserTitle,
+      fbtraceId: fbtraceId,
       type: errorType,
       error: errorMsg,
       advice: userAdvice,
@@ -431,6 +436,8 @@ async function sendMessage({
       explanation = 'Meta WhatsApp Account Restricted: Account has sending restrictions in Meta Business Suite.';
     } else if (errorCode === 100) {
       explanation = `Invalid parameter or phone number format (+${cleanPhone}).`;
+    } else if (errorCode === 200 || errorCode === 10) {
+      explanation = 'Meta Error (200): API Access Blocked / Permission Denied. Ensure your System User has Full Control over the WhatsApp Account in Meta Business Suite, and verify payment method in Billing & Payments.';
     }
 
     return {
