@@ -722,25 +722,59 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
 // 3. EXCEL & MEDIA ATTACHMENTS (Requirements 1, 7 & 8)
 // ============================================================================
 
-// API: Upload Excel recipients file
+// Helper to locate recipients.xlsx across session directory and fallback locations
+function findSessionExcel(req) {
+  const sDir = getSessionDir(req);
+  const candidates = [
+    path.join(sDir, 'recipients.xlsx'),
+    path.join(sessionsBaseDir, 'sess_default', 'recipients.xlsx'),
+    path.join(__dirname, 'recipients.xlsx'),
+    path.join(sDir, 'checking excel.xlsx'),
+    path.join(sessionsBaseDir, 'sess_default', 'checking excel.xlsx'),
+    path.join(__dirname, 'checking excel.xlsx')
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return null;
+}
+
+// API: Upload Excel recipients file (mirrors to session, sess_default, and root so it never gets lost)
 app.post('/api/upload/excel', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+  try {
+    const defaultDir = path.join(sessionsBaseDir, 'sess_default');
+    if (!fs.existsSync(defaultDir)) fs.mkdirSync(defaultDir, { recursive: true });
+    fs.copyFileSync(req.file.path, path.join(defaultDir, 'recipients.xlsx'));
+    fs.copyFileSync(req.file.path, path.join(__dirname, 'recipients.xlsx'));
+  } catch (e) {
+    console.warn('[Excel Copy Warning]:', e.message);
+  }
   res.json({ success: true, filename: req.file.originalname, saved: 'recipients.xlsx' });
 });
 
 // API: Delete Excel recipients file
 app.delete('/api/delete-excel', (req, res) => {
   try {
-    const exPath = path.join(getSessionDir(req), 'recipients.xlsx');
-    if (fs.existsSync(exPath)) fs.unlinkSync(exPath);
+    const exPath = findSessionExcel(req);
+    if (exPath && fs.existsSync(exPath)) fs.unlinkSync(exPath);
+    const defPath = path.join(sessionsBaseDir, 'sess_default', 'recipients.xlsx');
+    if (fs.existsSync(defPath)) fs.unlinkSync(defPath);
+    const rootPath = path.join(__dirname, 'recipients.xlsx');
+    if (fs.existsSync(rootPath)) fs.unlinkSync(rootPath);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// Helper to find session media file (image or pdf)
+// Helper to find session media file (image or pdf) with fallback
 function findSessionMedia(sDir) {
+  const dirs = [
+    sDir,
+    path.join(sessionsBaseDir, 'sess_default'),
+    __dirname
+  ];
   const candidates = [
     'campaign_media.pdf',
     'campaign_media.png',
@@ -749,9 +783,12 @@ function findSessionMedia(sDir) {
     'campaign.png',
     'campaign.pdf'
   ];
-  for (const c of candidates) {
-    const p = path.join(sDir, c);
-    if (fs.existsSync(p)) return p;
+  for (const d of dirs) {
+    if (!d || !fs.existsSync(d)) continue;
+    for (const c of candidates) {
+      const p = path.join(d, c);
+      if (fs.existsSync(p)) return p;
+    }
   }
   return null;
 }
@@ -761,6 +798,11 @@ app.post('/api/upload/media', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
   const ext = path.extname(req.file.originalname).toLowerCase();
   const type = ext === '.pdf' ? 'document' : 'image';
+  try {
+    const defaultDir = path.join(sessionsBaseDir, 'sess_default');
+    if (!fs.existsSync(defaultDir)) fs.mkdirSync(defaultDir, { recursive: true });
+    fs.copyFileSync(req.file.path, path.join(defaultDir, path.basename(req.file.path)));
+  } catch (e) {}
   res.json({
     success: true,
     filename: req.file.originalname,
@@ -776,6 +818,9 @@ app.post('/api/upload/image', upload.single('file'), (req, res) => {
   const sDir = getSessionDir(req);
   try {
     fs.copyFileSync(req.file.path, path.join(sDir, 'campaign.jpg'));
+    const defaultDir = path.join(sessionsBaseDir, 'sess_default');
+    if (!fs.existsSync(defaultDir)) fs.mkdirSync(defaultDir, { recursive: true });
+    fs.copyFileSync(req.file.path, path.join(defaultDir, 'campaign.jpg'));
   } catch (e) {}
   res.json({ success: true, filename: req.file.originalname, saved: 'campaign.jpg', type: 'image' });
 });
@@ -805,7 +850,7 @@ app.delete('/api/delete-image', (req, res) => {
 // API: Check files status for current session
 app.get('/api/files-status', async (req, res) => {
   const dir = getSessionDir(req);
-  const exPath = path.join(dir, 'recipients.xlsx');
+  const exPath = findSessionExcel(req);
   const mediaPath = findSessionMedia(dir);
 
   let mediaType = null;
@@ -823,7 +868,7 @@ app.get('/api/files-status', async (req, res) => {
   } catch (e) {}
 
   res.json({
-    excelExists: fs.existsSync(exPath),
+    excelExists: !!(exPath && fs.existsSync(exPath)),
     imageExists: !!mediaPath,
     mediaExists: !!mediaPath,
     mediaType: mediaType,
@@ -838,8 +883,9 @@ app.get('/api/files-status', async (req, res) => {
  * E.164 phone normalization, opt-out filtering, deduplication, and variable extraction.
  */
 function parseRecipientsExcel(filePath, optOutPhones = new Set()) {
-  if (!fs.existsSync(filePath)) {
+  if (!filePath || !fs.existsSync(filePath)) {
     return {
+      success: false,
       exists: false,
       total: 0,
       valid: 0,
@@ -856,13 +902,13 @@ function parseRecipientsExcel(filePath, optOutPhones = new Set()) {
     const workbook = XLSX.readFile(filePath, { cellDates: true });
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) {
-      return { exists: true, total: 0, valid: 0, consented: 0, non_consented: 0, duplicates: 0, invalid: 0, opted_out: 0, preview: [] };
+      return { success: false, exists: true, total: 0, valid: 0, consented: 0, non_consented: 0, duplicates: 0, invalid: 0, opted_out: 0, preview: [] };
     }
 
     const sheet = workbook.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
     if (!rows || rows.length === 0) {
-      return { exists: true, total: 0, valid: 0, consented: 0, non_consented: 0, duplicates: 0, invalid: 0, opted_out: 0, preview: [] };
+      return { success: false, exists: true, total: 0, valid: 0, consented: 0, non_consented: 0, duplicates: 0, invalid: 0, opted_out: 0, preview: [] };
     }
 
     // Flexible column name matching
@@ -935,6 +981,7 @@ function parseRecipientsExcel(filePath, optOutPhones = new Set()) {
     }
 
     return {
+      success: true,
       exists: true,
       total,
       valid: validRecords.length,
@@ -948,6 +995,7 @@ function parseRecipientsExcel(filePath, optOutPhones = new Set()) {
   } catch (err) {
     console.error('[Excel Parse Error]:', err.message);
     return {
+      success: false,
       exists: true,
       error: 'Error parsing spreadsheet: ' + err.message,
       total: 0,
@@ -965,9 +1013,10 @@ function parseRecipientsExcel(filePath, optOutPhones = new Set()) {
 // API: Parse Excel Recipients with pure Node.js validation, preview, and deduplication
 app.get('/api/recipients', async (req, res) => {
   try {
-    const exPath = path.join(getSessionDir(req), 'recipients.xlsx');
-    if (!fs.existsSync(exPath)) {
+    const exPath = findSessionExcel(req);
+    if (!exPath || !fs.existsSync(exPath)) {
       return res.json({
+        success: false,
         exists: false,
         total: 0,
         valid: 0,
@@ -999,7 +1048,7 @@ app.get('/api/recipients', async (req, res) => {
     const parsed = parseRecipientsExcel(exPath, optOutSet);
     res.json(parsed);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to process Excel file: ' + err.message });
+    res.status(500).json({ success: false, error: 'Failed to process Excel file: ' + err.message });
   }
 });
 
@@ -1307,8 +1356,8 @@ app.post('/api/bulk/start', async (req, res) => {
     }
 
     const sDir = getSessionDir(req);
-    const exPath = path.join(sDir, 'recipients.xlsx');
-    if (!fs.existsSync(exPath)) {
+    const exPath = findSessionExcel(req);
+    if (!exPath || !fs.existsSync(exPath)) {
       return res.status(400).json({ success: false, error: 'No recipients.xlsx file uploaded. Please upload your Excel list.' });
     }
 
@@ -1579,8 +1628,8 @@ app.get('/api/stream-campaign', async (req, res) => {
   // If no job is currently running or paused, launch one from the uploaded Excel file
   if (!job || ['completed', 'cancelled', 'failed'].includes(job.status)) {
     const sDir = getSessionDir(req);
-    const exPath = path.join(sDir, 'recipients.xlsx');
-    if (!fs.existsSync(exPath)) {
+    const exPath = findSessionExcel(req);
+    if (!exPath || !fs.existsSync(exPath)) {
       res.write(`data: ${JSON.stringify({
         type: 'error',
         text: '[Excel Error] No recipients.xlsx file found. Please upload your Excel list before launching.'

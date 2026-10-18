@@ -2877,8 +2877,8 @@
         const lPrev = $('recListPreview');
         const stE = $('stE');
 
-        if (d.exists && d.success) {
-          activeRecipientsCount = d.valid;
+        if (d.exists && (d.valid > 0 || d.success)) {
+          activeRecipientsCount = d.valid || 0;
           pBox.style.display = 'block';
           sTxt.textContent = `✓ ${d.valid} Contacts Verified (${d.consented || d.valid} Consented)`;
           sTxt.style.color = 'var(--grn)';
@@ -2901,6 +2901,16 @@
 
           stE.textContent = `${d.valid} Contacts (${d.consented || d.valid} Consented)`;
           stE.style.color = 'var(--grn)';
+          updateStickyLaunchBar();
+        } else if (d.exists && d.valid === 0) {
+          activeRecipientsCount = 0;
+          pBox.style.display = 'block';
+          sTxt.textContent = '⚠️ 0 Valid Contacts Found in Spreadsheet';
+          sTxt.style.color = '#fbbf24';
+          dTxt.textContent = d.error || 'Please ensure your Excel file contains a "Name" and "Phone" column with 10-15 digit phone numbers.';
+          lPrev.innerHTML = '<div style="color:var(--txt-muted); font-size:12px; padding:10px 0;">No recipients could be recognized. Download our sample spreadsheet to verify column headers.</div>';
+          stE.textContent = '0 valid contacts';
+          stE.style.color = '#fbbf24';
           updateStickyLaunchBar();
         } else {
           activeRecipientsCount = 0;
@@ -3068,11 +3078,21 @@
           $('exZ').style.borderColor = 'var(--grn)';
           await fetchRecipientsPreview();
           updateStickyLaunchBar();
-          const launchSec = $('launch-section');
-          if (launchSec) launchSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          toast(`✓ ${f.name} validated! Ready to launch campaign.`, 'ok_');
+          const pBox = $('recPrevBox');
+          if (pBox && pBox.style.display !== 'none') {
+            pBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+          if (activeRecipientsCount > 0) {
+            toast(`✓ ${f.name} loaded! ${activeRecipientsCount} verified recipients ready.`, 'ok_');
+          } else {
+            toast(`File uploaded. Checking recipients...`, '');
+          }
+        } else {
+          toast(d.error || 'Upload failed', 'err_');
         }
-      } catch { toast('Upload failed', 'err_'); }
+      } catch (err) {
+        toast('Upload failed: ' + (err.message || 'Network error'), 'err_');
+      }
     }
 
     async function rmEx(e) {
