@@ -1262,6 +1262,45 @@
       color: #fff;
     }
 
+    /* ─── STICKY FLOATING QUICK-LAUNCH BAR ─── */
+    .sticky-launch-bar {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(13, 11, 26, 0.95);
+      border: 1.5px solid rgba(16, 185, 129, 0.55);
+      border-radius: 100px;
+      padding: 9px 12px 9px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 9980;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(16, 185, 129, 0.25);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      animation: slideUpSticky 0.3s ease;
+      max-width: 92vw;
+    }
+    @keyframes slideUpSticky {
+      from { transform: translate(-50%, 40px); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
+    }
+    .sticky-launch-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    @media screen and (max-width: 860px) {
+      .sticky-launch-bar {
+        bottom: calc(72px + env(safe-area-inset-bottom, 8px));
+        width: calc(100% - 24px);
+        max-width: 480px;
+        justify-content: space-between;
+        padding: 8px 12px 8px 16px;
+      }
+    }
+
     /* ─── PHONE & MOBILE RESPONSIVENESS (Screens <= 860px) ─── */
     @media screen and (max-width: 860px) {
       .mobile-menu-btn {
@@ -1685,6 +1724,17 @@
           </div>
         </div>
 
+        <!-- Mode Switch Hint for Excel Bulk -->
+        <div style="margin-bottom:18px; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.3); border-radius:12px; padding:11px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:18px;">📊</span>
+            <span style="font-size:12.5px; color:#e2e8f0;">Broadcasting to a contact list from an Excel file?</span>
+          </div>
+          <button type="button" onclick="switchSendingMode('bulk')" class="btn" style="background:linear-gradient(135deg, #8b5cf6, #06b6d4); color:#fff; font-size:12px; font-weight:800; padding:7px 16px; border-radius:8px; border:none; cursor:pointer;">
+            Switch to Excel Bulk Mode ➔
+          </button>
+        </div>
+
         <!-- Phone & Country Code -->
         <div style="margin-bottom:16px;">
           <label class="lbl">Country Code and Phone Number</label>
@@ -1839,6 +1889,14 @@
                 <span id="recDedupText" style="font-size:11px; color:var(--txt-muted);">Validation clean</span>
               </div>
               <div id="recListPreview" style="font-size:11.5px; font-family:var(--font-mono); color:var(--txt-secondary); max-height:160px; overflow-y:auto; line-height:1.6;"></div>
+              
+              <!-- Quick Launch button right inside contacts box -->
+              <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">
+                <span style="font-size:11px; color:var(--txt-muted);">Ready to send</span>
+                <button type="button" onclick="doLaunch()" class="btn btn-primary" style="padding:7px 16px; font-size:12px; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; gap:6px;">
+                  <span>🚀 Launch Campaign Now &rarr;</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1888,6 +1946,14 @@
                 ✕ Remove Attachment
               </button>
             </div>
+
+            <!-- Action Launch Button directly inside Step 02 Card -->
+            <div style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
+              <button type="button" class="btn btn-primary" onclick="doLaunch()" style="width:100%; padding:14px; font-size:14.5px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                <span>🚀 Launch Bulk Campaign Now</span>
+              </button>
+            </div>
           </div>
 
         </div>
@@ -1918,7 +1984,7 @@
           </div>
 
           <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
-            <button class="btn-launch" id="btnL" onclick="doLaunch()" disabled style="flex:2; min-width:200px;">
+            <button class="btn-launch" id="btnL" onclick="doLaunch()" style="flex:2; min-width:200px;">
               <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
               <span id="btnLaunchText">Launch Bulk Campaign Now</span>
             </button>
@@ -2339,6 +2405,21 @@
     </a>
   </nav>
 
+  <!-- STICKY FLOATING QUICK-LAUNCH BAR FOR BULK CAMPAIGN -->
+  <div id="stickyLaunchBar" class="sticky-launch-bar" style="display:none;">
+    <div class="sticky-launch-info">
+      <span style="font-size:20px;">📊</span>
+      <div>
+        <div style="font-weight:800; font-size:13px; color:#fff;" id="stickyRecCount">0 Contacts Ready</div>
+        <div style="font-size:11px; color:#94a3b8;" id="stickyMediaStatus">Text only</div>
+      </div>
+    </div>
+    <button type="button" onclick="doLaunch()" class="btn btn-primary" style="padding:10px 22px; font-size:13.5px; font-weight:800; border-radius:100px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 18px rgba(16,185,129,0.5);">
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      <span>Launch Campaign Now</span>
+    </button>
+  </div>
+
   <!-- ============================================================================ -->
   <!-- JAVASCRIPT APPLICATION LOGIC -->
   <!-- ============================================================================ -->
@@ -2442,6 +2523,31 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 
+    // ─── STICKY QUICK-LAUNCH BAR CONTROLLER ───
+    function updateStickyLaunchBar() {
+      const bar = $('stickyLaunchBar');
+      const countEl = $('stickyRecCount');
+      const mediaEl = $('stickyMediaStatus');
+      if (!bar) return;
+
+      const isBulkActive = $('bulkExcelView') && $('bulkExcelView').style.display !== 'none';
+      if (isBulkActive && activeRecipientsCount > 0) {
+        bar.style.display = 'flex';
+        if (countEl) countEl.textContent = `${activeRecipientsCount} Contacts Ready`;
+        if (mediaEl) {
+          if (bulkSelectedFile) {
+            mediaEl.textContent = `Attached: ${bulkSelectedFile.name}`;
+            mediaEl.style.color = '#38bdf8';
+          } else {
+            mediaEl.textContent = 'Text campaign (No attachment)';
+            mediaEl.style.color = '#94a3b8';
+          }
+        }
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
     // ─── MODE SWITCHING: SINGLE PERSON vs. BULK EXCEL ───
     function switchSendingMode(mode) {
       const singleView = $('singlePersonView');
@@ -2461,6 +2567,8 @@
         btnSingle.classList.remove('active');
         fetchRecipientsPreview();
       }
+
+      updateStickyLaunchBar();
 
       const sendSec = $('send-section');
       if (sendSec) {
@@ -2735,6 +2843,7 @@
 
           $('stI').textContent = file.name;
           $('stI').style.color = 'var(--grn)';
+          updateStickyLaunchBar();
           toast(`Bulk media attached: ${file.name}`, 'ok_');
         }
       } catch {
@@ -2752,6 +2861,7 @@
         $('bulkPdfFile').value = '';
         $('stI').textContent = 'None (Text only)';
         $('stI').style.color = 'var(--txt-muted)';
+        updateStickyLaunchBar();
         toast('Bulk attachment removed', '');
       } catch {}
     }
@@ -2791,13 +2901,13 @@
 
           stE.textContent = `${d.valid} Contacts (${d.consented || d.valid} Consented)`;
           stE.style.color = 'var(--grn)';
-          if (ok) $('btnL').disabled = false;
+          updateStickyLaunchBar();
         } else {
           activeRecipientsCount = 0;
           pBox.style.display = 'none';
           stE.textContent = 'Not uploaded';
           stE.style.color = 'var(--txt-muted)';
-          $('btnL').disabled = true;
+          updateStickyLaunchBar();
         }
       } catch (err) {}
     }
@@ -2957,7 +3067,10 @@
           $('exB').style.display = 'flex';
           $('exZ').style.borderColor = 'var(--grn)';
           await fetchRecipientsPreview();
-          toast('Excel validated: ' + f.name, 'ok_');
+          updateStickyLaunchBar();
+          const launchSec = $('launch-section');
+          if (launchSec) launchSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          toast(`✓ ${f.name} validated! Ready to launch campaign.`, 'ok_');
         }
       } catch { toast('Upload failed', 'err_'); }
     }
@@ -2974,7 +3087,7 @@
         $('stE').style.color = 'var(--txt-muted)';
         $('recPrevBox').style.display = 'none';
         activeRecipientsCount = 0;
-        $('btnL').disabled = true;
+        updateStickyLaunchBar();
         toast('Excel removed', 'ok_');
       } catch { toast('Error removing file', 'err_'); }
     }
@@ -2991,9 +3104,31 @@
 
     // ─── BULK CAMPAIGN DISPATCH ───
     function doLaunch() {
-      if (!ok) { toast('Please configure and authorize official Meta Cloud API first!', 'err_'); return; }
+      // 1. Verify contacts are loaded
       if (activeRecipientsCount <= 0) {
         toast('Please upload an Excel contact sheet with valid recipients first!', 'err_');
+        const exZ = $('exZ');
+        if (exZ) {
+          exZ.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          exZ.style.borderColor = '#f43f5e';
+          setTimeout(() => { if (exZ) exZ.style.borderColor = ''; }, 3000);
+        }
+        return;
+      }
+
+      // 2. Verify Meta API credentials
+      if (!ok) {
+        toast('Please configure your Meta WhatsApp credentials in Settings first!', 'err_');
+        const setSec = $('settings-section');
+        if (setSec) {
+          setSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const inp = $('metaToken');
+          if (inp) {
+            inp.focus();
+            inp.style.borderColor = '#fbbf24';
+            setTimeout(() => { if (inp) inp.style.borderColor = ''; }, 3500);
+          }
+        }
         return;
       }
 
@@ -3113,7 +3248,7 @@
           badge.className = 'conn-badge live';
           sc.textContent = 'Connected ✓ (+' + d.phone + ')';
           sc.className = 'stat-val log-ok';
-          if (activeRecipientsCount > 0) bl.disabled = false;
+          updateStickyLaunchBar();
 
           $('connInfo').style.display = 'block';
           $('metaConfigPanel').style.display = 'none';
@@ -3160,7 +3295,7 @@
             if (fixerCard) fixerCard.style.display = 'none';
           }
 
-          bl.disabled = true;
+          updateStickyLaunchBar();
           $('connInfo').style.display = 'none';
           $('metaConfigPanel').style.display = 'block';
           if (tbDisc) tbDisc.style.display = 'none';
