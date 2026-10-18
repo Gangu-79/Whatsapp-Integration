@@ -13,6 +13,34 @@ const GRAPH_API_VERSION = 'v21.0';
 const GRAPH_BASE_URL = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 
 /**
+ * Universally redacts any Meta access tokens (starting with EAA...) from strings or objects.
+ * Prevents any credential leakage in logs, diagnostics, and API error responses.
+ */
+function redactSensitive(val) {
+  if (val === null || val === undefined) return val;
+  if (typeof val === 'object') {
+    try {
+      const jsonStr = JSON.stringify(val);
+      const redacted = jsonStr.replace(/EAA[A-Za-z0-9_-]{10,}/gi, '[REDACTED_ACCESS_TOKEN]');
+      return JSON.parse(redacted);
+    } catch (e) {
+      return val;
+    }
+  }
+  return String(val).replace(/EAA[A-Za-z0-9_-]{10,}/gi, '[REDACTED_ACCESS_TOKEN]');
+}
+
+/**
+ * Safely masks a token for UI presentation (e.g. EAABcd...98fA).
+ */
+function maskToken(token) {
+  if (!token || typeof token !== 'string') return '';
+  const trimmed = token.trim();
+  if (trimmed.length <= 10) return '******';
+  return trimmed.slice(0, 6) + '...' + trimmed.slice(-4);
+}
+
+/**
  * Normalizes phone numbers to pure international digits (E.164 without leading '+').
  * E.g. "+91 99665-59211" -> "919966559211", "9876543210" -> "919876543210"
  */
@@ -71,10 +99,11 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
   } catch (err) {
     const errorObj = err.response?.data?.error || {};
     const errorCode = errorObj.code || err.response?.status || 500;
-    const errorMsg = errorObj.message || err.message;
+    const rawErrorMsg = errorObj.message || err.message;
+    const errorMsg = redactSensitive(rawErrorMsg);
     const errorType = errorObj.type || 'ApiException';
-    const errorUserTitle = errorObj.error_user_title || null;
-    const errorUserMsg = errorObj.error_user_msg || null;
+    const errorUserTitle = redactSensitive(errorObj.error_user_title || null);
+    const errorUserMsg = redactSensitive(errorObj.error_user_msg || null);
     const fbtraceId = errorObj.fbtrace_id || null;
     const errorSubcode = errorObj.error_subcode || null;
 
@@ -82,8 +111,10 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
     let rootCauses = [];
 
     if (errorCode === 190) {
-      userAdvice = 'Access Token has expired or is invalid. Please generate a new Permanent System User Token in Meta Business Suite > System Users.';
-      rootCauses.push('The token has expired or was revoked.');
+      userAdvice = 'Meta Error 190: Access token has expired, is invalid, or was revoked. A fresh Permanent System User Token is required from Meta Business Suite.\n\nHow to fix:\n1. Open Meta Business Suite (business.facebook.com) -> Settings -> System Users.\n2. Ensure your System User has Full Control under Assigned Assets -> WhatsApp Accounts.\n3. Click "Generate New Token", select your WhatsApp App, and check permissions: "whatsapp_business_messaging" and "whatsapp_business_management".\n4. Copy the newly generated permanent token and paste it into Settings in this application.';
+      rootCauses.push('The token has expired or was manually revoked in Meta Business Suite.');
+      rootCauses.push('A short-lived 24-hour developer token was configured instead of a Permanent System User Token.');
+      rootCauses.push('The Meta Business account or user password was changed, which automatically invalidates previous session tokens.');
     } else if (errorCode === 100) {
       userAdvice = 'Phone Number ID does not exist or does not belong to this Meta App/Business Portfolio.';
       rootCauses.push('Check that the Phone Number ID is 15-16 digits and matches the Phone Number ID in WhatsApp > API Setup.');
@@ -106,8 +137,8 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
       fbtraceId: fbtraceId,
       type: errorType,
       error: errorMsg,
-      advice: userAdvice,
-      rootCauses: rootCauses
+      advice: redactSensitive(userAdvice),
+      rootCauses: rootCauses.map(r => redactSensitive(r))
     };
   }
 }
@@ -195,7 +226,7 @@ async function deepDiagnoseCredentials(token, phoneNumberId, wabaId = null) {
     } catch (err) {
       const errObj = err.response?.data?.error || {};
       const code = errObj.code || 500;
-      const msg = errObj.message || err.message;
+      const msg = redactSensitive(errObj.message || err.message);
       let fix = 'Check Phone Number ID.';
       if (code === 200) {
         fix = 'API Access Blocked: System user needs WhatsApp Account asset assigned with Full Control, or Meta Payment method requires review.';
@@ -581,15 +612,16 @@ async function sendMessage({
     const errorCode = errorObj.code || err.response?.status || 500;
     const rawErrorMsg = errorObj.message || err.message || '';
     const rawErrorDetails = errorObj.error_data?.details || '';
-    // Redact any access tokens from error strings
-    const errorMsg = String(rawErrorMsg).replace(/EAAG[A-Za-z0-9_-]+/g, '[REDACTED_TOKEN]');
-    const errorDetails = String(rawErrorDetails).replace(/EAAG[A-Za-z0-9_-]+/g, '[REDACTED_TOKEN]');
+    const errorMsg = redactSensitive(rawErrorMsg);
+    const errorDetails = redactSensitive(rawErrorDetails);
 
     let explanation = errorMsg;
-    if (errorCode === 131058) {
+    if (errorCode === 190) {
+      explanation = "Meta Error (190): Access token has expired, is invalid, or was revoked. Please generate a new Permanent System User Token in Meta Business Suite (business.facebook.com) > Settings > System Users, and update your token in Meta API Settings.";
+    } else if (errorCode === 131058) {
       explanation = "Meta Error (131058): The 'hello_world' sample template can only be sent from Meta Public Test Numbers. Real registered production numbers must use an approved template created in Meta WhatsApp Manager or send direct messages within the active 24-hr customer window.";
     } else if (errorCode === 131047) {
-      explanation = '24-Hour Window Expired: Outside the 24-hr customer service window, Meta strictly requires an approved Message Template. Freeform messages cannot be sent. Please choose an approved template.';
+      explanation = '24-Hour Window Expired: Outside the 24-hr customer service window, Meta strictly requires an approved Message Template. Freeform messages cannot be sent until the recipient messages you or you send an approved template.';
     } else if (errorCode === 132001) {
       explanation = `Template '${templateName}' does not exist or is not approved in language '${templateLang}'. Check Meta WhatsApp Manager > Message Templates.`;
     } else if (errorCode === 132000) {
@@ -609,7 +641,7 @@ async function sendMessage({
       code: errorCode,
       error: errorMsg,
       details: errorDetails,
-      explanation
+      explanation: redactSensitive(explanation)
     };
   }
 }
@@ -803,6 +835,8 @@ async function removeProfileWebsites(token, phoneNumberId) {
 module.exports = {
   GRAPH_API_VERSION,
   GRAPH_BASE_URL,
+  redactSensitive,
+  maskToken,
   cleanPhoneNumber,
   isValidE164,
   verifyCredentials,

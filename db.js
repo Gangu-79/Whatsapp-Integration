@@ -153,8 +153,8 @@ async function saveSession(sessionId, data) {
     token: data.token !== undefined ? data.token : current.token,
     phone_number_id: data.phone_number_id !== undefined ? data.phone_number_id : current.phone_number_id,
     waba_id: data.waba_id !== undefined ? data.waba_id : current.waba_id,
-    template_name: data.template_name || current.template_name || 'campaign_update',
-    template_lang: data.template_lang || current.template_lang || 'en_US',
+    template_name: data.template_name !== undefined ? (data.template_name ? String(data.template_name).trim() : null) : (current.template_name || null),
+    template_lang: data.template_lang !== undefined ? (data.template_lang ? String(data.template_lang).trim() : 'en_US') : (current.template_lang || 'en_US'),
     verified_name: data.verified_name || current.verified_name || null,
     display_phone: data.display_phone || current.display_phone || null,
     quality_rating: data.quality_rating || current.quality_rating || 'GREEN',
@@ -215,14 +215,28 @@ async function getConversations(targetPhoneId = null) {
   filtered.sort((a, b) => new Date(b.last_timestamp || 0) - new Date(a.last_timestamp || 0));
 
   return filtered.map(conv => {
-    const expiresAt = conv.window_expires_at ? new Date(conv.window_expires_at) : null;
-    const isWindowActive = expiresAt && expiresAt > now;
+    // Dynamically derive the 24-hr customer service window from the contact's most recent incoming message
+    const incomingMsgs = (memoryStore.messages || []).filter(m => m.phone === conv.phone && m.direction === 'incoming');
+    let latestIncomingTime = null;
+    if (incomingMsgs.length > 0) {
+      const sorted = incomingMsgs.slice().sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+      if (sorted[0] && sorted[0].timestamp) {
+        latestIncomingTime = new Date(sorted[0].timestamp);
+      }
+    }
+
+    const expiresAt = latestIncomingTime
+      ? new Date(latestIncomingTime.getTime() + 24 * 60 * 60 * 1000)
+      : (conv.window_expires_at ? new Date(conv.window_expires_at) : null);
+
+    const isWindowActive = expiresAt ? expiresAt > now : false;
     const remainingMs = isWindowActive ? expiresAt.getTime() - now.getTime() : 0;
     const remainingHours = Math.floor(remainingMs / (1000 * 60 * 60));
     const remainingMins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
 
     return {
       ...conv,
+      window_expires_at: expiresAt ? expiresAt.toISOString() : null,
       is_window_active: isWindowActive,
       window_time_left: isWindowActive ? `${remainingHours}h ${remainingMins}m` : 'Expired'
     };
@@ -276,13 +290,14 @@ async function saveOutgoingReply({ id, phone, text, type = 'text', mediaUrl = nu
   const cleanPhone = String(phone).replace(/\D/g, '');
   const now = new Date().toISOString();
 
-  // Upsert conversation
+  // Upsert conversation while preserving active window
   const currentConv = memoryStore.conversations[cleanPhone] || {};
   memoryStore.conversations[cleanPhone] = {
     ...currentConv,
     phone: cleanPhone,
     last_message: text,
     last_timestamp: now,
+    window_expires_at: currentConv.window_expires_at || null,
     target_phone_id: targetPhoneId || currentConv.target_phone_id || null
   };
 

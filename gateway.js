@@ -12,6 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const multer = require('multer');
+const XLSX = require('xlsx');
 
 // Persistent Database & Meta Cloud API Modules
 const db = require('./db');
@@ -199,34 +200,38 @@ app.get('/api/status', async (req, res) => {
         codeStatus: verifyResult.codeStatus,
         phoneNumberId: cfg.phoneNumberId,
         wabaId: cfg.wabaId,
-        templateName: cfg.templateName,
-        templateLang: cfg.templateLang
+        maskedToken: metaApi.maskToken(cfg.token),
+        templateName: cfg.templateName || '',
+        templateLang: cfg.templateLang || 'en_US'
       });
     } else {
-      // Return clear, detailed error diagnosis
+      // Return clear, detailed error diagnosis with masked secrets
+      const safeError = metaApi.redactSensitive(verifyResult.error);
+      const safeUserMsg = metaApi.redactSensitive(verifyResult.userMsg);
       return res.json({
         connected: false,
         configured: true,
         state: 'error',
         provider: 'Meta WhatsApp Cloud API',
         phone: '',
-        error: verifyResult.error,
+        maskedToken: metaApi.maskToken(cfg.token),
+        error: safeError,
         code: verifyResult.code,
         subcode: verifyResult.subcode,
-        userMsg: verifyResult.userMsg,
-        userTitle: verifyResult.userTitle,
+        userMsg: safeUserMsg,
+        userTitle: metaApi.redactSensitive(verifyResult.userTitle),
         fbtraceId: verifyResult.fbtraceId,
-        advice: verifyResult.advice,
-        rootCauses: verifyResult.rootCauses,
-        message: `Meta API Error (${verifyResult.code}): ${verifyResult.userMsg || verifyResult.error}`
+        advice: metaApi.redactSensitive(verifyResult.advice),
+        rootCauses: (verifyResult.rootCauses || []).map(r => metaApi.redactSensitive(r)),
+        message: `Meta API Error (${verifyResult.code}): ${safeUserMsg || safeError}`
       });
     }
   } catch (err) {
-    console.error('[Status Check Error]:', err.message);
+    console.error('[Status Check Error]:', metaApi.redactSensitive(err.message));
     res.status(500).json({
       connected: false,
       configured: false,
-      error: err.message,
+      error: metaApi.redactSensitive(err.message),
       message: 'Failed to verify Meta Cloud API status.'
     });
   }
@@ -827,11 +832,14 @@ app.get('/api/files-status', async (req, res) => {
   });
 });
 
-// API: Parse Excel Recipients with validation, preview, and deduplication
-app.get('/api/recipients', (req, res) => {
-  const exPath = path.join(getSessionDir(req), 'recipients.xlsx');
-  if (!fs.existsSync(exPath)) {
-    return res.json({
+/**
+ * Native Node.js Excel & CSV parsing using xlsx.
+ * Handles .xlsx, .xls, and .csv files directly in memory with robust column detection,
+ * E.164 phone normalization, opt-out filtering, deduplication, and variable extraction.
+ */
+function parseRecipientsExcel(filePath, optOutPhones = new Set()) {
+  if (!fs.existsSync(filePath)) {
+    return {
       exists: false,
       total: 0,
       valid: 0,
@@ -841,26 +849,181 @@ app.get('/api/recipients', (req, res) => {
       invalid: 0,
       opted_out: 0,
       preview: []
-    });
+    };
   }
 
-  const optOutFilePath = path.join(__dirname, 'optouts.json');
-  const pythonCmd = process.platform === 'win32' ? 'python' : (process.env.PYTHON_CMD || 'python3');
-  const py = spawn(pythonCmd, ['-u', 'send_campaign.py', '--excel', exPath, '--optouts', optOutFilePath, '--preview'], { cwd: __dirname });
-  let stdout = '';
-  let stderr = '';
-
-  py.stdout.on('data', chunk => stdout += chunk.toString());
-  py.stderr.on('data', chunk => stderr += chunk.toString());
-
-  py.on('close', code => {
-    try {
-      const data = JSON.parse(stdout.trim());
-      res.json({ exists: true, ...data });
-    } catch (e) {
-      res.status(500).json({ error: 'Failed to parse Excel file', details: stdout || stderr });
+  try {
+    const workbook = XLSX.readFile(filePath, { cellDates: true });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      return { exists: true, total: 0, valid: 0, consented: 0, non_consented: 0, duplicates: 0, invalid: 0, opted_out: 0, preview: [] };
     }
-  });
+
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+    if (!rows || rows.length === 0) {
+      return { exists: true, total: 0, valid: 0, consented: 0, non_consented: 0, duplicates: 0, invalid: 0, opted_out: 0, preview: [] };
+    }
+
+    // Flexible column name matching
+    const firstRow = rows[0] || {};
+    const colKeys = Object.keys(firstRow);
+    let nameKey = colKeys.find(k => /^(name|full_?name|recipient|contact_?name|customer_?name)$/i.test(k.trim()));
+    let phoneKey = colKeys.find(k => /(phone|mobile|ph_?no|contact|number|whatsapp)/i.test(k.trim()));
+    let consentKey = colKeys.find(k => /(consent|opt_?in|permission|agree|status)/i.test(k.trim()));
+
+    if (!nameKey && colKeys.length > 0) nameKey = colKeys[0];
+    if (!phoneKey && colKeys.length > 1) phoneKey = colKeys[1];
+
+    const total = rows.length;
+    const validRecords = [];
+    const seenPhones = new Set();
+    let duplicateCount = 0;
+    let invalidCount = 0;
+    let optedOutCount = 0;
+    let consentedCount = 0;
+    let nonConsentedCount = 0;
+
+    for (let idx = 0; idx < rows.length; idx++) {
+      const row = rows[idx];
+      const rawName = String(row[nameKey] || '').trim();
+      const rawPhone = String(row[phoneKey] || '').trim();
+
+      if (!rawPhone) {
+        invalidCount++;
+        continue;
+      }
+
+      const clean = metaApi.cleanPhoneNumber(rawPhone, '91');
+      if (!metaApi.isValidE164(clean)) {
+        invalidCount++;
+        continue;
+      }
+
+      if (optOutPhones.has(clean)) {
+        optedOutCount++;
+        continue;
+      }
+
+      if (seenPhones.has(clean)) {
+        duplicateCount++;
+        continue;
+      }
+
+      let hasConsent = true;
+      if (consentKey && row[consentKey] !== undefined && String(row[consentKey]).trim()) {
+        const val = String(row[consentKey]).trim().toLowerCase();
+        if (['yes', 'y', 'true', '1', 'opted_in', 'optin', 'agreed', 'subscribed'].includes(val)) {
+          hasConsent = true;
+          consentedCount++;
+        } else {
+          hasConsent = false;
+          nonConsentedCount++;
+        }
+      } else {
+        consentedCount++;
+      }
+
+      seenPhones.add(clean);
+      validRecords.push({
+        row_idx: idx + 2,
+        name: rawName || 'Customer',
+        phone: clean,
+        has_consent: hasConsent,
+        raw_row: row
+      });
+    }
+
+    return {
+      exists: true,
+      total,
+      valid: validRecords.length,
+      consented: consentedCount,
+      non_consented: nonConsentedCount,
+      duplicates: duplicateCount,
+      invalid: invalidCount,
+      opted_out: optedOutCount,
+      preview: validRecords
+    };
+  } catch (err) {
+    console.error('[Excel Parse Error]:', err.message);
+    return {
+      exists: true,
+      error: 'Error parsing spreadsheet: ' + err.message,
+      total: 0,
+      valid: 0,
+      consented: 0,
+      non_consented: 0,
+      duplicates: 0,
+      invalid: 0,
+      opted_out: 0,
+      preview: []
+    };
+  }
+}
+
+// API: Parse Excel Recipients with pure Node.js validation, preview, and deduplication
+app.get('/api/recipients', async (req, res) => {
+  try {
+    const exPath = path.join(getSessionDir(req), 'recipients.xlsx');
+    if (!fs.existsSync(exPath)) {
+      return res.json({
+        exists: false,
+        total: 0,
+        valid: 0,
+        consented: 0,
+        non_consented: 0,
+        duplicates: 0,
+        invalid: 0,
+        opted_out: 0,
+        preview: []
+      });
+    }
+
+    // Build opt-out phone set from both SQLite and optouts.json
+    const optOutSet = new Set();
+    try {
+      const optList = await db.getOptOutList();
+      for (const o of optList) {
+        if (o.phone) optOutSet.add(o.phone);
+      }
+      const optOutFilePath = path.join(__dirname, 'optouts.json');
+      if (fs.existsSync(optOutFilePath)) {
+        const data = JSON.parse(fs.readFileSync(optOutFilePath, 'utf8'));
+        for (const p of data.opted_out_numbers || []) {
+          optOutSet.add(String(p).replace(/\D/g, ''));
+        }
+      }
+    } catch (e) {}
+
+    const parsed = parseRecipientsExcel(exPath, optOutSet);
+    res.json(parsed);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to process Excel file: ' + err.message });
+  }
+});
+
+// API: Download Official Sample Spreadsheet (.xlsx)
+app.get('/api/sample-excel', (req, res) => {
+  try {
+    const wb = XLSX.utils.book_new();
+    const sampleData = [
+      ['Name', 'Phone', 'Consent', 'Notes'],
+      ['Rahul Sharma', '919966559281', 'Yes', 'Existing policy holder'],
+      ['Priya Patel', '919876543210', 'Yes', 'Renewal inquiry'],
+      ['Amit Kumar', '919123456789', 'Yes', 'New claim update']
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(sampleData);
+    ws['!cols'] = [{ wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 28 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Recipients');
+
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="sample_whatsapp_recipients.xlsx"');
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).send('Error generating sample spreadsheet: ' + err.message);
+  }
 });
 
 // API: Message template text
@@ -913,16 +1076,494 @@ app.get('/api/preview-image', (req, res) => {
 });
 
 // ============================================================================
-// 4. STREAMING BULK CAMPAIGN DISPATCHER (Requirements 2 & 8)
+// 4. ENTERPRISE NATIVE BACKGROUND BULK CAMPAIGN QUEUE ENGINE (Requirement 5)
 // ============================================================================
 
+// In-Memory Campaign State Store (Session ID -> Job State)
+const activeCampaignJobs = new Map();
+
+function getCampaignJob(sid) {
+  return activeCampaignJobs.get(sid) || null;
+}
+
+/**
+ * Launches an asynchronous background campaign job with controlled pacing,
+ * batch pausing, idempotency, retry backoff on 429, and automatic halt on fatal errors.
+ */
+function launchBackgroundCampaignJob({
+  sessionId,
+  campaignId,
+  recipients,
+  templateText,
+  mediaId = null,
+  mediaType = 'image',
+  filename = 'attachment.pdf',
+  templateName = null,
+  templateLang = 'en_US',
+  delayMs = 1500,
+  token,
+  phoneNumberId
+}) {
+  const job = {
+    id: campaignId,
+    sessionId,
+    status: 'running', // 'running' | 'paused' | 'completed' | 'cancelled' | 'failed'
+    total: recipients.length,
+    currentIndex: 0,
+    sent: 0,
+    accepted: 0,
+    delivered: 0,
+    read: 0,
+    failed: 0,
+    logs: [],
+    recipients,
+    templateText,
+    mediaId,
+    mediaType,
+    filename,
+    templateName,
+    templateLang,
+    delayMs,
+    token,
+    phoneNumberId,
+    startedAt: new Date().toISOString(),
+    completedAt: null,
+    listeners: new Set()
+  };
+
+  activeCampaignJobs.set(sessionId, job);
+
+  // Background execution loop
+  (async () => {
+    const broadcast = (data) => {
+      for (const res of job.listeners) {
+        try {
+          res.write(`data: ${JSON.stringify(data)}\n\n`);
+        } catch (e) {}
+      }
+    };
+
+    const addLog = (text, type = 'info') => {
+      const entry = { time: new Date().toLocaleTimeString(), text, type };
+      job.logs.push(entry);
+      if (job.logs.length > 500) job.logs.shift();
+      broadcast({ type: 'log', text, logType: type, timestamp: entry.time });
+    };
+
+    addLog(`Connecting to Official Meta WhatsApp Cloud API...`);
+    addLog(`Background campaign engine started: ${job.total} recipients queued. [Campaign ID: ${job.id}]`);
+
+    try {
+      for (let i = job.currentIndex; i < job.total; i++) {
+        // Handle Pause state
+        while (job.status === 'paused') {
+          await new Promise(r => setTimeout(r, 800));
+        }
+
+        // Handle Cancel state
+        if (job.status === 'cancelled') {
+          addLog(`Campaign cancelled by user. Stopped at recipient ${i}/${job.total}.`, 'warn');
+          break;
+        }
+
+        job.currentIndex = i;
+        const recip = job.recipients[i];
+        const name = recip.name || 'Customer';
+        const phone = recip.phone;
+
+        addLog(`[${i + 1}/${job.total}] Sending to ${name} (+${phone})...`);
+
+        // Variable replacement: {{name}}
+        let textToSend = (job.templateText || '').replace(/\{\{name\}\}/gi, name);
+
+        let result = await metaApi.sendMessage({
+          token: job.token,
+          phoneNumberId: job.phoneNumberId,
+          to: phone,
+          text: textToSend,
+          mediaId: job.mediaId,
+          mediaType: job.mediaType,
+          filename: job.filename,
+          templateName: job.templateName || null,
+          templateLang: job.templateLang || 'en_US',
+          recipientName: name
+        });
+
+        // Retry once on rate limit (HTTP 429 or Meta Error 130429) with 5-second backoff
+        if (!result.success && (result.code === 429 || result.code === 130429)) {
+          addLog(`[Rate Limit] Meta throttled request. Backing off 5s before retry...`, 'warn');
+          await new Promise(r => setTimeout(r, 5000));
+          result = await metaApi.sendMessage({
+            token: job.token,
+            phoneNumberId: job.phoneNumberId,
+            to: phone,
+            text: textToSend,
+            mediaId: job.mediaId,
+            mediaType: job.mediaType,
+            filename: job.filename,
+            templateName: job.templateName || null,
+            templateLang: job.templateLang || 'en_US',
+            recipientName: name
+          });
+        }
+
+        if (result.success) {
+          job.sent++;
+          job.accepted++;
+          addLog(`--> ACCEPTED by Meta Cloud API (Meta ID: ${result.messageId})`, 'ok');
+
+          await db.logCampaignRecipient(job.id, phone, name, 'sent', result.messageId).catch(() => {});
+          await db.saveOutgoingReply({
+            phone,
+            text: textToSend || (job.templateName ? `Template: ${job.templateName}` : '[Media Attachment]'),
+            metaMessageId: result.messageId,
+            status: 'sent'
+          }).catch(() => {});
+        } else {
+          job.failed++;
+          const errDetail = result.explanation || result.error;
+          addLog(`--> FAILED [Code ${result.code}]: ${errDetail}`, 'err');
+
+          await db.logCampaignRecipient(
+            job.id,
+            phone,
+            name,
+            'failed',
+            null,
+            result.code,
+            errDetail
+          ).catch(() => {});
+
+          // Automatic halt on fatal credentials or account error
+          if ([190, 131031].includes(result.code)) {
+            job.status = 'failed';
+            addLog(`[CRITICAL HALT] Meta returned fatal error ${result.code}. Halting campaign to protect account.`, 'err');
+            break;
+          }
+        }
+
+        // Update campaign progress in database
+        await db.updateCampaignStats(job.id, job.sent, job.failed, job.status === 'running' ? 'running' : job.status).catch(() => {});
+
+        // Broadcast progress event to connected SSE clients
+        broadcast({
+          type: 'progress',
+          index: i + 1,
+          total: job.total,
+          percent: Math.round(((i + 1) / job.total) * 100),
+          sent: job.sent,
+          failed: job.failed,
+          recipient: { name, phone },
+          result
+        });
+
+        // Controlled pacing delay between messages
+        if (i < job.total - 1 && job.status === 'running') {
+          let wait = job.delayMs;
+          // Extra 2s pause every 10 messages for Meta Cloud API rate compliance
+          if ((i + 1) % 10 === 0) {
+            wait += 2000;
+            addLog(`[Batch Pause] Completed batch of 10. Pausing 2s to strictly comply with Meta rate limits...`);
+          }
+          await new Promise(r => setTimeout(r, wait));
+        }
+      }
+
+      if (job.status === 'running') {
+        job.status = 'completed';
+        addLog(`Campaign dispatch finished! Total: ${job.total}, Accepted: ${job.sent}, Failed: ${job.failed}.`, 'ok');
+      }
+
+      job.completedAt = new Date().toISOString();
+      await db.updateCampaignStats(job.id, job.sent, job.failed, job.status).catch(() => {});
+
+      broadcast({
+        type: 'finish',
+        exitCode: job.status === 'completed' ? 0 : 1,
+        sentCount: job.sent,
+        failedCount: job.failed,
+        status: job.status
+      });
+    } catch (fatalErr) {
+      console.error('[Bulk Campaign Engine Error]:', fatalErr.message);
+      job.status = 'failed';
+      addLog(`Fatal engine error: ${fatalErr.message}`, 'err');
+      broadcast({ type: 'finish', exitCode: 1, error: fatalErr.message });
+    }
+  })();
+
+  return job;
+}
+
+// API: Start Background Bulk Campaign
+app.post('/api/bulk/start', async (req, res) => {
+  try {
+    const cfg = await getEffectiveConfig(req);
+    if (!cfg.token || !cfg.phoneNumberId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Meta Cloud API not configured. Please enter your Phone Number ID and Permanent Access Token in Settings.'
+      });
+    }
+
+    const sDir = getSessionDir(req);
+    const exPath = path.join(sDir, 'recipients.xlsx');
+    if (!fs.existsSync(exPath)) {
+      return res.status(400).json({ success: false, error: 'No recipients.xlsx file uploaded. Please upload your Excel list.' });
+    }
+
+    // Build opt-out phone set
+    const optOutSet = new Set();
+    try {
+      const optList = await db.getOptOutList();
+      for (const o of optList) {
+        if (o.phone) optOutSet.add(o.phone);
+      }
+    } catch (e) {}
+
+    const parsed = parseRecipientsExcel(exPath, optOutSet);
+    if (!parsed.valid || parsed.preview.length === 0) {
+      return res.status(400).json({ success: false, error: 'No valid recipient phone numbers found in the uploaded file.' });
+    }
+
+    const sid = getSessionId(req);
+    const existingJob = getCampaignJob(sid);
+    if (existingJob && existingJob.status === 'running') {
+      return res.status(409).json({
+        success: false,
+        error: 'A campaign is already actively running for this session. Please pause or cancel it first.',
+        campaignId: existingJob.id
+      });
+    }
+
+    // Read message text and media
+    const msgPath = path.join(sDir, 'message.txt');
+    let templateText = 'Hello {{name}},\nThank you for choosing our service!';
+    if (req.body && req.body.message) {
+      templateText = req.body.message;
+    } else if (fs.existsSync(msgPath)) {
+      templateText = fs.readFileSync(msgPath, 'utf8');
+    }
+
+    const mediaPath = findSessionMedia(sDir);
+    let mediaId = null;
+    let mediaType = 'image';
+    let mediaFilename = 'attachment.pdf';
+    if (mediaPath) {
+      try {
+        const up = await metaApi.uploadMedia(cfg.token, cfg.phoneNumberId, mediaPath);
+        mediaId = up.mediaId;
+        mediaType = up.type;
+        mediaFilename = up.filename;
+      } catch (e) {
+        console.warn('[Bulk Media Upload Note]:', e.message);
+      }
+    }
+
+    const campaignId = 'camp_' + Date.now();
+    await db.createCampaign(campaignId, 'Bulk Campaign ' + new Date().toLocaleDateString(), parsed.valid).catch(() => {});
+
+    const job = launchBackgroundCampaignJob({
+      sessionId: sid,
+      campaignId,
+      recipients: parsed.preview,
+      templateText,
+      mediaId,
+      mediaType,
+      filename: mediaFilename,
+      templateName: (req.body?.templateName || cfg.templateName || '').trim() || null,
+      templateLang: (req.body?.templateLang || cfg.templateLang || 'en_US').trim(),
+      delayMs: parseInt(req.body?.delayMs) || 1500,
+      token: cfg.token,
+      phoneNumberId: cfg.phoneNumberId
+    });
+
+    res.json({
+      success: true,
+      campaignId,
+      totalRecipients: parsed.valid,
+      message: `Bulk campaign engine launched with ${parsed.valid} recipients in background.`
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// API: Get Current Bulk Campaign Job Status (Preserves progress across browser refreshes)
+app.get('/api/bulk/status', (req, res) => {
+  const sid = getSessionId(req);
+  const job = getCampaignJob(sid);
+  if (!job) {
+    return res.json({
+      running: false,
+      status: 'idle',
+      total: 0,
+      currentIndex: 0,
+      sent: 0,
+      failed: 0,
+      percent: 0,
+      logs: []
+    });
+  }
+
+  res.json({
+    running: job.status === 'running',
+    status: job.status,
+    id: job.id,
+    total: job.total,
+    currentIndex: job.currentIndex,
+    sent: job.sent,
+    accepted: job.accepted,
+    failed: job.failed,
+    percent: job.total > 0 ? Math.round((job.currentIndex / job.total) * 100) : 0,
+    startedAt: job.startedAt,
+    completedAt: job.completedAt,
+    logs: job.logs.slice(-50)
+  });
+});
+
+// API: Pause Bulk Campaign
+app.post('/api/bulk/pause', (req, res) => {
+  const sid = getSessionId(req);
+  const job = getCampaignJob(sid);
+  if (!job || job.status !== 'running') {
+    return res.status(400).json({ success: false, error: 'No active running campaign to pause.' });
+  }
+  job.status = 'paused';
+  job.logs.push({ time: new Date().toLocaleTimeString(), text: 'Campaign paused by user.', type: 'warn' });
+  res.json({ success: true, status: 'paused', message: 'Campaign safely paused.' });
+});
+
+// API: Resume Bulk Campaign
+app.post('/api/bulk/resume', (req, res) => {
+  const sid = getSessionId(req);
+  const job = getCampaignJob(sid);
+  if (!job || job.status !== 'paused') {
+    return res.status(400).json({ success: false, error: 'No paused campaign to resume.' });
+  }
+  job.status = 'running';
+  job.logs.push({ time: new Date().toLocaleTimeString(), text: 'Campaign resumed by user.', type: 'info' });
+  res.json({ success: true, status: 'running', message: 'Campaign resumed.' });
+});
+
+// API: Cancel Bulk Campaign
+app.post('/api/bulk/cancel', (req, res) => {
+  const sid = getSessionId(req);
+  const job = getCampaignJob(sid);
+  if (!job || !['running', 'paused'].includes(job.status)) {
+    return res.status(400).json({ success: false, error: 'No active campaign to cancel.' });
+  }
+  job.status = 'cancelled';
+  job.logs.push({ time: new Date().toLocaleTimeString(), text: 'Campaign cancelled by user.', type: 'warn' });
+  res.json({ success: true, status: 'cancelled', message: 'Campaign cancelled.' });
+});
+
+// API: Send Message to One Selected Recipient from Excel Preview List
+app.post('/api/bulk/send-single-recipient', async (req, res) => {
+  try {
+    const { phone, name, templateName, templateLang } = req.body;
+    const cfg = await getEffectiveConfig(req);
+    if (!cfg.token || !cfg.phoneNumberId) {
+      return res.status(401).json({ success: false, error: 'Meta Cloud API not configured.' });
+    }
+    if (!phone) {
+      return res.status(400).json({ success: false, error: 'Recipient phone number is required.' });
+    }
+
+    const cleanPhone = metaApi.cleanPhoneNumber(phone);
+    if (!metaApi.isValidE164(cleanPhone)) {
+      return res.status(400).json({ success: false, error: `Invalid phone number: +${cleanPhone}` });
+    }
+
+    const sDir = getSessionDir(req);
+    const msgPath = path.join(sDir, 'message.txt');
+    let textToSend = 'Hello {{name}},\nThank you for choosing our service!';
+    if (fs.existsSync(msgPath)) {
+      textToSend = fs.readFileSync(msgPath, 'utf8');
+    }
+    textToSend = textToSend.replace(/\{\{name\}\}/gi, name || 'Customer');
+
+    const mediaPath = findSessionMedia(sDir);
+    let mediaId = null;
+    let mediaType = 'image';
+    let mediaFilename = 'attachment.pdf';
+    if (mediaPath) {
+      try {
+        const up = await metaApi.uploadMedia(cfg.token, cfg.phoneNumberId, mediaPath);
+        mediaId = up.mediaId;
+        mediaType = up.type;
+        mediaFilename = up.filename;
+      } catch (e) {}
+    }
+
+    const result = await metaApi.sendMessage({
+      token: cfg.token,
+      phoneNumberId: cfg.phoneNumberId,
+      to: cleanPhone,
+      text: textToSend,
+      mediaId,
+      mediaType,
+      filename: mediaFilename,
+      templateName: (templateName || cfg.templateName || '').trim() || null,
+      templateLang: templateLang || cfg.templateLang || 'en_US',
+      recipientName: name || 'Customer'
+    });
+
+    if (result.success) {
+      await db.logCampaignRecipient('manual_single_excel', cleanPhone, name || 'Customer', 'sent', result.messageId).catch(() => {});
+      await db.saveOutgoingReply({
+        phone: cleanPhone,
+        text: textToSend,
+        metaMessageId: result.messageId,
+        status: 'sent'
+      }).catch(() => {});
+      res.json({ success: true, messageId: result.messageId, recipient: cleanPhone });
+    } else {
+      await db.logCampaignRecipient('manual_single_excel', cleanPhone, name || 'Customer', 'failed', null, result.code, result.explanation || result.error).catch(() => {});
+      res.status(result.code === 400 ? 400 : 502).json({
+        success: false,
+        code: result.code,
+        error: result.error,
+        explanation: result.explanation
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// API: Download Failed Recipients Report as CSV
+app.get('/api/reports/failed-recipients', async (req, res) => {
+  try {
+    const logs = await db.getRecentCampaignLogs(2000);
+    const failedLogs = logs.filter(l => (l.status || '').toLowerCase() === 'failed');
+
+    let csv = 'Campaign,Recipient Name,Phone Number,Error Code,Error Details,Sent Timestamp\n';
+    for (const log of failedLogs) {
+      const camp = (log.campaign_id || 'Bulk').replace(/"/g, '""');
+      const name = (log.name || 'Customer').replace(/"/g, '""');
+      const phone = log.phone ? `+${log.phone}` : '';
+      const errCode = log.error_code || '';
+      const errDetails = (log.error_details || '').replace(/"/g, '""').replace(/\r?\n/g, ' ');
+      const sentAt = log.sent_at || '';
+      csv += `"${camp}","${name}","${phone}","${errCode}","${errDetails}","${sentAt}"\n`;
+    }
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="whatsapp_failed_recipients.csv"');
+    res.send(csv);
+  } catch (e) {
+    res.status(500).send('Error generating failed recipients report: ' + e.message);
+  }
+});
+
+// SSE Streaming Adapter for UI execution terminal (Connects directly to Native Background Engine)
 app.get('/api/stream-campaign', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
   const cfg = await getEffectiveConfig(req);
-
   if (!cfg.token || !cfg.phoneNumberId) {
     res.write(`data: ${JSON.stringify({
       type: 'error',
@@ -932,108 +1573,88 @@ app.get('/api/stream-campaign', async (req, res) => {
     return res.end();
   }
 
-  const sDir = getSessionDir(req);
-  const exPath = path.join(sDir, 'recipients.xlsx');
-  const msgPath = path.join(sDir, 'message.txt');
-  const mediaPath = findSessionMedia(sDir);
+  const sid = getSessionId(req);
+  let job = getCampaignJob(sid);
 
-  if (!fs.existsSync(exPath)) {
-    res.write(`data: ${JSON.stringify({
-      type: 'error',
-      text: '[Excel Error] No recipients.xlsx file found. Please upload your Excel list before launching.'
-    })}\n\n`);
-    res.write(`data: ${JSON.stringify({ type: 'finish', exitCode: 1 })}\n\n`);
-    return res.end();
-  }
-
-  const campaignId = 'camp_' + Date.now();
-  await db.createCampaign(campaignId, 'Bulk Campaign ' + new Date().toLocaleDateString(), 0).catch(() => {});
-
-  res.write(`data: ${JSON.stringify({ type: 'log', text: 'Connecting to Official Meta WhatsApp Cloud API...' })}\n\n`);
-  res.write(`data: ${JSON.stringify({ type: 'log', text: `Campaign ID initialized: ${campaignId}` })}\n\n`);
-
-  const optOutFilePath = path.join(__dirname, 'optouts.json');
-  const pythonCmd = process.platform === 'win32' ? 'python' : (process.env.PYTHON_CMD || 'python3');
-
-  const pyArgs = [
-    '-u', 'send_campaign.py',
-    '--excel', exPath,
-    '--message', fs.existsSync(msgPath) ? msgPath : path.join(__dirname, 'message.txt'),
-    '--image', mediaPath || 'campaign.jpg',
-    '--token', cfg.token,
-    '--phone-id', cfg.phoneNumberId,
-    '--template', cfg.templateName || '',
-    '--template-lang', cfg.templateLang || 'en_US',
-    '--optouts', optOutFilePath
-  ];
-
-  const py = spawn(pythonCmd, pyArgs, {
-    cwd: __dirname,
-    env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUNBUFFERED: '1' }
-  });
-
-  let sentCount = 0;
-  let failedCount = 0;
-  let currentRecipientName = '';
-  let currentRecipientPhone = '';
-  let lineRemainder = '';
-
-  py.stdout.on('data', (chunk) => {
-    const text = chunk.toString();
-    lineRemainder += text;
-    const lines = lineRemainder.split(/\r?\n/);
-    lineRemainder = lines.pop(); // keep trailing incomplete line
-
-    for (const l of lines) {
-      const trimmed = l.trim();
-      const recipMatch = trimmed.match(/\[\d+\/\d+\]\s+Recipient:\s*(.*?)\s*\(\+(\d+)\)/);
-      if (recipMatch) {
-        currentRecipientName = recipMatch[1].trim();
-        currentRecipientPhone = recipMatch[2].trim();
-      }
-
-      if (trimmed.includes('ACCEPTED by Meta Cloud API')) {
-        sentCount++;
-        const idMatch = trimmed.match(/Message ID:\s*([^\)]+)/);
-        const metaId = idMatch ? idMatch[1].trim() : null;
-        if (currentRecipientPhone) {
-          db.logCampaignRecipient(campaignId, currentRecipientPhone, currentRecipientName || 'Customer', 'sent', metaId).catch(() => {});
-          let campaignMsgBody = 'Campaign message dispatched';
-          try {
-            if (fs.existsSync(msgPath)) campaignMsgBody = fs.readFileSync(msgPath, 'utf8').trim();
-            else if (cfg.templateName) campaignMsgBody = `Template: ${cfg.templateName}`;
-          } catch (e) {}
-          db.saveOutgoingReply({
-            phone: currentRecipientPhone,
-            text: campaignMsgBody,
-            metaMessageId: metaId,
-            status: 'sent'
-          }).catch(() => {});
-        }
-      }
-
-      if (trimmed.includes('Status: FAILED')) {
-        failedCount++;
-        const errMatch = trimmed.match(/Meta Error\s*(\d+)/);
-        const errCode = errMatch ? errMatch[1].trim() : null;
-        if (currentRecipientPhone) {
-          db.logCampaignRecipient(campaignId, currentRecipientPhone, currentRecipientName || 'Customer', 'failed', null, errCode, trimmed).catch(() => {});
-        }
-      }
+  // If no job is currently running or paused, launch one from the uploaded Excel file
+  if (!job || ['completed', 'cancelled', 'failed'].includes(job.status)) {
+    const sDir = getSessionDir(req);
+    const exPath = path.join(sDir, 'recipients.xlsx');
+    if (!fs.existsSync(exPath)) {
+      res.write(`data: ${JSON.stringify({
+        type: 'error',
+        text: '[Excel Error] No recipients.xlsx file found. Please upload your Excel list before launching.'
+      })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'finish', exitCode: 1 })}\n\n`);
+      return res.end();
     }
 
-    res.write(`data: ${JSON.stringify({ type: 'log', text })}\n\n`);
-  });
+    const optOutSet = new Set();
+    try {
+      const optList = await db.getOptOutList();
+      for (const o of optList) {
+        if (o.phone) optOutSet.add(o.phone);
+      }
+    } catch (e) {}
 
-  py.stderr.on('data', (chunk) => {
-    const text = chunk.toString();
-    res.write(`data: ${JSON.stringify({ type: 'error', text })}\n\n`);
-  });
+    const parsed = parseRecipientsExcel(exPath, optOutSet);
+    if (!parsed.valid || parsed.preview.length === 0) {
+      res.write(`data: ${JSON.stringify({
+        type: 'error',
+        text: '[Excel Error] No valid recipients found in the uploaded spreadsheet.'
+      })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'finish', exitCode: 1 })}\n\n`);
+      return res.end();
+    }
 
-  py.on('close', async (exitCode) => {
-    await db.updateCampaignStats(campaignId, sentCount, failedCount, exitCode === 0 ? 'completed' : 'failed').catch(() => {});
-    res.write(`data: ${JSON.stringify({ type: 'finish', exitCode, sentCount, failedCount })}\n\n`);
-    res.end();
+    const msgPath = path.join(sDir, 'message.txt');
+    let templateText = 'Hello {{name}},\nThank you for choosing our service!';
+    if (fs.existsSync(msgPath)) {
+      templateText = fs.readFileSync(msgPath, 'utf8');
+    }
+
+    const mediaPath = findSessionMedia(sDir);
+    let mediaId = null;
+    let mediaType = 'image';
+    let mediaFilename = 'attachment.pdf';
+    if (mediaPath) {
+      try {
+        const up = await metaApi.uploadMedia(cfg.token, cfg.phoneNumberId, mediaPath);
+        mediaId = up.mediaId;
+        mediaType = up.type;
+        mediaFilename = up.filename;
+      } catch (e) {}
+    }
+
+    const campaignId = 'camp_' + Date.now();
+    await db.createCampaign(campaignId, 'Bulk Campaign ' + new Date().toLocaleDateString(), parsed.valid).catch(() => {});
+
+    job = launchBackgroundCampaignJob({
+      sessionId: sid,
+      campaignId,
+      recipients: parsed.preview,
+      templateText,
+      mediaId,
+      mediaType,
+      filename: mediaFilename,
+      templateName: (req.query.template || cfg.templateName || '').trim() || null,
+      templateLang: (req.query.templateLang || cfg.templateLang || 'en_US').trim(),
+      delayMs: 1500,
+      token: cfg.token,
+      phoneNumberId: cfg.phoneNumberId
+    });
+  }
+
+  // Send historical logs to newly connected client
+  for (const l of job.logs) {
+    res.write(`data: ${JSON.stringify({ type: 'log', text: l.text, logType: l.type })}\n\n`);
+  }
+
+  // Register client listener
+  job.listeners.add(res);
+
+  req.on('close', () => {
+    job.listeners.delete(res);
   });
 });
 
@@ -1209,19 +1830,15 @@ app.post('/api/inbox/reply', async (req, res) => {
     const isWindowActive = conv ? conv.is_window_active : false;
 
     // If outside 24h window and no template specified, require an approved template
-    let effectiveTemplate = templateName || null;
+    let effectiveTemplate = (templateName && String(templateName).trim()) ? String(templateName).trim() : null;
     if (!effectiveTemplate && !isWindowActive) {
-      if (cfg.templateName && cfg.templateName.toLowerCase() !== 'hello_world') {
-        effectiveTemplate = cfg.templateName;
-      } else {
-        return res.status(400).json({
-          success: false,
-          code: 131047,
-          error: `24-Hour Customer Care Window Closed for +${cleanPhone}.`,
-          explanation: 'Outside the active 24-hr window, Meta strictly requires an approved Message Template. You cannot send direct replies until the customer messages again or you dispatch an approved template.',
-          windowClosed: true
-        });
-      }
+      return res.status(400).json({
+        success: false,
+        code: 131047,
+        error: `24-Hour Customer Care Window Closed for +${cleanPhone}.`,
+        explanation: 'Outside the active 24-hr customer service window, Meta strictly requires an approved Message Template. Freeform direct messages cannot be sent. Please select an approved template or wait for the contact to message you.',
+        windowClosed: true
+      });
     }
 
     if (effectiveTemplate && effectiveTemplate.toLowerCase() === 'hello_world') {

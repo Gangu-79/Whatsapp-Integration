@@ -234,7 +234,7 @@ In your [Render Dashboard](https://dashboard.render.com/) > Your Service > **Env
 - `WHATSAPP_TOKEN`: Permanent System User Token
 - `WHATSAPP_PHONE_NUMBER_ID`: Phone Number ID
 - `WHATSAPP_BUSINESS_ACCOUNT_ID`: WABA ID
-- `WHATSAPP_TEMPLATE_NAME`: `campaign_update`
+- `WHATSAPP_TEMPLATE_NAME`: *(Optional - leave empty for direct customized messaging, or specify your approved template name)*
 - `WHATSAPP_TEMPLATE_LANG`: `en_US`
 - `WEBHOOK_VERIFY_TOKEN`: `whatsapp_campaign_verify_token_123`
 - `NODE_VERSION`: `20.10.0`

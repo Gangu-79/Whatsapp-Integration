@@ -1179,8 +1179,100 @@
       fill: currentColor;
     }
 
+    /* Mobile Navigation Drawer */
+    .mobile-menu-btn {
+      display: none;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      cursor: pointer;
+      color: #fff;
+    }
+    .mobile-drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .mobile-drawer-overlay.open {
+      display: flex;
+      opacity: 1;
+    }
+    .mobile-drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 300px;
+      max-width: 85vw;
+      background: #0d0b1a;
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: -12px 0 40px rgba(0, 0, 0, 0.8);
+      overflow-y: auto;
+    }
+    .mobile-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 14px;
+    }
+    .mobile-drawer-close {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .mobile-drawer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .mobile-drawer-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: #e2e8f0;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.2s ease;
+    }
+    .mobile-drawer-link:hover, .mobile-drawer-link.active {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: #fff;
+    }
+
     /* ─── PHONE & MOBILE RESPONSIVENESS (Screens <= 860px) ─── */
     @media screen and (max-width: 860px) {
+      .mobile-menu-btn {
+        display: grid;
+      }
+      #topbarSoundBtn {
+        display: none !important;
+      }
+      #topbarReportsBtn {
+        display: none !important;
+      }
       .mobile-bottom-nav {
         display: flex;
         padding-bottom: env(safe-area-inset-bottom, 8px);
@@ -1457,7 +1549,8 @@
         <a href="javascript:void(0)" onclick="switchSendingMode('bulk')" class="nav-link">Bulk Excel</a>
         <a href="javascript:void(0)" onclick="openInbox()" class="nav-link" id="navInbox">Inbox & Chat <span id="inboxBadge" style="display:none;background:#10b981;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:4px;">0</span></a>
         <a href="javascript:void(0)" onclick="openReportsModal()" class="nav-link">Reports</a>
-        <a href="#settings-section" class="nav-link">Meta API</a>
+        <a href="#settings-section" class="nav-link">Meta API Settings</a>
+        <a href="javascript:void(0)" onclick="openDiagnosticsModal()" class="nav-link">Diagnostics</a>
       </nav>
 
       <div class="top-right">
@@ -1478,8 +1571,49 @@
           <div class="dot" id="dot"></div>
           <span id="clbl">Checking...</span>
         </div>
+        <button id="mobileMenuBtn" class="mobile-menu-btn" onclick="toggleMobileDrawer()" aria-label="Open Navigation Menu">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#fff;"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
       </div>
     </header>
+  </div>
+
+  <!-- MOBILE SLIDE-OUT NAVIGATION DRAWER -->
+  <div id="mobileDrawerOverlay" class="mobile-drawer-overlay" onclick="if(event.target===this) toggleMobileDrawer()">
+    <div class="mobile-drawer">
+      <div class="mobile-drawer-header">
+        <div class="logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.888 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          </div>
+          WhatsApp Engine
+        </div>
+        <button onclick="toggleMobileDrawer()" class="mobile-drawer-close">✕</button>
+      </div>
+      <div class="mobile-drawer-links">
+        <a href="#hero" onclick="toggleMobileDrawer()" class="mobile-drawer-link">
+          <span>🏠</span> Home
+        </a>
+        <a href="javascript:void(0)" onclick="toggleMobileDrawer(); switchSendingMode('single')" class="mobile-drawer-link">
+          <span>💬</span> Single Message
+        </a>
+        <a href="javascript:void(0)" onclick="toggleMobileDrawer(); switchSendingMode('bulk')" class="mobile-drawer-link">
+          <span>📊</span> Bulk Excel
+        </a>
+        <a href="javascript:void(0)" onclick="toggleMobileDrawer(); openInbox()" class="mobile-drawer-link">
+          <span>📬</span> Inbox & Live Chat
+        </a>
+        <a href="javascript:void(0)" onclick="toggleMobileDrawer(); openReportsModal()" class="mobile-drawer-link">
+          <span>📈</span> Reports & Reach
+        </a>
+        <a href="#settings-section" onclick="toggleMobileDrawer()" class="mobile-drawer-link">
+          <span>⚙️</span> Meta API Settings
+        </a>
+        <a href="javascript:void(0)" onclick="toggleMobileDrawer(); openDiagnosticsModal()" class="mobile-drawer-link">
+          <span>🔍</span> Diagnostics Health Probe
+        </a>
+      </div>
+    </div>
   </div>
 
   <!-- MAIN CONTAINER -->
@@ -1675,12 +1809,19 @@
 
             <label class="lbl">Contact List Spreadsheet</label>
             <div class="upload-zone" id="exZ">
-              <input type="file" id="exI" accept=".xlsx,.xls" onchange="upEx(event)">
+              <input type="file" id="exI" accept=".xlsx,.xls,.csv" onchange="upEx(event)">
               <div class="upload-icon">
                 <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
               </div>
-              <div class="upload-title">Drop Excel File Here</div>
-              <div class="upload-sub">Validates names, phone numbers, and duplicates</div>
+              <div class="upload-title">Drop Excel or CSV File Here</div>
+              <div class="upload-sub">Validates names, phone numbers, and duplicates (.xlsx, .xls, .csv)</div>
+            </div>
+
+            <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <a href="/api/sample-excel" target="_blank" class="btn" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:var(--txt-secondary); font-size:11.5px; padding:6px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                📥 Download Sample Spreadsheet (.xlsx)
+              </a>
+              <span style="font-size:11px; color:var(--txt-muted);">Columns: Name, Phone, Consent</span>
             </div>
 
             <div class="file-badge" id="exB" style="display:none; justify-content:space-between; align-items:center; margin-top:12px;">
@@ -1697,7 +1838,7 @@
                 <span id="recSummaryText" style="font-size:12px; font-weight:700; color:var(--grn);">0 Contacts Loaded</span>
                 <span id="recDedupText" style="font-size:11px; color:var(--txt-muted);">Validation clean</span>
               </div>
-              <div id="recListPreview" style="font-size:11.5px; font-family:var(--font-mono); color:var(--txt-secondary); max-height:100px; overflow-y:auto; line-height:1.6;"></div>
+              <div id="recListPreview" style="font-size:11.5px; font-family:var(--font-mono); color:var(--txt-secondary); max-height:160px; overflow-y:auto; line-height:1.6;"></div>
             </div>
           </div>
 
@@ -1776,10 +1917,21 @@
             </div>
           </div>
 
-          <button class="btn-launch" id="btnL" onclick="doLaunch()" disabled>
-            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-            Launch Bulk Campaign Now
-          </button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+            <button class="btn-launch" id="btnL" onclick="doLaunch()" disabled style="flex:2; min-width:200px;">
+              <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              <span id="btnLaunchText">Launch Bulk Campaign Now</span>
+            </button>
+            <button type="button" class="btn" id="btnPauseBulk" onclick="pauseBulkCampaign()" style="display:none; flex:1; min-width:110px; background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.45); color:#fbbf24; font-weight:700;">
+              ⏸ Pause
+            </button>
+            <button type="button" class="btn" id="btnResumeBulk" onclick="resumeBulkCampaign()" style="display:none; flex:1; min-width:110px; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.45); color:#34d399; font-weight:700;">
+              ▶ Resume
+            </button>
+            <button type="button" class="btn" id="btnCancelBulk" onclick="cancelBulkCampaign()" style="display:none; flex:1; min-width:110px; background:rgba(244,63,94,0.18); border:1px solid rgba(244,63,94,0.45); color:#fb7185; font-weight:700;">
+              ⏹ Cancel
+            </button>
+          </div>
 
           <!-- LIVE LOG FEED -->
           <div class="console-log" id="clog">
@@ -1805,6 +1957,9 @@
                 </button>
                 <a href="/api/reports/download" target="_blank" class="btn btn-primary" style="padding:8px 16px; font-size:12.5px; text-decoration:none;">
                   📥 Download CSV Report
+                </a>
+                <a href="/api/reports/failed-recipients" target="_blank" class="btn" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.4); color:#fb7185; padding:8px 16px; font-size:12.5px; text-decoration:none;">
+                  ⚠️ Export Failed Contacts
                 </a>
               </div>
             </div>
@@ -2111,6 +2266,43 @@
       </div>
 
       <div id="reportsBody" style="padding:20px 24px; overflow-y:auto; flex:1;"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================================ -->
+  <!-- MODAL: META API HEALTH DIAGNOSTICS PROBE -->
+  <!-- ============================================================================ -->
+  <div id="diagnosticsModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 820px;">
+      <div style="padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#06b6d4,#8b5cf6); display:grid; place-items:center;">
+            <svg style="width:18px;height:18px;fill:#fff;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          </div>
+          <div>
+            <h3 style="font-size:17.5px; font-weight:800; color:#fff;">Meta Cloud API Diagnostic Health Probe</h3>
+            <p style="font-size:12px; color:var(--txt-muted);">Graph API credentials, permissions, WABA status, and token expiry verification</p>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button onclick="runDeepDiagnosisModal()" class="btn btn-primary" style="font-size:12px; padding:7px 14px;">
+            ⟳ Re-run Probe
+          </button>
+          <button onclick="closeDiagnosticsModal()" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+      </div>
+
+      <div style="padding:20px 24px; overflow-y:auto; flex:1;">
+        <div id="modalDiagnosticsResultBox">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-weight:800; font-size:13px; color:#22d3ee; text-transform:uppercase; letter-spacing:0.5px;">Diagnostic Probe Results</span>
+            <span id="modalDiagnoseBadge" style="font-size:11px; padding:3px 10px; border-radius:100px; font-weight:800; background:rgba(255,255,255,0.1); color:#fff;">Ready</span>
+          </div>
+          <div id="modalDiagnosticsStepsList" style="display:flex; flex-direction:column; gap:8px; font-size:12.5px;">
+            <div style="color:var(--txt-muted); text-align:center; padding:20px;">Click "Re-run Probe" to test your Meta Cloud API connection.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2587,12 +2779,14 @@
           if (d.opted_out) badges.push(`🛑 ${d.opted_out} opted-out`);
           dTxt.textContent = badges.join(' · ') || 'Validation clean';
 
-          let previewHtml = (d.preview || []).map(p =>
-            `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);">` +
-            `<span><b>${p.name}</b></span>` +
-            `<span style="color:var(--grn);">+${p.phone}</span>` +
-            `</div>`
-          ).join('');
+          let previewHtml = (d.preview || []).map(p => {
+            const safePhone = escapeHtml(p.phone);
+            const safeName = escapeHtml(p.name);
+            return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">` +
+              `<div><b>${safeName}</b> <span style="color:var(--grn); font-family:var(--font-mono); font-size:11px;">+${safePhone}</span></div>` +
+              `<button type="button" onclick="sendSingleFromExcel('${safePhone}', '${safeName}')" class="btn" style="background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.4); color:#c084fc; font-size:10.5px; padding:3px 8px; border-radius:6px; cursor:pointer;" title="Send individual test message via Meta API">Send Test</button>` +
+              `</div>`;
+          }).join('');
           lPrev.innerHTML = previewHtml;
 
           stE.textContent = `${d.valid} Contacts (${d.consented || d.valid} Consented)`;
@@ -2606,6 +2800,149 @@
           $('btnL').disabled = true;
         }
       } catch (err) {}
+    }
+
+    async function sendSingleFromExcel(phone, name) {
+      if (!ok) {
+        toast('Please configure your Meta WhatsApp credentials in Settings first!', 'err_');
+        $('settings-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      const defaultText = ($('msgI')?.value || '').trim() || `Hello ${name || 'there'}! This is a test message.`;
+      if (!confirm(`Send individual test message to ${name} (+${phone}) via Meta Cloud API?`)) return;
+
+      try {
+        toast(`Sending test message to +${phone}...`, '');
+        const r = await apiFetch('/api/bulk/send-single-recipient', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, name, text: defaultText })
+        });
+        const d = await r.json();
+        if (d.success) {
+          toast(`Message delivered to ${name} (+${phone})! ✓`, 'ok_');
+          fetchInbox();
+          refreshReachSummary();
+        } else {
+          toast(`Meta API Error (${d.code || ''}): ${d.error || d.explanation}`, 'err_');
+        }
+      } catch (e) {
+        toast('Send error: ' + e.message, 'err_');
+      }
+    }
+
+    async function pauseBulkCampaign() {
+      try {
+        const r = await apiFetch('/api/bulk/pause', { method: 'POST' });
+        const d = await r.json();
+        if (d.success) {
+          toast('Campaign paused. Click Resume to continue.', '');
+          const bp = $('btnPauseBulk'); const br = $('btnResumeBulk');
+          if (bp) bp.style.display = 'none';
+          if (br) br.style.display = 'inline-flex';
+        } else {
+          toast(d.error || 'Failed to pause campaign', 'err_');
+        }
+      } catch (e) {
+        toast('Error pausing campaign: ' + e.message, 'err_');
+      }
+    }
+
+    async function resumeBulkCampaign() {
+      try {
+        const r = await apiFetch('/api/bulk/resume', { method: 'POST' });
+        const d = await r.json();
+        if (d.success) {
+          toast('Campaign resumed! ✓', 'ok_');
+          const bp = $('btnPauseBulk'); const br = $('btnResumeBulk');
+          if (br) br.style.display = 'none';
+          if (bp) bp.style.display = 'inline-flex';
+        } else {
+          toast(d.error || 'Failed to resume campaign', 'err_');
+        }
+      } catch (e) {
+        toast('Error resuming campaign: ' + e.message, 'err_');
+      }
+    }
+
+    async function cancelBulkCampaign() {
+      if (!confirm('Are you sure you want to cancel the active bulk campaign? Any unsent messages will not be dispatched.')) return;
+      try {
+        const r = await apiFetch('/api/bulk/cancel', { method: 'POST' });
+        const d = await r.json();
+        if (d.success) {
+          toast('Campaign cancelled by user.', '');
+          const bp = $('btnPauseBulk'); const br = $('btnResumeBulk'); const bc = $('btnCancelBulk');
+          if (bp) bp.style.display = 'none';
+          if (br) br.style.display = 'none';
+          if (bc) bc.style.display = 'none';
+          $('btnL').disabled = false;
+          $('btnLaunchText').textContent = 'Launch Bulk Campaign Now';
+        } else {
+          toast(d.error || 'Failed to cancel campaign', 'err_');
+        }
+      } catch (e) {
+        toast('Error cancelling campaign: ' + e.message, 'err_');
+      }
+    }
+
+    function toggleMobileDrawer() {
+      const overlay = $('mobileDrawerOverlay');
+      if (overlay) overlay.classList.toggle('open');
+    }
+
+    function openDiagnosticsModal() {
+      const m = $('diagnosticsModal');
+      if (m) m.style.display = 'flex';
+      runDeepDiagnosisModal();
+    }
+
+    function closeDiagnosticsModal() {
+      const m = $('diagnosticsModal');
+      if (m) m.style.display = 'none';
+    }
+
+    async function runDeepDiagnosisModal() {
+      const badge = $('modalDiagnoseBadge');
+      const list = $('modalDiagnosticsStepsList');
+      if (!badge || !list) return;
+
+      badge.textContent = 'Probing Meta API...';
+      badge.style.background = 'rgba(6,182,212,0.2)';
+      badge.style.color = '#22d3ee';
+      list.innerHTML = `<div style="color:var(--txt-secondary);">Contacting Meta Graph API endpoints & permissions...</div>`;
+
+      try {
+        const r = await apiFetch('/api/meta/diagnose');
+        const d = await r.json();
+
+        if (!d.success && !d.diagnosis) {
+          badge.textContent = 'Configuration Missing';
+          badge.style.background = 'rgba(244,63,94,0.2)';
+          badge.style.color = '#f43f5e';
+          list.innerHTML = `<div style="color:#f43f5e; padding:12px; background:rgba(244,63,94,0.1); border-radius:8px;">${d.message || 'Meta credentials not found. Please enter Phone ID and Token in Settings.'}</div>`;
+          return;
+        }
+
+        const diag = d.diagnosis;
+        badge.textContent = diag.ok ? 'All Probes Passed ✓' : 'Issues Detected ✗';
+        badge.style.background = diag.ok ? 'rgba(16,185,129,0.2)' : 'rgba(244,63,94,0.2)';
+        badge.style.color = diag.ok ? 'var(--grn)' : '#f43f5e';
+
+        list.innerHTML = diag.steps.map(s => `
+          <div style="background:rgba(255,255,255,0.03); padding:10px 14px; border-radius:10px; border-left:3px solid ${s.passed ? 'var(--grn)' : '#f43f5e'};">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="color:#fff;">${s.name}</strong>
+              <span style="font-size:11px; font-weight:800; color:${s.passed ? 'var(--grn)' : '#f43f5e'};">
+                ${s.passed ? 'PASSED ✓' : 'FAILED ✗'}
+              </span>
+            </div>
+            <div style="color:var(--txt-secondary); margin-top:4px; line-height:1.5;">${s.detail}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        list.innerHTML = `<div style="color:#f43f5e;">Diagnostics error: ${e.message}</div>`;
+      }
     }
 
     async function upEx(e) {
@@ -2664,10 +3001,16 @@
 
       savMsg().then(() => {
         const b = $('btnL'), cl = $('clog'), feed = $('cfeed');
+        const btnPause = $('btnPauseBulk');
+        const btnResume = $('btnResumeBulk');
+        const btnCancel = $('btnCancelBulk');
         cl.style.display = 'block';
         feed.innerHTML = '<div class="log-dim">🚀 Initializing official Meta WhatsApp Cloud API campaign engine...</div>';
         b.disabled = true;
         b.textContent = '⏳ Dispatching Messages...';
+        if (btnPause) btnPause.style.display = 'inline-flex';
+        if (btnResume) btnResume.style.display = 'none';
+        if (btnCancel) btnCancel.style.display = 'inline-flex';
         cl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
         const streamUrl = '/api/stream-campaign?sessionId=' + encodeURIComponent(getSessionId());
@@ -2694,6 +3037,9 @@
             src.close();
             b.disabled = false;
             b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+            if (btnPause) btnPause.style.display = 'none';
+            if (btnResume) btnResume.style.display = 'none';
+            if (btnCancel) btnCancel.style.display = 'none';
 
             // Reveal and populate Campaign Reach Scorecard
             const rc = $('campaignReachCard');
@@ -2719,6 +3065,9 @@
           src.close();
           b.disabled = false;
           b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+          if (btnPause) btnPause.style.display = 'none';
+          if (btnResume) btnResume.style.display = 'none';
+          if (btnCancel) btnCancel.style.display = 'none';
         };
       });
     }
@@ -3506,7 +3855,7 @@
     }
 
     // Modal click & escape listeners
-    ['inboxModal', 'reportsModal'].forEach(id => {
+    ['inboxModal', 'reportsModal', 'diagnosticsModal'].forEach(id => {
       const el = $(id);
       if (el) {
         el.addEventListener('click', function(e) {
@@ -3517,7 +3866,7 @@
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
-        ['inboxModal', 'reportsModal'].forEach(id => {
+        ['inboxModal', 'reportsModal', 'diagnosticsModal'].forEach(id => {
           const el = $(id);
           if (el) {
             el.classList.remove('on');

@@ -14,7 +14,7 @@ services:
       - key: WHATSAPP_BUSINESS_ACCOUNT_ID
         sync: false
       - key: WHATSAPP_TEMPLATE_NAME
-        value: "campaign_update"
+        value: ""
       - key: WEBHOOK_VERIFY_TOKEN
         value: "whatsapp_campaign_verify_token_123"
       - key: USE_CLAUDE
