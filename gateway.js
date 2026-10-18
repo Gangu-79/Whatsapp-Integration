@@ -1878,16 +1878,10 @@ app.post('/api/inbox/reply', async (req, res) => {
     const conv = convs.find(c => c.phone === cleanPhone);
     const isWindowActive = conv ? conv.is_window_active : false;
 
-    // If outside 24h window and no template specified, require an approved template
+    // Resolve template: use explicit template, or fallback to settings template if window closed
     let effectiveTemplate = (templateName && String(templateName).trim()) ? String(templateName).trim() : null;
-    if (!effectiveTemplate && !isWindowActive) {
-      return res.status(400).json({
-        success: false,
-        code: 131047,
-        error: `24-Hour Customer Care Window Closed for +${cleanPhone}.`,
-        explanation: 'Outside the active 24-hr customer service window, Meta strictly requires an approved Message Template. Freeform direct messages cannot be sent. Please select an approved template or wait for the contact to message you.',
-        windowClosed: true
-      });
+    if (!effectiveTemplate && !isWindowActive && cfg.templateName) {
+      effectiveTemplate = cfg.templateName;
     }
 
     if (effectiveTemplate && effectiveTemplate.toLowerCase() === 'hello_world') {
@@ -1899,14 +1893,15 @@ app.post('/api/inbox/reply', async (req, res) => {
       });
     }
 
-    // Send reply via Meta Cloud API
+    // Send reply via Meta Cloud API (Meta API will validate window server-side)
     let result = await metaApi.sendMessage({
       token: cfg.token,
       phoneNumberId: cfg.phoneNumberId,
       to: cleanPhone,
       text: message.trim(),
       templateName: effectiveTemplate,
-      templateLang: cfg.templateLang || 'en_US'
+      templateLang: cfg.templateLang || 'en_US',
+      recipientName: conv?.contact_name || ''
     });
 
     if (result.success) {

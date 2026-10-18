@@ -2294,6 +2294,20 @@
               <!-- Populated via fetchActiveChatMessages() -->
             </div>
 
+            <!-- 24-hr Window Template Bar (Visible when 24h window is closed) -->
+            <div id="inboxTemplateBar" style="display: none; padding: 8px 16px; background: rgba(244,63,94,0.08); border-top: 1px solid rgba(244,63,94,0.22); align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #f43f5e;">
+                <span>⚠️ 24h Window Closed</span>
+                <span style="color: var(--txt-muted); font-size: 11px;">(Meta requires an approved template to message this contact)</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 11px; color: var(--txt-secondary);">Template:</label>
+                <select id="inboxReplyTemplateSelect" style="background: #0f0e17; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 5px 10px; font-size: 11.5px; outline: none; max-width: 280px;">
+                  <option value="">⚙️ Auto-use Configured Template</option>
+                </select>
+              </div>
+            </div>
+
             <!-- Reply Bar -->
             <div class="chat-footer-bar">
               <input type="text" id="chatReplyInput" onkeydown="if(event.key==='Enter') sendActiveChatReply()" placeholder="Type a WhatsApp reply... (Press Enter to send)" style="flex: 1; background: #06050b; border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 11px 16px; color: #fff; font-size: 13.5px; outline: none;">
@@ -3664,11 +3678,28 @@
       $('activeChatAvatar').textContent = (contactName ? contactName.charAt(0) : '+').toUpperCase();
 
       const badgeEl = $('activeChatWindowBadge');
+      const tplBar = $('inboxTemplateBar');
+      const tplSelect = $('inboxReplyTemplateSelect');
+
       if (badgeEl) {
         if (conv?.is_window_active) {
           badgeEl.innerHTML = `<span style="background:rgba(16,185,129,0.18); color:var(--grn); padding:3px 9px; border-radius:100px; font-weight:700; font-size:11px;">🟢 24h Window Active (${conv.window_time_left} left)</span>`;
+          if (tplBar) tplBar.style.display = 'none';
+          if ($('chatReplyInput')) $('chatReplyInput').placeholder = 'Type a WhatsApp reply... (Press Enter to send)';
         } else {
-          badgeEl.innerHTML = `<span style="background:rgba(244,63,94,0.18); color:#f43f5e; padding:3px 9px; border-radius:100px; font-weight:700; font-size:11px;" title="Replies will use approved Meta template">🔴 Window Expired (Auto-Template Reply)</span>`;
+          badgeEl.innerHTML = `<span style="background:rgba(244,63,94,0.18); color:#f43f5e; padding:3px 9px; border-radius:100px; font-weight:700; font-size:11px;" title="Replies outside 24h window use approved Meta template">🔴 Window Closed (Template Reply)</span>`;
+          if (tplBar) {
+            tplBar.style.display = 'flex';
+            if (tplSelect) {
+              let opts = '<option value="">⚙️ Auto-use Configured Template</option>';
+              if (metaApprovedTemplates && metaApprovedTemplates.length > 0) {
+                opts += metaApprovedTemplates.map(t => `<option value="${escapeHtml(t.name)}">📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)})</option>`).join('');
+              }
+              opts += '<option value="__direct__">💬 Attempt Direct Message</option>';
+              tplSelect.innerHTML = opts;
+            }
+          }
+          if ($('chatReplyInput')) $('chatReplyInput').placeholder = 'Type reply message or variable value (press Enter)...';
         }
       }
 
@@ -3804,21 +3835,33 @@
       btn.disabled = true;
       btn.style.opacity = '0.6';
 
+      const tplSelect = $('inboxReplyTemplateSelect');
+      let selectedTpl = (tplSelect ? tplSelect.value : '').trim();
+      if (selectedTpl === '__direct__') selectedTpl = '';
+
       try {
         const res = await apiFetch('/api/inbox/reply', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: activeChatPhone, message: text })
+          body: JSON.stringify({
+            to: activeChatPhone,
+            message: text,
+            templateName: selectedTpl || undefined
+          })
         });
         const d = await res.json();
         if (d.success) {
           inp.value = '';
-          toast('Reply sent successfully! ✓', 'ok_');
+          toast(d.usedTemplate ? `✓ Reply sent via template '${d.usedTemplate}'!` : 'Reply sent successfully! ✓', 'ok_');
           playNotificationChime();
           await fetchActiveChatMessages(activeChatPhone, false);
           fetchInbox();
         } else {
-          toast(`Meta API Error (${d.code || ''}): ${d.explanation || d.error}`, 'err_');
+          if (d.code === 131047) {
+            toast(`Meta 24-hr Policy (131047): Outside the 24-hr customer service window, Meta strictly requires an approved Message Template. Please select an approved template or configure one in Settings.`, 'err_');
+          } else {
+            toast(`Meta API Error (${d.code || ''}): ${d.explanation || d.error}`, 'err_');
+          }
         }
       } catch (e) {
         toast('Failed to send reply: ' + e.message, 'err_');
