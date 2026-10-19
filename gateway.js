@@ -1910,20 +1910,12 @@ app.post('/api/inbox/reply', async (req, res) => {
     const conv = convs.find(c => c.phone === cleanPhone);
     const isWindowActive = conv ? conv.is_window_active : false;
 
-    // Resolve template: use explicit template, or fallback to settings template if window closed
-    let effectiveTemplate = (templateName && String(templateName).trim()) ? String(templateName).trim() : null;
-    if (!effectiveTemplate && !isWindowActive && cfg.templateName) {
+    // Resolve template: explicit template, or direct message if requested
+    let effectiveTemplate = null;
+    if (templateName && String(templateName).trim() && templateName !== '__direct__') {
+      effectiveTemplate = String(templateName).trim();
+    } else if (!isWindowActive && cfg.templateName) {
       effectiveTemplate = cfg.templateName;
-    }
-
-    // Outside 24-hr window, Meta strictly requires an approved template
-    if (!isWindowActive && !effectiveTemplate) {
-      return res.status(400).json({
-        success: false,
-        code: 131047,
-        error: "Meta 24-Hour Policy (131047): The 24-hour customer care window for this contact has expired.",
-        explanation: "Meta strictly requires an approved Message Template to send messages outside the active 24-hour window. Please select an approved template from the template selector."
-      });
     }
 
     if (effectiveTemplate && effectiveTemplate.toLowerCase() === 'hello_world') {
@@ -1938,7 +1930,7 @@ app.post('/api/inbox/reply', async (req, res) => {
     // Determine template language
     const chosenLang = templateLang || cfg.templateLang || 'en_US';
 
-    // Send reply via Meta Cloud API
+    // Attempt sending message via Meta Cloud API
     let result = await metaApi.sendMessage({
       token: cfg.token,
       phoneNumberId: cfg.phoneNumberId,
@@ -1965,6 +1957,39 @@ app.post('/api/inbox/reply', async (req, res) => {
         });
         if (retryResult.success) {
           result = retryResult;
+        }
+      }
+    }
+
+    // Auto-recovery from Meta 131047 (24h window closed):
+    // If a direct message failed with 131047 because customer's window expired on Meta,
+    // automatically attempt to send using the configured template or any approved WABA template!
+    if (!result.success && result.code === 131047 && !effectiveTemplate) {
+      let fallbackTemplate = cfg.templateName;
+      if (!fallbackTemplate && cfg.wabaId) {
+        try {
+          const tplsRes = await metaApi.fetchApprovedTemplates(cfg.token, cfg.wabaId);
+          if (tplsRes.success && tplsRes.templates && tplsRes.templates.length > 0) {
+            fallbackTemplate = tplsRes.templates[0].name;
+            console.log(`[Inbox Reply] Auto-recovering from 131047 with approved WABA template: '${fallbackTemplate}'`);
+          }
+        } catch (e) {}
+      }
+
+      if (fallbackTemplate) {
+        console.log(`[Inbox Reply] 24-hr window closed on Meta. Auto-retrying via template '${fallbackTemplate}'...`);
+        const tplRetry = await metaApi.sendMessage({
+          token: cfg.token,
+          phoneNumberId: cfg.phoneNumberId,
+          to: cleanPhone,
+          text: message.trim(),
+          templateName: fallbackTemplate,
+          templateLang: chosenLang,
+          recipientName: conv?.contact_name || ''
+        });
+        if (tplRetry.success) {
+          result = tplRetry;
+          effectiveTemplate = fallbackTemplate;
         }
       }
     }
@@ -2006,6 +2031,19 @@ app.post('/api/inbox/reply', async (req, res) => {
     }
   } catch (e) {
     console.error('[Inbox Reply Error]:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: Sync or Activate 24-hr Customer Care Window manually when customer replies on WhatsApp
+app.post('/api/inbox/open-window', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ success: false, error: 'Phone number required' });
+    const cleanPhone = metaApi.cleanPhoneNumber(phone);
+    const result = await db.openCustomerWindow(cleanPhone);
+    res.json(result);
+  } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
 });

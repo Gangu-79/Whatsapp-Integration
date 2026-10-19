@@ -124,7 +124,7 @@ async function runAllTests() {
   });
 
   await runTest('db.getConversations should calculate EXPIRED 24h window when customer messaged 26 hours ago', async () => {
-    const testPhone = '918888877777';
+    const testPhone = '9188888' + String(Date.now()).slice(-5);
     const oldTimestamp = new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(); // 26 hours ago
 
     // Seed old incoming message
@@ -141,6 +141,18 @@ async function runAllTests() {
     assert(found != null, 'Conversation not found in database!');
     assert.strictEqual(found.is_window_active, false, 'Window should be EXPIRED for message sent 26h ago!');
     assert.strictEqual(found.window_time_left, 'Expired', 'Window time left should be Expired!');
+  });
+
+  await runTest('db.openCustomerWindow should immediately activate the 24h window for an expired contact', async () => {
+    const testPhone = '9177777' + String(Date.now()).slice(-5);
+    const res = await db.openCustomerWindow(testPhone);
+    assert.strictEqual(res.success, true);
+    assert.strictEqual(res.is_window_active, true);
+
+    const convos = await db.getConversations();
+    const found = convos.find(c => c.phone === testPhone);
+    assert(found != null);
+    assert.strictEqual(found.is_window_active, true, 'Window should be ACTIVE after openCustomerWindow!');
   });
 
   // --------------------------------------------------------------------------

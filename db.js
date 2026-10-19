@@ -586,6 +586,43 @@ async function getBackupStatus() {
   };
 }
 
+async function openCustomerWindow(phone) {
+  const cleanPhone = String(phone).replace(/\D/g, '');
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+  const currentConv = memoryStore.conversations[cleanPhone] || {
+    phone: cleanPhone,
+    contact_name: '+' + cleanPhone,
+    last_message: '',
+    last_timestamp: now.toISOString(),
+    created_at: now.toISOString(),
+    unread_count: 0
+  };
+
+  memoryStore.conversations[cleanPhone] = {
+    ...currentConv,
+    window_expires_at: expiresAt
+  };
+
+  // Add an inbound record so derived 24-hr care calculation recognizes the customer interaction
+  memoryStore.messages.push({
+    id: 'sync_inbound_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    phone: cleanPhone,
+    direction: 'incoming',
+    sender_name: currentConv.contact_name || 'Customer',
+    type: 'text',
+    body: '👋 [Customer WhatsApp Interaction Synced]',
+    media_url: null,
+    media_id: null,
+    status: 'received',
+    target_phone_id: null,
+    timestamp: now.toISOString()
+  });
+
+  saveStoreSync();
+  return { success: true, phone: cleanPhone, is_window_active: true, window_expires_at: expiresAt };
+}
+
 module.exports = {
   run,
   get,
@@ -602,6 +639,7 @@ module.exports = {
   exportBackup,
   restoreBackup,
   getBackupStatus,
+  openCustomerWindow,
   isOptedOut,
   setOptOut,
   getOptOutList,

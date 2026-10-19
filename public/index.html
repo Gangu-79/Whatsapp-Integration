@@ -2358,13 +2358,20 @@
             <div id="inboxTemplateBar" style="display: none; padding: 8px 16px; background: rgba(244,63,94,0.08); border-top: 1px solid rgba(244,63,94,0.22); align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #f43f5e;">
                 <span>⚠️ 24h Window Closed</span>
-                <span style="color: var(--txt-muted); font-size: 11px;">(Meta requires an approved template to message this contact)</span>
+                <span style="color: var(--txt-muted); font-size: 11px;">(Meta policy: template required outside 24h)</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                 <label style="font-size: 11px; color: var(--txt-secondary);">Template:</label>
-                <select id="inboxReplyTemplateSelect" style="background: #0f0e17; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 5px 10px; font-size: 11.5px; outline: none; max-width: 280px;">
-                  <option value="">⚙️ Auto-use Configured Template</option>
+                <select id="inboxReplyTemplateSelect" style="background: #0f0e17; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 5px 8px; font-size: 11.5px; outline: none; max-width: 250px;">
+                  <option value="__direct__">💬 Direct Message (Send Directly)</option>
+                  <option value="">⚙️ Auto-use Approved Template</option>
                 </select>
+                <button type="button" onclick="fetchMetaTemplates(true)" class="btn" style="background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.35); color: #22d3ee; padding: 4px 9px; font-size: 11px; border-radius: 6px;" title="Refresh approved templates from Meta WABA">
+                  ⟳ Templates
+                </button>
+                <button type="button" onclick="markCustomerRepliedNow()" class="btn" style="background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.4); color: #34d399; padding: 4px 9px; font-size: 11px; border-radius: 6px; font-weight: 700;" title="Customer replied on WhatsApp? Click to open 24h conversation window">
+                  ⚡ Customer Replied
+                </button>
               </div>
             </div>
 
@@ -2749,13 +2756,16 @@
             `;
           }
 
+          // Also populate the template selector inside the chat panel
+          populateInboxTemplateSelect();
+
           if (manual) {
             if (metaApprovedTemplates.length > 0) {
               toast(`Loaded ${metaApprovedTemplates.length} approved templates from Meta WABA! ✓`, 'ok_');
             } else if (inReview.length > 0) {
               toast(`Found ${inReview.length} template(s) currently In Review by Meta.`, '');
             } else {
-              toast('No templates found in WABA.', '');
+              toast('No approved templates found in Meta WABA.', '');
             }
           }
         }
@@ -2767,6 +2777,19 @@
           btn.textContent = '🔄 Refresh Templates';
         }
       }
+    }
+
+    function populateInboxTemplateSelect() {
+      const tplSelect = $('inboxReplyTemplateSelect');
+      if (!tplSelect) return;
+      let opts = '<option value="__direct__">💬 Direct Message (Send Directly)</option>';
+      opts += '<option value="">⚙️ Auto-use Approved Template</option>';
+      if (metaApprovedTemplates && metaApprovedTemplates.length > 0) {
+        opts += `<optgroup label="✅ Approved Meta Templates (${metaApprovedTemplates.length})">`;
+        opts += metaApprovedTemplates.map(t => `<option value="${escapeHtml(t.name)}">📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)})</option>`).join('');
+        opts += `</optgroup>`;
+      }
+      tplSelect.innerHTML = opts;
     }
 
     function onSingleTplSelectChange() {}
@@ -3797,16 +3820,9 @@
           badgeEl.innerHTML = `<span style="background:rgba(244,63,94,0.18); color:#f43f5e; padding:3px 9px; border-radius:100px; font-weight:700; font-size:11px;" title="Replies outside 24h window use approved Meta template">🔴 Window Closed (Template Reply)</span>`;
           if (tplBar) {
             tplBar.style.display = 'flex';
-            if (tplSelect) {
-              let opts = '<option value="">⚙️ Auto-use Configured Template</option>';
-              if (metaApprovedTemplates && metaApprovedTemplates.length > 0) {
-                opts += metaApprovedTemplates.map(t => `<option value="${escapeHtml(t.name)}">📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)})</option>`).join('');
-              }
-              opts += '<option value="__direct__">💬 Attempt Direct Message</option>';
-              tplSelect.innerHTML = opts;
-            }
+            populateInboxTemplateSelect();
           }
-          if ($('chatReplyInput')) $('chatReplyInput').placeholder = 'Type reply message or variable value (press Enter)...';
+          if ($('chatReplyInput')) $('chatReplyInput').placeholder = 'Type reply message (press Enter to send)...';
         }
       }
 
@@ -3932,6 +3948,27 @@
       }
     }
 
+    async function markCustomerRepliedNow() {
+      if (!activeChatPhone) return toast('Please select a contact first', 'err_');
+      try {
+        const res = await apiFetch('/api/inbox/open-window', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: activeChatPhone })
+        });
+        const d = await res.json();
+        if (d.success) {
+          toast('✓ Customer reply synchronized! 24-hr care window is now active.', 'ok_');
+          await fetchInbox();
+          selectInboxContact(activeChatPhone);
+        } else {
+          toast(d.error || 'Failed to sync customer window', 'err_');
+        }
+      } catch (err) {
+        toast('Failed to sync customer window: ' + err.message, 'err_');
+      }
+    }
+
     async function sendActiveChatReply() {
       if (!activeChatPhone) return toast('Please select a contact to reply to', 'err_');
       const inp = $('chatReplyInput');
@@ -3944,7 +3981,6 @@
 
       const tplSelect = $('inboxReplyTemplateSelect');
       let selectedTpl = (tplSelect ? tplSelect.value : '').trim();
-      if (selectedTpl === '__direct__') selectedTpl = '';
 
       try {
         const res = await apiFetch('/api/inbox/reply', {
@@ -3965,7 +4001,7 @@
           fetchInbox();
         } else {
           if (d.code === 131047) {
-            toast(`Meta 24-hr Policy (131047): Outside the 24-hr customer service window, Meta strictly requires an approved Message Template. Please select an approved template or configure one in Settings.`, 'err_');
+            toast(`Meta 24-hr Policy (131047): Outside 24-hr window. Click "⚡ Customer Replied" if they messaged you, or select an approved template above.`, 'err_');
           } else {
             toast(`Meta API Error (${d.code || ''}): ${d.explanation || d.error}`, 'err_');
           }
@@ -3988,6 +4024,9 @@
       }
       fetchInbox();
       loadBackupStatus();
+      if (!metaApprovedTemplates || metaApprovedTemplates.length === 0) {
+        fetchMetaTemplates(false);
+      }
       if (inboxPollingTimer) clearInterval(inboxPollingTimer);
       inboxPollingTimer = setInterval(() => {
         if ($('inboxModal').style.display !== 'none') {
