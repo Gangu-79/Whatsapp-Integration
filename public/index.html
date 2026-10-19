@@ -3613,8 +3613,13 @@
     async function doLogout() {
       if (!confirm('Log out of this web application? Your WhatsApp Business connection will remain securely connected for background messaging.')) return;
       try {
+        // Ensure latest chat backup snapshot is saved in browser storage before logout
+        try {
+          const exp = await apiFetch('/api/backup/export?raw=1');
+          const d = await exp.json();
+          if (d && d.store) localStorage.setItem('wa_inbox_full_backup', JSON.stringify(d));
+        } catch {}
         await apiFetch('/api/logout', { method: 'POST' });
-        localStorage.removeItem('wa_session_id');
         toast('Logged out of web application. WhatsApp connection preserved.', 'ok_');
         poll();
       } catch (err) {
@@ -3660,6 +3665,30 @@
         const res = await apiFetch('/api/inbox');
         const data = await res.json();
         allConversations = data.conversations || [];
+
+        // Automatic redeploy / restart recovery:
+        // If server returns empty list but browser storage has chat history, auto-restore
+        if (allConversations.length === 0) {
+          const cachedFull = localStorage.getItem('wa_inbox_full_backup');
+          if (cachedFull) {
+            try {
+              const parsed = JSON.parse(cachedFull);
+              if (parsed && parsed.store && (parsed.store.messages?.length > 0 || Object.keys(parsed.store.conversations || {}).length > 0)) {
+                await apiFetch('/api/backup/restore', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(parsed)
+                });
+                const retryRes = await apiFetch('/api/inbox');
+                const retryData = await retryRes.json();
+                if (retryData.conversations && retryData.conversations.length > 0) {
+                  allConversations = retryData.conversations;
+                }
+              }
+            } catch (e) {}
+          }
+        }
+
         const count = allConversations.length;
         const totalUnread = allConversations.reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
@@ -3677,6 +3706,13 @@
               savedAt: Date.now(),
               conversations: allConversations
             }));
+            // Periodically sync full backup to browser storage
+            if (!window._lastBackupSync || Date.now() - window._lastBackupSync > 30000) {
+              window._lastBackupSync = Date.now();
+              apiFetch('/api/backup/export?raw=1').then(r => r.json()).then(d => {
+                if (d && d.store) localStorage.setItem('wa_inbox_full_backup', JSON.stringify(d));
+              }).catch(() => {});
+            }
           } catch {}
         }
 

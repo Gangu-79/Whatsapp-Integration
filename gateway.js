@@ -1296,8 +1296,10 @@ function launchBackgroundCampaignJob({
           await db.logCampaignRecipient(job.id, phone, name, 'sent', result.messageId).catch(() => {});
           await db.saveOutgoingReply({
             phone,
+            name,
             text: textToSend || (job.templateName ? `Template: ${job.templateName}` : '[Media Attachment]'),
             metaMessageId: result.messageId,
+            targetPhoneId: job.phoneNumberId,
             status: 'sent'
           }).catch(() => {});
         } else {
@@ -1314,6 +1316,15 @@ function launchBackgroundCampaignJob({
             result.code,
             errDetail
           ).catch(() => {});
+
+          await db.saveOutgoingReply({
+            phone,
+            name,
+            text: textToSend || (job.templateName ? `Template: ${job.templateName}` : '[Media Attachment]'),
+            targetPhoneId: job.phoneNumberId,
+            status: 'failed',
+            errorMessage: errDetail
+          }).catch(() => {});
 
           // Automatic halt on fatal credentials or account error
           if ([190, 131031].includes(result.code)) {
@@ -1357,6 +1368,7 @@ function launchBackgroundCampaignJob({
 
       job.completedAt = new Date().toISOString();
       await db.updateCampaignStats(job.id, job.sent, job.failed, job.status).catch(() => {});
+      await db.createBackupNow().catch(() => {});
 
       broadcast({
         type: 'finish',

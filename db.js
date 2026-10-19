@@ -301,7 +301,7 @@ async function saveIncomingMessage({ id, phone, name, text, type = 'text', media
   return newMsg;
 }
 
-async function saveOutgoingReply({ id, phone, text, type = 'text', mediaUrl = null, mediaId = null, metaMessageId = null, targetPhoneId = null, status = 'sent', errorMessage = null }) {
+async function saveOutgoingReply({ id, phone, name = null, text, type = 'text', mediaUrl = null, mediaId = null, metaMessageId = null, targetPhoneId = null, status = 'sent', errorMessage = null }) {
   const cleanPhone = String(phone).replace(/\D/g, '');
   const now = new Date().toISOString();
 
@@ -321,8 +321,11 @@ async function saveOutgoingReply({ id, phone, text, type = 'text', mediaUrl = nu
   memoryStore.conversations[cleanPhone] = {
     ...currentConv,
     phone: cleanPhone,
+    contact_name: name || currentConv.contact_name || ('+' + cleanPhone),
     last_message: text,
     last_timestamp: now,
+    unread_count: currentConv.unread_count || 0,
+    created_at: currentConv.created_at || now,
     window_expires_at: currentConv.window_expires_at || null,
     target_phone_id: targetPhoneId || currentConv.target_phone_id || null
   };
