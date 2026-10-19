@@ -1183,7 +1183,8 @@ function launchBackgroundCampaignJob({
   templateLang = 'en_US',
   delayMs = 1500,
   token,
-  phoneNumberId
+  phoneNumberId,
+  wabaId = null
 }) {
   const job = {
     id: campaignId,
@@ -1207,6 +1208,7 @@ function launchBackgroundCampaignJob({
     delayMs,
     token,
     phoneNumberId,
+    wabaId,
     startedAt: new Date().toISOString(),
     completedAt: null,
     listeners: new Set()
@@ -1234,6 +1236,36 @@ function launchBackgroundCampaignJob({
     addLog(`Connecting to Official Meta WhatsApp Cloud API...`);
     addLog(`Background campaign engine started: ${job.total} recipients queued. [Campaign ID: ${job.id}]`);
 
+    // 1. Fetch conversations from DB to know which recipients have active 24h windows
+    let existingConvs = [];
+    try {
+      existingConvs = await db.getConversations();
+    } catch (e) {}
+
+    // 2. Resolve approved template to comply with Meta 24-hr policy
+    let effectiveTemplate = job.templateName || null;
+    let effectiveLang = job.templateLang || 'en_US';
+    let matchedTemplate = null;
+
+    if (job.wabaId) {
+      try {
+        const tplsRes = await metaApi.fetchApprovedTemplates(job.token, job.wabaId);
+        if (tplsRes.success && tplsRes.templates && tplsRes.templates.length > 0) {
+          if (!effectiveTemplate) {
+            effectiveTemplate = tplsRes.templates[0].name;
+            effectiveLang = tplsRes.templates[0].language || 'en_US';
+            addLog(`[Policy Compliance] Contacts outside 24h window require a Meta Template. Auto-selected approved template: '${effectiveTemplate}' (${effectiveLang})`, 'ok');
+          }
+          matchedTemplate = tplsRes.templates.find(t => t.name.toLowerCase() === effectiveTemplate.toLowerCase());
+          if (matchedTemplate && matchedTemplate.language) {
+            effectiveLang = matchedTemplate.language;
+          }
+        }
+      } catch (e) {
+        console.warn('[Template Auto-Detect Error]:', e.message);
+      }
+    }
+
     try {
       for (let i = job.currentIndex; i < job.total; i++) {
         // Handle Pause state
@@ -1251,8 +1283,18 @@ function launchBackgroundCampaignJob({
         const recip = job.recipients[i];
         const name = recip.name || 'Customer';
         const phone = recip.phone;
+        const cleanPhone = metaApi.cleanPhoneNumber(phone);
 
-        addLog(`[${i + 1}/${job.total}] Sending to ${name} (+${phone})...`);
+        addLog(`[${i + 1}/${job.total}] Sending to ${name} (+${cleanPhone})...`);
+
+        // Check if this contact has an active 24h care window
+        const conv = existingConvs.find(c => c.phone === cleanPhone);
+        const isWindowActive = conv ? conv.is_window_active : false;
+
+        // If outside 24h window (typical for outbound Excel bulk), Meta policy strictly requires an approved template!
+        const tplToUse = isWindowActive ? (job.templateName || null) : (effectiveTemplate || job.templateName || null);
+        const langToUse = effectiveLang || job.templateLang || 'en_US';
+        const varCount = matchedTemplate ? matchedTemplate.variableCount : null;
 
         // Variable replacement: {{name}}
         let textToSend = (job.templateText || '').replace(/\{\{name\}\}/gi, name);
@@ -1260,15 +1302,37 @@ function launchBackgroundCampaignJob({
         let result = await metaApi.sendMessage({
           token: job.token,
           phoneNumberId: job.phoneNumberId,
-          to: phone,
+          to: cleanPhone,
           text: textToSend,
           mediaId: job.mediaId,
           mediaType: job.mediaType,
           filename: job.filename,
-          templateName: job.templateName || null,
-          templateLang: job.templateLang || 'en_US',
-          recipientName: name
+          templateName: tplToUse,
+          templateLang: langToUse,
+          recipientName: name,
+          variableCount: varCount
         });
+
+        // Language mismatch auto-retry: if 132001 (template not found for language), try alternate en/en_US
+        if (!result.success && result.code === 132001 && tplToUse) {
+          const altLang = (langToUse === 'en_US' || langToUse === 'en-US') ? 'en' : (langToUse === 'en' ? 'en_US' : null);
+          if (altLang) {
+            addLog(`[Language Auto-Retry] Retrying template '${tplToUse}' with alternate language '${altLang}'...`, 'warn');
+            result = await metaApi.sendMessage({
+              token: job.token,
+              phoneNumberId: job.phoneNumberId,
+              to: cleanPhone,
+              text: textToSend,
+              mediaId: job.mediaId,
+              mediaType: job.mediaType,
+              filename: job.filename,
+              templateName: tplToUse,
+              templateLang: altLang,
+              recipientName: name,
+              variableCount: varCount
+            });
+          }
+        }
 
         // Retry once on rate limit (HTTP 429 or Meta Error 130429) with 5-second backoff
         if (!result.success && (result.code === 429 || result.code === 130429)) {
@@ -1277,27 +1341,29 @@ function launchBackgroundCampaignJob({
           result = await metaApi.sendMessage({
             token: job.token,
             phoneNumberId: job.phoneNumberId,
-            to: phone,
+            to: cleanPhone,
             text: textToSend,
             mediaId: job.mediaId,
             mediaType: job.mediaType,
             filename: job.filename,
-            templateName: job.templateName || null,
-            templateLang: job.templateLang || 'en_US',
-            recipientName: name
+            templateName: tplToUse,
+            templateLang: langToUse,
+            recipientName: name,
+            variableCount: varCount
           });
         }
 
         if (result.success) {
           job.sent++;
           job.accepted++;
-          addLog(`--> ACCEPTED by Meta Cloud API (Meta ID: ${result.messageId})`, 'ok');
+          const usedTplStr = tplToUse ? ` (Template: ${tplToUse})` : '';
+          addLog(`--> ACCEPTED by Meta Cloud API (Meta ID: ${result.messageId})${usedTplStr}`, 'ok');
 
-          await db.logCampaignRecipient(job.id, phone, name, 'sent', result.messageId).catch(() => {});
+          await db.logCampaignRecipient(job.id, cleanPhone, name, 'sent', result.messageId).catch(() => {});
           await db.saveOutgoingReply({
-            phone,
+            phone: cleanPhone,
             name,
-            text: textToSend || (job.templateName ? `Template: ${job.templateName}` : '[Media Attachment]'),
+            text: textToSend || (tplToUse ? `Template: ${tplToUse}` : '[Media Attachment]'),
             metaMessageId: result.messageId,
             targetPhoneId: job.phoneNumberId,
             status: 'sent'
@@ -1309,7 +1375,7 @@ function launchBackgroundCampaignJob({
 
           await db.logCampaignRecipient(
             job.id,
-            phone,
+            cleanPhone,
             name,
             'failed',
             null,
@@ -1318,9 +1384,9 @@ function launchBackgroundCampaignJob({
           ).catch(() => {});
 
           await db.saveOutgoingReply({
-            phone,
+            phone: cleanPhone,
             name,
-            text: textToSend || (job.templateName ? `Template: ${job.templateName}` : '[Media Attachment]'),
+            text: textToSend || (tplToUse ? `Template: ${tplToUse}` : '[Media Attachment]'),
             targetPhoneId: job.phoneNumberId,
             status: 'failed',
             errorMessage: errDetail
@@ -1734,7 +1800,8 @@ app.get('/api/stream-campaign', async (req, res) => {
       templateLang: (req.query.templateLang || cfg.templateLang || 'en_US').trim(),
       delayMs: 1500,
       token: cfg.token,
-      phoneNumberId: cfg.phoneNumberId
+      phoneNumberId: cfg.phoneNumberId,
+      wabaId: cfg.wabaId
     });
   }
 
@@ -1760,8 +1827,8 @@ app.get('/api/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
-  const expectedToken = process.env.WEBHOOK_VERIFY_TOKEN || 'whatsapp_campaign_verify_token_123';
 
+  const expectedToken = process.env.WEBHOOK_VERIFY_TOKEN || 'whatsapp_campaign_verify_token_123';
   if (mode === 'subscribe' && token === expectedToken) {
     console.log('[Meta Webhook] Successfully verified webhook subscription challenge.');
     return res.status(200).send(challenge);
@@ -1787,7 +1854,15 @@ app.post('/api/webhook', async (req, res) => {
           for (const status of value.statuses) {
             const metaId = status.id;
             const deliveryStatus = status.status; // 'sent' | 'delivered' | 'read' | 'failed'
-            const errorDetails = status.errors ? JSON.stringify(status.errors) : null;
+            let errorDetails = null;
+            if (status.errors && status.errors.length > 0) {
+              const err0 = status.errors[0];
+              const code = err0.code || '';
+              const detail = err0.error_data?.details || err0.message || err0.title || 'Message delivery failed';
+              errorDetails = code ? `Error ${code}: ${detail}` : detail;
+            } else if (status.errors) {
+              errorDetails = typeof status.errors === 'string' ? status.errors : JSON.stringify(status.errors);
+            }
 
             console.log(`[Meta Webhook] Delivery: ${deliveryStatus} | Recipient: ${status.recipient_id} | MetaID: ${metaId}`);
             await db.updateMessageDeliveryStatus(metaId, deliveryStatus, errorDetails).catch(() => {});

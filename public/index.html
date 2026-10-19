@@ -2019,6 +2019,25 @@
             </div>
           </div>
 
+          <!-- Meta Policy 24-hr Window & Approved Template Selector -->
+          <div style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 16px;">📋</span>
+              <div>
+                <div style="font-size: 12.5px; font-weight: 700; color: #fff;">WhatsApp Message Template (Meta Policy Compliance)</div>
+                <div style="font-size: 11px; color: var(--txt-muted);">Contacts outside the 24-hr window require an approved Meta template to prevent Error 131047</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <select id="bulkCampaignTemplateSelect" style="background: #0f0e17; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 7px 12px; font-size: 12px; outline: none; min-width: 260px; max-width: 340px;">
+                <option value="">⚙️ Auto-use Approved Template (Recommended)</option>
+              </select>
+              <button type="button" onclick="fetchMetaTemplates(true)" class="btn" style="background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.35); color: #22d3ee; padding: 6px 12px; font-size: 11.5px; border-radius: 8px;" title="Refresh approved templates from Meta WABA">
+                ⟳ Refresh
+              </button>
+            </div>
+          </div>
+
           <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
             <button class="btn-launch" id="btnL" onclick="doLaunch()" style="flex:2; min-width:200px;">
               <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -2756,8 +2775,9 @@
             `;
           }
 
-          // Also populate the template selector inside the chat panel
+          // Also populate the template selector inside the chat panel and bulk campaign panel
           populateInboxTemplateSelect();
+          populateBulkTemplateSelect();
 
           if (manual) {
             if (metaApprovedTemplates.length > 0) {
@@ -2790,6 +2810,18 @@
         opts += `</optgroup>`;
       }
       tplSelect.innerHTML = opts;
+    }
+
+    function populateBulkTemplateSelect() {
+      const sel = $('bulkCampaignTemplateSelect');
+      if (!sel) return;
+      let opts = '<option value="">⚙️ Auto-use Approved Template (Recommended)</option>';
+      if (metaApprovedTemplates && metaApprovedTemplates.length > 0) {
+        opts += `<optgroup label="✅ Approved Meta Templates (${metaApprovedTemplates.length})">`;
+        opts += metaApprovedTemplates.map(t => `<option value="${escapeHtml(t.name)}">📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)} · ${escapeHtml(t.category)})</option>`).join('');
+        opts += `</optgroup>`;
+      }
+      sel.innerHTML = opts;
     }
 
     function onSingleTplSelectChange() {}
@@ -3265,7 +3297,9 @@
         if (btnCancel) btnCancel.style.display = 'inline-flex';
         cl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-        const streamUrl = '/api/stream-campaign?sessionId=' + encodeURIComponent(getSessionId());
+        const chosenTpl = ($('bulkCampaignTemplateSelect')?.value || '').trim();
+        let streamUrl = '/api/stream-campaign?sessionId=' + encodeURIComponent(getSessionId());
+        if (chosenTpl) streamUrl += '&template=' + encodeURIComponent(chosenTpl);
         const src = new EventSource(streamUrl);
 
         src.onmessage = ev => {

@@ -1,7 +1,7 @@
 {
   "settings": {
-    "LAST_BACKUP_TIME": "2026-10-19T09:00:50.289Z",
-    "LAST_RESTORE_TIME": "2026-10-19T09:00:50.294Z"
+    "LAST_BACKUP_TIME": "2026-10-19T09:55:30.770Z",
+    "LAST_RESTORE_TIME": "2026-10-19T09:55:30.775Z"
   },
   "sessions": {},
   "users": {
@@ -22,9 +22,9 @@
       "phone": "919999988888",
       "contact_name": "Test Customer Recent",
       "last_message": "Hello, I need insurance details",
-      "last_timestamp": "2026-10-19T07:00:50.224Z",
-      "unread_count": 7,
-      "window_expires_at": "2026-10-20T09:00:50.225Z",
+      "last_timestamp": "2026-10-19T07:55:30.684Z",
+      "unread_count": 9,
+      "window_expires_at": "2026-10-20T09:55:30.686Z",
       "target_phone_id": null,
       "created_at": "2026-10-19T04:22:54.057Z"
     },
@@ -42,9 +42,9 @@
       "phone": "919966559211",
       "contact_name": "Dedup Customer",
       "last_message": "First arrival of message",
-      "last_timestamp": "2026-10-19T09:00:50.288Z",
-      "unread_count": 7,
-      "window_expires_at": "2026-10-20T09:00:50.288Z",
+      "last_timestamp": "2026-10-19T09:55:30.768Z",
+      "unread_count": 9,
+      "window_expires_at": "2026-10-20T09:55:30.768Z",
       "target_phone_id": null,
       "created_at": "2026-10-19T06:22:54.143Z"
     },
@@ -85,6 +85,44 @@
       "created_at": "2026-10-19T09:00:50.229Z",
       "unread_count": 0,
       "window_expires_at": "2026-10-20T09:00:50.229Z"
+    },
+    "918888804611": {
+      "phone": "918888804611",
+      "contact_name": "Test Customer Old",
+      "last_message": "Old query from yesterday",
+      "last_timestamp": "2026-10-18T07:50:04.611Z",
+      "unread_count": 1,
+      "window_expires_at": "2026-10-20T09:50:04.611Z",
+      "target_phone_id": null,
+      "created_at": "2026-10-18T07:50:04.611Z"
+    },
+    "917777704612": {
+      "phone": "917777704612",
+      "contact_name": "+917777704612",
+      "last_message": "",
+      "last_timestamp": "2026-10-19T09:50:04.612Z",
+      "created_at": "2026-10-19T09:50:04.612Z",
+      "unread_count": 0,
+      "window_expires_at": "2026-10-20T09:50:04.612Z"
+    },
+    "918888830689": {
+      "phone": "918888830689",
+      "contact_name": "Test Customer Old",
+      "last_message": "Old query from yesterday",
+      "last_timestamp": "2026-10-18T07:55:30.689Z",
+      "unread_count": 1,
+      "window_expires_at": "2026-10-20T09:55:30.689Z",
+      "target_phone_id": null,
+      "created_at": "2026-10-18T07:55:30.689Z"
+    },
+    "917777730690": {
+      "phone": "917777730690",
+      "contact_name": "+917777730690",
+      "last_message": "",
+      "last_timestamp": "2026-10-19T09:55:30.691Z",
+      "created_at": "2026-10-19T09:55:30.691Z",
+      "unread_count": 0,
+      "window_expires_at": "2026-10-20T09:55:30.691Z"
     }
   },
   "messages": [
@@ -412,6 +450,110 @@
       "status": "received",
       "target_phone_id": null,
       "timestamp": "2026-10-19T09:00:50.288Z"
+    },
+    {
+      "id": "msg_1792403404608_es1t4v",
+      "phone": "919999988888",
+      "direction": "incoming",
+      "sender_name": "Test Customer Recent",
+      "type": "text",
+      "body": "Hello, I need insurance details",
+      "media_url": null,
+      "media_id": null,
+      "status": "received",
+      "target_phone_id": null,
+      "timestamp": "2026-10-19T07:50:04.607Z"
+    },
+    {
+      "id": "msg_1792403404611_dt89cx",
+      "phone": "918888804611",
+      "direction": "incoming",
+      "sender_name": "Test Customer Old",
+      "type": "text",
+      "body": "Old query from yesterday",
+      "media_url": null,
+      "media_id": null,
+      "status": "received",
+      "target_phone_id": null,
+      "timestamp": "2026-10-18T07:50:04.611Z"
+    },
+    {
+      "id": "sync_inbound_1792403404613_rtqh",
+      "phone": "917777704612",
+      "direction": "incoming",
+      "sender_name": "+917777704612",
+      "type": "text",
+      "body": "👋 [Customer WhatsApp Interaction Synced]",
+      "media_url": null,
+      "media_id": null,
+      "status": "received",
+      "target_phone_id": null,
+      "timestamp": "2026-10-19T09:50:04.612Z"
+    },
+    {
+      "id": "test_dedup_1792403404702",
+      "phone": "919966559211",
+      "direction": "incoming",
+      "sender_name": "Dedup Customer",
+      "type": "text",
+      "body": "First arrival of message",
+      "media_url": null,
+      "media_id": null,
+      "status": "received",
+      "target_phone_id": null,
+      "timestamp": "2026-10-19T09:50:04.702Z"
+    },
+    {
+      "id": "msg_1792403730686_17ejql",
+      "phone": "919999988888",
+      "direction": "incoming",
+      "sender_name": "Test Customer Recent",
+      "type": "text",
+      "body": "Hello, I need insurance details",
+      "media_url": null,
+      "media_id": null,
+      "status": "received",
+      "target_phone_id": null,
+      "timestamp": "2026-10-19T07:55:30.684Z"
+    },
+    {
+      "id": "msg_1792403730689_54rtf4",
+      "phone": "918888830689",
+      "direction": "incoming",
+      "sender_name": "Test Customer Old",
+      "type": "text",
+      "body": "Old query from yesterday",
+      "media_url": null,
+      "media_id": null,
+      "status": "received",
+      "target_phone_id": null,
+      "timestamp": "2026-10-18T07:55:30.689Z"
+    },
+    {
+      "id": "sync_inbound_1792403730691_fapq",
+      "phone": "917777730690",
+      "direction": "incoming",
+      "sender_name": "+917777730690",
+      "type": "text",
+      "body": "👋 [Customer WhatsApp Interaction Synced]",
+      "media_url": null,
+      "media_id": null,
+      "status": "received",
+      "target_phone_id": null,
+      "timestamp": "2026-10-19T09:55:30.691Z"
+    },
+    {
+      "id": "test_dedup_1792403730768",
+      "phone": "919966559211",
+      "direction": "incoming",
+      "sender_name": "Dedup Customer",
+      "type": "text",
+      "body": "First arrival of message",
+      "media_url": null,
+      "media_id": null,
+      "status": "received",
+      "target_phone_id": null,
+      "timestamp": "2026-10-19T09:55:30.768Z"
     }
   ],
   "campaigns": {},
