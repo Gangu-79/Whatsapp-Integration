@@ -78,7 +78,7 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
   }
 
   try {
-    const url = `${GRAPH_BASE_URL}/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,status,messaging_limit_tier,throughput`;
+    const url = `${GRAPH_BASE_URL}/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,status,messaging_limit_tier,throughput,whatsapp_business_account`;
     const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 12000
@@ -96,6 +96,8 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
     else if (limitTier === 'TIER_UNLIMITED') messagingLimitText = 'Unlimited recipients / 24h (Tier 4)';
     else if (limitTier && limitTier !== 'TIER_UNKNOWN') messagingLimitText = `${limitTier} (Meta Verified)`;
 
+    const wabaId = data.whatsapp_business_account?.id || null;
+
     return {
       valid: true,
       phone: phone || phoneNumberId,
@@ -106,6 +108,7 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
       messagingLimitTier: limitTier,
       messagingLimitText: messagingLimitText,
       throughput: data.throughput || null,
+      wabaId,
       status: data.status || 'CONNECTED'
     };
   } catch (err) {
@@ -335,6 +338,23 @@ async function uploadMedia(token, phoneNumberId, filePath) {
 }
 
 /**
+ * Auto-discover WABA ID directly from Meta Graph API using Phone Number ID.
+ */
+async function autoDiscoverWabaId(token, phoneNumberId) {
+  if (!token || !phoneNumberId) return null;
+  try {
+    const url = `${GRAPH_BASE_URL}/${phoneNumberId}?fields=whatsapp_business_account`;
+    const res = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 10000
+    });
+    return res.data?.whatsapp_business_account?.id || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
  * Query Meta Graph API for all approved WhatsApp Message Templates belonging to the WABA.
  */
 async function fetchApprovedTemplates(token, wabaId) {
@@ -381,13 +401,14 @@ async function fetchApprovedTemplates(token, wabaId) {
         hasMediaHeader,
         mediaFormat,
         variableCount,
-        bodyText
+        bodyText,
+        isHelloWorld: t.name.toLowerCase() === 'hello_world'
       };
     };
 
     const allMapped = list.map(mapTemplate);
-    const approved = allMapped.filter(t => t.status === 'APPROVED' && t.name.toLowerCase() !== 'hello_world');
-    const inReview = allMapped.filter(t => ['IN_REVIEW', 'PENDING'].includes(t.status));
+    const approved = allMapped.filter(t => ['APPROVED', 'ACTIVE'].includes(t.status) || t.status.startsWith('APPROVED') || t.status.startsWith('ACTIVE'));
+    const inReview = allMapped.filter(t => ['IN_REVIEW', 'PENDING'].includes(t.status) || t.status.includes('REVIEW') || t.status.includes('PENDING'));
     const rejected = allMapped.filter(t => ['REJECTED', 'PAUSED', 'DISABLED'].includes(t.status));
 
     return {
@@ -877,6 +898,7 @@ module.exports = {
   isValidE164,
   verifyCredentials,
   deepDiagnoseCredentials,
+  autoDiscoverWabaId,
   fetchApprovedTemplates,
   validateTemplate,
   uploadMedia,

@@ -2792,6 +2792,18 @@
               toast('No approved templates found in Meta WABA. Please create and submit one in Meta WhatsApp Manager.', '');
             }
           }
+        } else {
+          const hint = $('bulkTemplateStatusHint');
+          if (hint) {
+            hint.style.display = 'block';
+            hint.style.background = 'rgba(239, 68, 68, 0.12)';
+            hint.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+            hint.style.color = '#f87171';
+            hint.innerHTML = `⚠️ <b>Could not load templates:</b> ${escapeHtml(d.message || 'Please check your Meta API credentials in Settings.')}`;
+          }
+          if (manual) {
+            toast(d.message || 'Failed to fetch templates from Meta. Please check your credentials.', 'err_');
+          }
         }
       } catch (e) {
         if (manual) toast('Failed to fetch templates: ' + e.message, 'err_');
@@ -3467,6 +3479,9 @@
           if (tbDisc) tbDisc.style.display = 'inline-flex';
           if (errBox) errBox.style.display = 'none';
           if (fixerCard) fixerCard.style.display = 'none';
+          if ($('metaWabaId') && d.wabaId && !$('metaWabaId').value) {
+            $('metaWabaId').value = d.wabaId;
+          }
           if (metaApprovedTemplates.length === 0) {
             fetchMetaTemplates();
           }
@@ -3505,6 +3520,9 @@
           }
 
           updateStickyLaunchBar();
+          if ($('metaWabaId') && d.wabaId && !$('metaWabaId').value) {
+            $('metaWabaId').value = d.wabaId;
+          }
           $('connInfo').style.display = 'none';
           $('metaConfigPanel').style.display = 'block';
           if (tbDisc) tbDisc.style.display = 'none';

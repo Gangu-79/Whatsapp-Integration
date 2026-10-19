@@ -100,9 +100,21 @@ async function getEffectiveConfig(req) {
 
   const token = (sessionRow?.token || diskCfg?.token || globalToken || process.env.WHATSAPP_TOKEN || '').trim();
   const phoneNumberId = (sessionRow?.phone_number_id || diskCfg?.phoneNumberId || globalPhoneId || process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
-  const wabaId = (sessionRow?.waba_id || diskCfg?.wabaId || globalWabaId || process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '').trim();
+  let wabaId = (sessionRow?.waba_id || diskCfg?.wabaId || globalWabaId || process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '').trim();
   const templateName = (sessionRow?.template_name || diskCfg?.templateName || globalTemplate || process.env.WHATSAPP_TEMPLATE_NAME || '').trim();
   const templateLang = (sessionRow?.template_lang || diskCfg?.templateLang || globalLang || process.env.WHATSAPP_TEMPLATE_LANG || 'en_US').trim();
+
+  // Automatic WABA ID auto-discovery from Meta if token & phone ID exist
+  if (!wabaId && token && phoneNumberId) {
+    try {
+      const autoWaba = await metaApi.autoDiscoverWabaId(token, phoneNumberId);
+      if (autoWaba) {
+        wabaId = autoWaba;
+        await db.setSetting('WHATSAPP_BUSINESS_ACCOUNT_ID', autoWaba).catch(() => {});
+        if (sessionRow) await db.saveSession(sid, { waba_id: autoWaba }).catch(() => {});
+      }
+    } catch (e) {}
+  }
 
   return { token, phoneNumberId, wabaId, templateName, templateLang };
 }
@@ -176,10 +188,15 @@ app.get('/api/status', async (req, res) => {
     if (verifyResult.valid) {
       // Save profile info to DB
       const sid = getSessionId(req);
+      const effectiveWaba = cfg.wabaId || verifyResult.wabaId || null;
+      if (effectiveWaba && !cfg.wabaId) {
+        await db.setSetting('WHATSAPP_BUSINESS_ACCOUNT_ID', effectiveWaba).catch(() => {});
+      }
+
       db.saveSession(sid, {
         token: cfg.token,
         phone_number_id: cfg.phoneNumberId,
-        waba_id: cfg.wabaId,
+        waba_id: effectiveWaba,
         template_name: cfg.templateName,
         template_lang: cfg.templateLang,
         verified_name: verifyResult.verifiedName,
@@ -202,7 +219,7 @@ app.get('/api/status', async (req, res) => {
         messagingLimitText: verifyResult.messagingLimitText || 'Dynamic Meta Limit',
         throughput: verifyResult.throughput || null,
         phoneNumberId: cfg.phoneNumberId,
-        wabaId: cfg.wabaId,
+        wabaId: effectiveWaba,
         maskedToken: metaApi.maskToken(cfg.token),
         templateName: cfg.templateName || '',
         templateLang: cfg.templateLang || 'en_US'
@@ -264,13 +281,39 @@ app.get('/api/meta/diagnose', async (req, res) => {
 // API: Fetch Approved WhatsApp Message Templates from Meta Graph API
 app.get('/api/meta/templates', async (req, res) => {
   try {
-    const cfg = await getEffectiveConfig(req);
-    if (!cfg.token || !cfg.wabaId) {
+    let cfg = await getEffectiveConfig(req);
+
+    // If wabaId is missing, auto-discover it using phoneNumberId and token
+    if (!cfg.wabaId && cfg.phoneNumberId && cfg.token) {
+      try {
+        const autoWaba = await metaApi.autoDiscoverWabaId(cfg.token, cfg.phoneNumberId);
+        if (autoWaba) {
+          cfg.wabaId = autoWaba;
+          await db.setSetting('WHATSAPP_BUSINESS_ACCOUNT_ID', autoWaba).catch(() => {});
+          await db.saveSession(getSessionId(req), { waba_id: autoWaba }).catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    if (!cfg.token) {
       return res.json({
         success: false,
-        configured: !!cfg.token && !!cfg.wabaId,
-        message: 'Permanent Access Token or WABA ID not configured. Please add your WABA ID in Meta API settings.',
-        templates: []
+        configured: false,
+        message: 'Permanent Access Token not configured. Please enter your Meta credentials in Settings.',
+        templates: [],
+        inReview: [],
+        allTemplates: []
+      });
+    }
+
+    if (!cfg.wabaId) {
+      return res.json({
+        success: false,
+        configured: false,
+        message: 'WABA ID could not be resolved. Please enter your WhatsApp Business Account ID (WABA ID) in Meta API Settings.',
+        templates: [],
+        inReview: [],
+        allTemplates: []
       });
     }
 
@@ -373,6 +416,11 @@ app.post('/api/config', async (req, res) => {
     // Run verification
     const effective = await getEffectiveConfig(req);
     const verify = await metaApi.verifyCredentials(effective.token, effective.phoneNumberId);
+
+    if (verify.valid && verify.wabaId && !dataToSave.waba_id) {
+      await db.setSetting('WHATSAPP_BUSINESS_ACCOUNT_ID', verify.wabaId).catch(() => {});
+      await db.saveSession(sid, { waba_id: verify.wabaId }).catch(() => {});
+    }
 
     res.json({
       success: true,
@@ -1251,6 +1299,16 @@ function launchBackgroundCampaignJob({
     let effectiveLang = job.templateLang || 'en_US';
     let matchedTemplate = null;
 
+    if (!job.wabaId && job.token && job.phoneNumberId) {
+      try {
+        const autoWaba = await metaApi.autoDiscoverWabaId(job.token, job.phoneNumberId);
+        if (autoWaba) {
+          job.wabaId = autoWaba;
+          await db.setSetting('WHATSAPP_BUSINESS_ACCOUNT_ID', autoWaba).catch(() => {});
+        }
+      } catch (e) {}
+    }
+
     if (job.wabaId) {
       try {
         const tplsRes = await metaApi.fetchApprovedTemplates(job.token, job.wabaId);
@@ -1585,7 +1643,8 @@ app.post('/api/bulk/start', async (req, res) => {
       templateLang: (req.body?.templateLang || cfg.templateLang || 'en_US').trim(),
       delayMs: parseInt(req.body?.delayMs) || 1500,
       token: cfg.token,
-      phoneNumberId: cfg.phoneNumberId
+      phoneNumberId: cfg.phoneNumberId,
+      wabaId: cfg.wabaId
     });
 
     res.json({
