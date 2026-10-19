@@ -3908,8 +3908,8 @@
             } else if (st === 'sent') {
               statusIcon = '<span style="color:#94a3b8;font-weight:700;" title="Sent & Accepted by Meta (One grey tick)">✓</span>';
             } else if (st === 'failed') {
-              const errStr = escapeHtml(m.error_message || 'Message delivery failed');
-              statusIcon = `<span style="color:#f43f5e;font-weight:900;" title="${errStr}">✕</span>`;
+              const errStr = escapeHtml(m.error_message || 'Message delivery failed (recipient phone unreachable or not on WhatsApp)');
+              statusIcon = `<span style="color:#f43f5e;font-weight:900;cursor:pointer;" onclick="toast('Delivery Failed: ' + (this.getAttribute('data-err') || 'Undeliverable by Meta'), 'err_')" data-err="${errStr}" title="${errStr} (Click for details)">✕</span>`;
             } else {
               statusIcon = '<span style="color:#94a3b8;font-weight:700;" title="Sent">✓</span>';
             }
