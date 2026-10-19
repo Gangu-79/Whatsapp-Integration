@@ -352,19 +352,35 @@ async function saveOutgoingReply({ id, phone, name = null, text, type = 'text', 
   return newMsg;
 }
 
+const STATUS_RANK = {
+  submitted: 10,
+  sent: 20,
+  delivered: 30,
+  read: 40,
+  failed: 50
+};
+
 async function updateMessageDeliveryStatus(metaMessageId, status, errorDetails = null) {
   if (!metaMessageId) return;
+  const newRank = STATUS_RANK[status] || 0;
 
   for (const msg of memoryStore.messages) {
     if (msg.meta_message_id === metaMessageId) {
-      msg.status = status;
+      const curRank = STATUS_RANK[msg.status] || 0;
+      // Allow transition if status is 'failed' or if new rank is higher or equal
+      if (status === 'failed' || newRank >= curRank) {
+        msg.status = status;
+      }
       if (errorDetails) msg.error_message = errorDetails;
     }
   }
 
   for (const log of memoryStore.campaign_logs) {
     if (log.meta_id === metaMessageId) {
-      log.status = status;
+      const curRank = STATUS_RANK[log.status] || 0;
+      if (status === 'failed' || newRank >= curRank) {
+        log.status = status;
+      }
       if (errorDetails) log.error_details = errorDetails;
     }
   }

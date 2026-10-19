@@ -2036,6 +2036,7 @@
                 ⟳ Refresh
               </button>
             </div>
+            <div id="bulkTemplateStatusHint" style="display:none; width:100%; margin-top:8px; font-size:11.5px; padding:6px 10px; border-radius:6px;"></div>
           </div>
 
           <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
@@ -2725,6 +2726,8 @@
 
     // ─── TEMPLATE MANAGEMENT & 24-HR WINDOW SUPPORT ───
     let metaApprovedTemplates = [];
+    let metaInReviewTemplates = [];
+    let metaAllTemplates = [];
 
     async function fetchMetaTemplates(manual = false) {
       const btn = $('btnRefreshTpls');
@@ -2740,8 +2743,8 @@
 
         if (d.success) {
           metaApprovedTemplates = d.templates || [];
-          const allTpls = d.allTemplates || [];
-          const inReview = allTpls.filter(t => t.status !== 'APPROVED' && t.name.toLowerCase() !== 'hello_world');
+          metaInReviewTemplates = d.inReview || (d.allTemplates || []).filter(t => ['IN_REVIEW', 'PENDING'].includes(t.status));
+          metaAllTemplates = d.allTemplates || [];
 
           if (sel) {
             let groupsHtml = '';
@@ -2749,7 +2752,7 @@
               groupsHtml += `
                 <optgroup label="✅ Approved Meta Templates (${metaApprovedTemplates.length})">
                   ${metaApprovedTemplates.map(t => `
-                    <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language)}" data-vars="${t.variableCount}">
+                    <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language || 'en_US')}" data-vars="${t.variableCount}">
                       📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)} · ${escapeHtml(t.category)})
                     </option>
                   `).join('')}
@@ -2757,11 +2760,11 @@
               `;
             }
 
-            if (inReview.length > 0) {
+            if (metaInReviewTemplates.length > 0) {
               groupsHtml += `
-                <optgroup label="⏳ In Review by Meta (${inReview.length})">
-                  ${inReview.map(t => `
-                    <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language)}" style="color:#f59e0b;">
+                <optgroup label="⏳ In Review by Meta (${metaInReviewTemplates.length}) — Pending Approval">
+                  ${metaInReviewTemplates.map(t => `
+                    <option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language || 'en_US')}" disabled style="color:#f59e0b;">
                       ⏳ ${escapeHtml(t.name)} (${escapeHtml(t.language)} · In Review)
                     </option>
                   `).join('')}
@@ -2775,17 +2778,18 @@
             `;
           }
 
-          // Also populate the template selector inside the chat panel and bulk campaign panel
+          // Populate the template selector inside the chat panel and bulk campaign panel
           populateInboxTemplateSelect();
           populateBulkTemplateSelect();
+          updateBulkTemplateStatusHint();
 
           if (manual) {
             if (metaApprovedTemplates.length > 0) {
-              toast(`Loaded ${metaApprovedTemplates.length} approved templates from Meta WABA! ✓`, 'ok_');
-            } else if (inReview.length > 0) {
-              toast(`Found ${inReview.length} template(s) currently In Review by Meta.`, '');
+              toast(`Loaded ${metaApprovedTemplates.length} approved template(s) from Meta WABA! ✓`, 'ok_');
+            } else if (metaInReviewTemplates.length > 0) {
+              toast(`Found ${metaInReviewTemplates.length} template(s) currently In Review by Meta.`, '');
             } else {
-              toast('No approved templates found in Meta WABA.', '');
+              toast('No approved templates found in Meta WABA. Please create and submit one in Meta WhatsApp Manager.', '');
             }
           }
         }
@@ -2799,14 +2803,40 @@
       }
     }
 
+    function updateBulkTemplateStatusHint() {
+      const hint = $('bulkTemplateStatusHint');
+      if (!hint) return;
+
+      if (metaApprovedTemplates.length > 0) {
+        hint.style.display = 'block';
+        hint.style.background = 'rgba(16, 185, 129, 0.12)';
+        hint.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+        hint.style.color = '#34d399';
+        hint.innerHTML = `✅ <b>${metaApprovedTemplates.length} approved template(s) ready:</b> ${metaApprovedTemplates.map(t => escapeHtml(t.name) + ' (' + escapeHtml(t.language) + ')').join(', ')}`;
+      } else if (metaInReviewTemplates.length > 0) {
+        hint.style.display = 'block';
+        hint.style.background = 'rgba(245, 158, 11, 0.12)';
+        hint.style.border = '1px solid rgba(245, 158, 11, 0.3)';
+        hint.style.color = '#fbbf24';
+        hint.innerHTML = `⏳ <b>${metaInReviewTemplates.length} template(s) under review by Meta:</b> ${metaInReviewTemplates.map(t => escapeHtml(t.name)).join(', ')} — Meta review typically takes 1–5 minutes. Click <b>⟳ Refresh</b> to check when approved.`;
+      } else {
+        hint.style.display = 'none';
+      }
+    }
+
     function populateInboxTemplateSelect() {
       const tplSelect = $('inboxReplyTemplateSelect');
       if (!tplSelect) return;
       let opts = '<option value="__direct__">💬 Direct Message (Send Directly)</option>';
-      opts += '<option value="">⚙️ Auto-use Approved Template</option>';
+      opts += '<option value="" data-lang="">⚙️ Auto-use Approved Template</option>';
       if (metaApprovedTemplates && metaApprovedTemplates.length > 0) {
         opts += `<optgroup label="✅ Approved Meta Templates (${metaApprovedTemplates.length})">`;
-        opts += metaApprovedTemplates.map(t => `<option value="${escapeHtml(t.name)}">📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)})</option>`).join('');
+        opts += metaApprovedTemplates.map(t => `<option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language || 'en_US')}">📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)})</option>`).join('');
+        opts += `</optgroup>`;
+      }
+      if (metaInReviewTemplates && metaInReviewTemplates.length > 0) {
+        opts += `<optgroup label="⏳ In Review by Meta (${metaInReviewTemplates.length}) — Pending Approval">`;
+        opts += metaInReviewTemplates.map(t => `<option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language || 'en_US')}" disabled style="color:#f59e0b;">⏳ ${escapeHtml(t.name)} (${escapeHtml(t.language)} · In Review)</option>`).join('');
         opts += `</optgroup>`;
       }
       tplSelect.innerHTML = opts;
@@ -2815,10 +2845,15 @@
     function populateBulkTemplateSelect() {
       const sel = $('bulkCampaignTemplateSelect');
       if (!sel) return;
-      let opts = '<option value="">⚙️ Auto-use Approved Template (Recommended)</option>';
+      let opts = '<option value="" data-lang="">⚙️ Auto-use Approved Template (Recommended)</option>';
       if (metaApprovedTemplates && metaApprovedTemplates.length > 0) {
         opts += `<optgroup label="✅ Approved Meta Templates (${metaApprovedTemplates.length})">`;
-        opts += metaApprovedTemplates.map(t => `<option value="${escapeHtml(t.name)}">📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)} · ${escapeHtml(t.category)})</option>`).join('');
+        opts += metaApprovedTemplates.map(t => `<option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language || 'en_US')}">📋 ${escapeHtml(t.name)} (${escapeHtml(t.language)} · ${escapeHtml(t.category)})</option>`).join('');
+        opts += `</optgroup>`;
+      }
+      if (metaInReviewTemplates && metaInReviewTemplates.length > 0) {
+        opts += `<optgroup label="⏳ In Review by Meta (${metaInReviewTemplates.length}) — Pending Approval">`;
+        opts += metaInReviewTemplates.map(t => `<option value="${escapeHtml(t.name)}" data-lang="${escapeHtml(t.language || 'en_US')}" disabled style="color:#f59e0b;">⏳ ${escapeHtml(t.name)} (${escapeHtml(t.language)} · In Review)</option>`).join('');
         opts += `</optgroup>`;
       }
       sel.innerHTML = opts;
@@ -3297,9 +3332,25 @@
         if (btnCancel) btnCancel.style.display = 'inline-flex';
         cl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-        const chosenTpl = ($('bulkCampaignTemplateSelect')?.value || '').trim();
+        const selTpl = $('bulkCampaignTemplateSelect');
+        const chosenTpl = (selTpl?.value || '').trim();
+        const selectedOpt = selTpl && selTpl.selectedIndex >= 0 ? selTpl.options[selTpl.selectedIndex] : null;
+        const chosenLang = (selectedOpt?.getAttribute('data-lang') || '').trim();
+
+        if (chosenTpl && selectedOpt && selectedOpt.disabled) {
+          toast(`Selected template '${chosenTpl}' is currently In Review by Meta. Please select an APPROVED template or wait for Meta to approve it.`, 'err_');
+          b.disabled = false;
+          b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+          if (btnPause) btnPause.style.display = 'none';
+          if (btnCancel) btnCancel.style.display = 'none';
+          return;
+        }
+
         let streamUrl = '/api/stream-campaign?sessionId=' + encodeURIComponent(getSessionId());
-        if (chosenTpl) streamUrl += '&template=' + encodeURIComponent(chosenTpl);
+        if (chosenTpl) {
+          streamUrl += '&template=' + encodeURIComponent(chosenTpl);
+          if (chosenLang) streamUrl += '&templateLang=' + encodeURIComponent(chosenLang);
+        }
         const src = new EventSource(streamUrl);
 
         src.onmessage = ev => {
@@ -3368,7 +3419,7 @@
           const rc = $('campaignReachCard');
           if (rc && s.totalTracked > 0) rc.style.display = 'block';
           if ($('reachDispatched')) $('reachDispatched').textContent = s.totalTracked || 0;
-          if ($('reachAccepted')) $('reachAccepted').textContent = s.totalSent || 0;
+          if ($('reachAccepted')) $('reachAccepted').textContent = (s.totalAccepted !== undefined ? s.totalAccepted : s.totalSent) || 0;
           if ($('reachDelivered')) $('reachDelivered').textContent = s.totalDelivered || 0;
           if ($('reachRead')) $('reachRead').textContent = s.totalRead || 0;
           if ($('reachFailed')) $('reachFailed').textContent = s.totalFailed || 0;

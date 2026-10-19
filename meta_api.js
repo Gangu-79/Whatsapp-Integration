@@ -339,20 +339,27 @@ async function uploadMedia(token, phoneNumberId, filePath) {
  */
 async function fetchApprovedTemplates(token, wabaId) {
   if (!token) {
-    return { success: false, error: 'Meta access token is required to fetch templates.', templates: [] };
+    return { success: false, error: 'Meta access token is required to fetch templates.', templates: [], inReview: [], rejected: [], allTemplates: [] };
   }
   if (!wabaId) {
-    return { success: false, error: 'WhatsApp Business Account ID (WABA ID) is required to fetch templates.', templates: [] };
+    return { success: false, error: 'WhatsApp Business Account ID (WABA ID) is required to fetch templates.', templates: [], inReview: [], rejected: [], allTemplates: [] };
   }
 
   try {
-    const url = `${GRAPH_BASE_URL}/${wabaId.trim()}/message_templates?fields=name,status,language,category,components&limit=100`;
-    const response = await axios.get(url, {
-      headers: { Authorization: `Bearer ${token}` },
-      timeout: 15000
-    });
+    let list = [];
+    let nextUrl = `${GRAPH_BASE_URL}/${wabaId.trim()}/message_templates?fields=name,status,language,category,components&limit=100`;
 
-    const list = response.data?.data || [];
+    // Follow Meta Graph API pagination to retrieve all templates (up to 500 max)
+    while (nextUrl && list.length < 500) {
+      const response = await axios.get(nextUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 15000
+      });
+
+      const batch = response.data?.data || [];
+      list = list.concat(batch);
+      nextUrl = response.data?.paging?.next || null;
+    }
     
     const mapTemplate = (t) => {
       const headerComp = (t.components || []).find(c => c.type === 'HEADER');
@@ -364,11 +371,13 @@ async function fetchApprovedTemplates(token, wabaId) {
       const varMatches = bodyText.match(/\{\{\d+\}\}/g) || [];
       const variableCount = new Set(varMatches).size;
 
+      const rawStatus = (t.status || 'UNKNOWN').toUpperCase();
+
       return {
         name: t.name,
         language: t.language,
         category: t.category,
-        status: t.status,
+        status: rawStatus,
         hasMediaHeader,
         mediaFormat,
         variableCount,
@@ -378,14 +387,20 @@ async function fetchApprovedTemplates(token, wabaId) {
 
     const allMapped = list.map(mapTemplate);
     const approved = allMapped.filter(t => t.status === 'APPROVED' && t.name.toLowerCase() !== 'hello_world');
+    const inReview = allMapped.filter(t => ['IN_REVIEW', 'PENDING'].includes(t.status));
+    const rejected = allMapped.filter(t => ['REJECTED', 'PAUSED', 'DISABLED'].includes(t.status));
 
     return {
       success: true,
       wabaId: wabaId.trim(),
       templates: approved,
+      inReview,
+      rejected,
       allTemplates: allMapped,
       totalCount: allMapped.length,
-      approvedCount: approved.length
+      approvedCount: approved.length,
+      inReviewCount: inReview.length,
+      rejectedCount: rejected.length
     };
   } catch (err) {
     const errData = err.response?.data?.error || {};
@@ -394,6 +409,8 @@ async function fetchApprovedTemplates(token, wabaId) {
       code: errData.code || 500,
       error: errData.message || err.message,
       templates: [],
+      inReview: [],
+      rejected: [],
       allTemplates: []
     };
   }
@@ -554,6 +571,13 @@ async function sendMessage({
         const val1 = (recipientName && recipientName.trim()) ? recipientName.trim() : 'Customer';
         const val2 = (text && text.trim()) ? text.trim() : 'Notification';
         bodyParams.push({ type: 'text', text: val1 }, { type: 'text', text: val2 });
+      } else if (variableCount && variableCount > 2) {
+        const val1 = (recipientName && recipientName.trim()) ? recipientName.trim() : 'Customer';
+        const val2 = (text && text.trim()) ? text.trim() : 'Notification';
+        bodyParams.push({ type: 'text', text: val1 }, { type: 'text', text: val2 });
+        for (let v = 2; v < variableCount; v++) {
+          bodyParams.push({ type: 'text', text: '-' });
+        }
       } else if (recipientName && recipientName.trim()) {
         bodyParams.push({ type: 'text', text: recipientName.trim() });
       }

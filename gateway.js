@@ -290,7 +290,11 @@ app.get('/api/meta/templates', async (req, res) => {
       wabaId: cfg.wabaId,
       totalCount: result.totalCount,
       approvedCount: result.approvedCount,
+      inReviewCount: result.inReviewCount || 0,
+      rejectedCount: result.rejectedCount || 0,
       templates: result.templates,
+      inReview: result.inReview || [],
+      rejected: result.rejected || [],
       allTemplates: result.allTemplates || []
     });
   } catch (err) {
@@ -1250,15 +1254,21 @@ function launchBackgroundCampaignJob({
     if (job.wabaId) {
       try {
         const tplsRes = await metaApi.fetchApprovedTemplates(job.token, job.wabaId);
-        if (tplsRes.success && tplsRes.templates && tplsRes.templates.length > 0) {
-          if (!effectiveTemplate) {
-            effectiveTemplate = tplsRes.templates[0].name;
-            effectiveLang = tplsRes.templates[0].language || 'en_US';
+        if (tplsRes.success) {
+          const approved = tplsRes.templates || [];
+          if (!effectiveTemplate && approved.length > 0) {
+            effectiveTemplate = approved[0].name;
+            effectiveLang = approved[0].language || 'en_US';
             addLog(`[Policy Compliance] Contacts outside 24h window require a Meta Template. Auto-selected approved template: '${effectiveTemplate}' (${effectiveLang})`, 'ok');
           }
-          matchedTemplate = tplsRes.templates.find(t => t.name.toLowerCase() === effectiveTemplate.toLowerCase());
-          if (matchedTemplate && matchedTemplate.language) {
-            effectiveLang = matchedTemplate.language;
+          if (effectiveTemplate) {
+            matchedTemplate = (tplsRes.allTemplates || []).find(t => t.name.toLowerCase() === effectiveTemplate.toLowerCase());
+            if (matchedTemplate) {
+              if (matchedTemplate.language) effectiveLang = matchedTemplate.language;
+              if (matchedTemplate.status !== 'APPROVED') {
+                addLog(`[Template Notice] Selected template '${effectiveTemplate}' has status '${matchedTemplate.status}' in Meta WABA. Only APPROVED templates can be delivered.`, 'warn');
+              }
+            }
           }
         }
       } catch (e) {
@@ -1291,13 +1301,54 @@ function launchBackgroundCampaignJob({
         const conv = existingConvs.find(c => c.phone === cleanPhone);
         const isWindowActive = conv ? conv.is_window_active : false;
 
-        // If outside 24h window (typical for outbound Excel bulk), Meta policy strictly requires an approved template!
+        // If outside 24h window, Meta policy strictly requires an APPROVED template!
         const tplToUse = isWindowActive ? (job.templateName || null) : (effectiveTemplate || job.templateName || null);
         const langToUse = effectiveLang || job.templateLang || 'en_US';
         const varCount = matchedTemplate ? matchedTemplate.variableCount : null;
 
         // Variable replacement: {{name}}
         let textToSend = (job.templateText || '').replace(/\{\{name\}\}/gi, name);
+
+        // Strict Policy Enforcement: Never dispatch free-form text outside 24h window!
+        if (!isWindowActive && !tplToUse) {
+          job.failed++;
+          const errDetail = 'Meta Policy Restriction (Error 131047): Recipient is outside the 24-hr customer service window. Free-form text was safely blocked to prevent Meta delivery failure. An APPROVED WhatsApp template is required.';
+          addLog(`--> BLOCKED [Policy 131047]: Recipient (+${cleanPhone}) requires an APPROVED Meta Template because the 24h service window is closed.`, 'err');
+
+          await db.logCampaignRecipient(
+            job.id,
+            cleanPhone,
+            name,
+            'failed',
+            null,
+            131047,
+            errDetail
+          ).catch(() => {});
+
+          await db.saveOutgoingReply({
+            phone: cleanPhone,
+            name,
+            text: textToSend,
+            targetPhoneId: job.phoneNumberId,
+            status: 'failed',
+            errorMessage: errDetail
+          }).catch(() => {});
+
+          await db.updateCampaignStats(job.id, job.sent, job.failed, job.status === 'running' ? 'running' : job.status).catch(() => {});
+
+          broadcast({
+            type: 'progress',
+            index: i + 1,
+            total: job.total,
+            percent: Math.round(((i + 1) / job.total) * 100),
+            sent: job.sent,
+            failed: job.failed,
+            recipient: { name, phone },
+            result: { success: false, code: 131047, error: errDetail }
+          });
+
+          continue; // Process remaining recipients independently!
+        }
 
         let result = await metaApi.sendMessage({
           token: job.token,
@@ -2005,6 +2056,16 @@ app.post('/api/inbox/reply', async (req, res) => {
       effectiveTemplate = cfg.templateName;
     }
 
+    // Strict Meta 24-hour Policy Enforcement:
+    if (!isWindowActive && !effectiveTemplate) {
+      return res.status(400).json({
+        success: false,
+        code: 131047,
+        error: "Customer's 24-hour service window is closed (Error 131047).",
+        explanation: "Meta policy requires an APPROVED Message Template to reply to a customer outside the 24-hr window. Please select an approved template from the template dropdown above the chat box."
+      });
+    }
+
     if (effectiveTemplate && effectiveTemplate.toLowerCase() === 'hello_world') {
       return res.status(400).json({
         success: false,
@@ -2164,6 +2225,8 @@ app.get('/api/reports', async (req, res) => {
       success: true,
       summary: {
         totalTracked: logs.length,
+        totalAccepted: totalSent + totalDelivered + totalRead,
+        totalPendingDelivery: totalSent,
         totalSent,
         totalDelivered,
         totalRead,

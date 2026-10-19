@@ -317,6 +317,65 @@ async function runAllTests() {
   });
 
   // --------------------------------------------------------------------------
+  // SUITE 7: Webhook Status Precedence & 24-Hour Policy Enforcement
+  // --------------------------------------------------------------------------
+  console.log('\n=== Suite 7: Webhook Precedence & 24-Hr Window Policy ===');
+
+  await runTest('updateMessageDeliveryStatus should prevent regression of delivered/read status on out-of-order webhooks', async () => {
+    const testMetaId = 'wamid_test_idempotent_' + Date.now();
+    const testPhone = '919123456789';
+
+    // 1. Create initial outgoing message with status 'sent'
+    await db.saveOutgoingReply({
+      phone: testPhone,
+      text: 'Test message for status idempotency',
+      metaMessageId: testMetaId,
+      status: 'sent'
+    });
+
+    let msgs = await db.getMessagesForContact(testPhone);
+    let target = msgs.find(m => m.meta_message_id === testMetaId);
+    assert.strictEqual(target.status, 'sent', 'Initial status should be sent');
+
+    // 2. Deliver webhook for 'delivered'
+    await db.updateMessageDeliveryStatus(testMetaId, 'delivered');
+    msgs = await db.getMessagesForContact(testPhone);
+    target = msgs.find(m => m.meta_message_id === testMetaId);
+    assert.strictEqual(target.status, 'delivered', 'Status should advance to delivered');
+
+    // 3. Out-of-order duplicate webhook arrives with 'sent'
+    await db.updateMessageDeliveryStatus(testMetaId, 'sent');
+    msgs = await db.getMessagesForContact(testPhone);
+    target = msgs.find(m => m.meta_message_id === testMetaId);
+    assert.strictEqual(target.status, 'delivered', 'Delivered status must NOT regress to sent!');
+
+    // 4. Advance to 'read'
+    await db.updateMessageDeliveryStatus(testMetaId, 'read');
+    msgs = await db.getMessagesForContact(testPhone);
+    target = msgs.find(m => m.meta_message_id === testMetaId);
+    assert.strictEqual(target.status, 'read', 'Status should advance to read');
+
+    // 5. Out-of-order duplicate webhook arrives with 'delivered'
+    await db.updateMessageDeliveryStatus(testMetaId, 'delivered');
+    msgs = await db.getMessagesForContact(testPhone);
+    target = msgs.find(m => m.meta_message_id === testMetaId);
+    assert.strictEqual(target.status, 'read', 'Read status must NOT regress to delivered!');
+  });
+
+  await runTest('sendMessage should reject hello_world with Error 131058 on registered live numbers', async () => {
+    const { sendMessage } = require('../meta_api');
+    const res = await sendMessage({
+      token: 'fake_token',
+      phoneNumberId: 'fake_phone_id',
+      to: '919876543210',
+      text: 'Test',
+      templateName: 'hello_world'
+    });
+    assert.strictEqual(res.success, false);
+    assert.strictEqual(res.code, 131058, 'Should reject hello_world with 131058');
+  });
+
+  // --------------------------------------------------------------------------
   // SUMMARY
   // --------------------------------------------------------------------------
   console.log('\n======================================================');
