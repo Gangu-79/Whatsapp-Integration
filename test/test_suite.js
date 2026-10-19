@@ -255,6 +255,56 @@ async function runAllTests() {
   });
 
   // --------------------------------------------------------------------------
+  // SUITE 6: Chat Backup, Restore & Deduplication (Requirement 1 & 2)
+  // --------------------------------------------------------------------------
+  console.log('\n=== Suite 6: Chat Backup, Restore & Deduplication ===');
+
+  await runTest('db.createBackupNow and getBackupStatus should track persistent backup snapshots', async () => {
+    const backup = await db.createBackupNow();
+    assert.strictEqual(backup.success, true);
+    assert(backup.lastBackup != null);
+
+    const status = await db.getBackupStatus();
+    assert(status.lastBackup != null);
+    assert(typeof status.conversationsCount === 'number');
+    assert(typeof status.messagesCount === 'number');
+  });
+
+  await runTest('saveIncomingMessage and getMessagesForContact should deduplicate messages by ID', async () => {
+    const testPhone = '919966559211';
+    const msgId = 'test_dedup_' + Date.now();
+
+    await db.saveIncomingMessage({
+      id: msgId,
+      phone: testPhone,
+      name: 'Dedup Customer',
+      text: 'First arrival of message'
+    });
+
+    // Attempt second save with exact same message ID
+    await db.saveIncomingMessage({
+      id: msgId,
+      phone: testPhone,
+      name: 'Dedup Customer',
+      text: 'Second arrival of message'
+    });
+
+    const msgs = await db.getMessagesForContact(testPhone);
+    const matching = msgs.filter(m => m.id === msgId);
+    assert.strictEqual(matching.length, 1, 'Duplicate incoming message ID was not deduplicated!');
+  });
+
+  await runTest('exportBackup and restoreBackup should export and restore valid JSON store', async () => {
+    const exported = await db.exportBackup();
+    assert.strictEqual(exported.version, '2.0');
+    assert(exported.store != null);
+    assert(Array.isArray(exported.store.messages));
+
+    const restored = await db.restoreBackup(exported);
+    assert.strictEqual(restored.success, true);
+  });
+
+  // --------------------------------------------------------------------------
   // SUMMARY
   // --------------------------------------------------------------------------
   console.log('\n======================================================');

@@ -198,6 +198,9 @@ app.get('/api/status', async (req, res) => {
         verifiedName: verifyResult.verifiedName,
         qualityRating: verifyResult.qualityRating,
         codeStatus: verifyResult.codeStatus,
+        messagingLimitTier: verifyResult.messagingLimitTier || 'TIER_UNKNOWN',
+        messagingLimitText: verifyResult.messagingLimitText || 'Dynamic Meta Limit',
+        throughput: verifyResult.throughput || null,
         phoneNumberId: cfg.phoneNumberId,
         wabaId: cfg.wabaId,
         maskedToken: metaApi.maskToken(cfg.token),
@@ -508,13 +511,36 @@ app.get('/api/meta/diagnose', async (req, res) => {
 });
 
 // ============================================================================
-// MESSAGE STORAGE & DATABASE BACKUP / RECOVERY (Requirement 7)
+// MESSAGE STORAGE & DATABASE BACKUP / RECOVERY (Requirements 1 & 7)
 // ============================================================================
+
+// API: Get Current Backup Status & Snapshot Metadata
+app.get('/api/backup/status', async (req, res) => {
+  try {
+    const status = await db.getBackupStatus();
+    res.json({ success: true, ...status });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: Trigger Immediate Live Database Backup
+app.post('/api/backup/create', async (req, res) => {
+  try {
+    const result = await db.createBackupNow();
+    res.json({ success: true, message: 'Backup created successfully!', ...result });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 // API: Export Full Database Backup (Settings, Messages, Conversations, Logs)
 app.get('/api/backup/export', async (req, res) => {
   try {
     const backup = await db.exportBackup();
+    if (req.query.raw === '1') {
+      return res.json(backup);
+    }
     const dateStr = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="whatsapp_backup_${dateStr}.json"`);
@@ -533,8 +559,14 @@ app.post('/api/backup/restore', upload.single('backupFile'), async (req, res) =>
       backupData = JSON.parse(raw);
     } else if (req.body && req.body.store) {
       backupData = req.body;
-    } else {
-      return res.status(400).json({ success: false, error: 'No backup file or JSON payload provided.' });
+    } else if (req.body && typeof req.body === 'string') {
+      try {
+        backupData = JSON.parse(req.body);
+      } catch (e) {}
+    }
+
+    if (!backupData || !backupData.store) {
+      return res.status(400).json({ success: false, error: 'No valid backup file or JSON payload provided.' });
     }
 
     const result = await db.restoreBackup(backupData);
@@ -1849,7 +1881,7 @@ app.get('/api/inbox/messages/:phone', async (req, res) => {
 // Fixes the bug where inbox replies were not reaching recipients
 app.post('/api/inbox/reply', async (req, res) => {
   try {
-    const { to, message, templateName } = req.body;
+    const { to, message, templateName, templateLang } = req.body;
     const cfg = await getEffectiveConfig(req);
 
     if (!cfg.token || !cfg.phoneNumberId) {
@@ -1884,6 +1916,16 @@ app.post('/api/inbox/reply', async (req, res) => {
       effectiveTemplate = cfg.templateName;
     }
 
+    // Outside 24-hr window, Meta strictly requires an approved template
+    if (!isWindowActive && !effectiveTemplate) {
+      return res.status(400).json({
+        success: false,
+        code: 131047,
+        error: "Meta 24-Hour Policy (131047): The 24-hour customer care window for this contact has expired.",
+        explanation: "Meta strictly requires an approved Message Template to send messages outside the active 24-hour window. Please select an approved template from the template selector."
+      });
+    }
+
     if (effectiveTemplate && effectiveTemplate.toLowerCase() === 'hello_world') {
       return res.status(400).json({
         success: false,
@@ -1893,16 +1935,39 @@ app.post('/api/inbox/reply', async (req, res) => {
       });
     }
 
-    // Send reply via Meta Cloud API (Meta API will validate window server-side)
+    // Determine template language
+    const chosenLang = templateLang || cfg.templateLang || 'en_US';
+
+    // Send reply via Meta Cloud API
     let result = await metaApi.sendMessage({
       token: cfg.token,
       phoneNumberId: cfg.phoneNumberId,
       to: cleanPhone,
       text: message.trim(),
       templateName: effectiveTemplate,
-      templateLang: cfg.templateLang || 'en_US',
+      templateLang: chosenLang,
       recipientName: conv?.contact_name || ''
     });
+
+    // Language mismatch auto-retry: if 132001 (template not found for language), try alternate en/en_US
+    if (!result.success && result.code === 132001 && effectiveTemplate) {
+      const altLang = (chosenLang === 'en_US' || chosenLang === 'en-US') ? 'en' : (chosenLang === 'en' ? 'en_US' : null);
+      if (altLang) {
+        console.log(`[Inbox Reply] Retrying template '${effectiveTemplate}' with alternate language '${altLang}'...`);
+        const retryResult = await metaApi.sendMessage({
+          token: cfg.token,
+          phoneNumberId: cfg.phoneNumberId,
+          to: cleanPhone,
+          text: message.trim(),
+          templateName: effectiveTemplate,
+          templateLang: altLang,
+          recipientName: conv?.contact_name || ''
+        });
+        if (retryResult.success) {
+          result = retryResult;
+        }
+      }
+    }
 
     if (result.success) {
       // Save outgoing reply to SQLite database immediately
@@ -1918,6 +1983,7 @@ app.post('/api/inbox/reply', async (req, res) => {
         success: true,
         messageId: result.messageId,
         replyId: saved.id,
+        usedTemplate: effectiveTemplate,
         status: 'sent'
       });
     } else {

@@ -246,7 +246,15 @@ async function getConversations(targetPhoneId = null) {
 async function getMessagesForContact(phone) {
   const clean = String(phone).replace(/\D/g, '');
   const msgs = memoryStore.messages.filter(m => m.phone === clean);
-  return msgs.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+  const seenIds = new Set();
+  const deduped = [];
+  for (const m of msgs) {
+    const key = m.id || m.meta_message_id;
+    if (key && seenIds.has(key)) continue;
+    if (key) seenIds.add(key);
+    deduped.push(m);
+  }
+  return deduped.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
 }
 
 async function saveIncomingMessage({ id, phone, name, text, type = 'text', mediaUrl = null, mediaId = null, targetPhoneId = null, timestamp = null }) {
@@ -254,7 +262,14 @@ async function saveIncomingMessage({ id, phone, name, text, type = 'text', media
   const msgTime = timestamp ? new Date(timestamp).toISOString() : new Date().toISOString();
   const windowExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-  // Upsert conversation
+  // Deduplication: Check if this message ID was already processed
+  const msgId = id || 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+  const existingMsg = memoryStore.messages.find(m => m.id === msgId || (id && m.id === id));
+  if (existingMsg) {
+    return existingMsg;
+  }
+
+  // Upsert conversation (reuses existing conversation for this customer)
   const currentConv = memoryStore.conversations[cleanPhone] || {};
   memoryStore.conversations[cleanPhone] = {
     phone: cleanPhone,
@@ -267,8 +282,7 @@ async function saveIncomingMessage({ id, phone, name, text, type = 'text', media
     created_at: currentConv.created_at || msgTime
   };
 
-  const msgId = id || 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
-  memoryStore.messages.push({
+  const newMsg = {
     id: msgId,
     phone: cleanPhone,
     direction: 'incoming',
@@ -280,17 +294,29 @@ async function saveIncomingMessage({ id, phone, name, text, type = 'text', media
     status: 'received',
     target_phone_id: targetPhoneId,
     timestamp: msgTime
-  });
+  };
+  memoryStore.messages.push(newMsg);
 
   scheduleSave();
-  return { id: msgId, phone: cleanPhone, text, timestamp: msgTime };
+  return newMsg;
 }
 
 async function saveOutgoingReply({ id, phone, text, type = 'text', mediaUrl = null, mediaId = null, metaMessageId = null, targetPhoneId = null, status = 'sent', errorMessage = null }) {
   const cleanPhone = String(phone).replace(/\D/g, '');
   const now = new Date().toISOString();
 
-  // Upsert conversation while preserving active window
+  // Deduplication: if message with this metaMessageId already exists, update its status
+  if (metaMessageId) {
+    const existing = memoryStore.messages.find(m => m.meta_message_id === metaMessageId);
+    if (existing) {
+      existing.status = status;
+      if (errorMessage) existing.error_message = errorMessage;
+      scheduleSave();
+      return existing;
+    }
+  }
+
+  // Upsert conversation while preserving active window (reuses existing customer conversation)
   const currentConv = memoryStore.conversations[cleanPhone] || {};
   memoryStore.conversations[cleanPhone] = {
     ...currentConv,
@@ -302,7 +328,7 @@ async function saveOutgoingReply({ id, phone, text, type = 'text', mediaUrl = nu
   };
 
   const msgId = id || 'reply_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
-  memoryStore.messages.push({
+  const newMsg = {
     id: msgId,
     phone: cleanPhone,
     direction: 'outgoing',
@@ -316,10 +342,11 @@ async function saveOutgoingReply({ id, phone, text, type = 'text', mediaUrl = nu
     meta_message_id: metaMessageId,
     target_phone_id: targetPhoneId,
     timestamp: now
-  });
+  };
+  memoryStore.messages.push(newMsg);
 
   scheduleSave();
-  return { id: msgId, metaMessageId, status };
+  return newMsg;
 }
 
 async function updateMessageDeliveryStatus(metaMessageId, status, errorDetails = null) {
@@ -471,11 +498,27 @@ async function getUser(username) {
   return safeUser;
 }
 
-// ─── BACKUP & RESTORE METHODS (Requirement 7) ───
+// ─── BACKUP & RESTORE METHODS (Requirement 1 & 7) ───
+async function createBackupNow() {
+  const now = new Date().toISOString();
+  memoryStore.settings['LAST_BACKUP_TIME'] = now;
+  saveStoreSync();
+  return {
+    success: true,
+    lastBackup: now,
+    conversationsCount: Object.keys(memoryStore.conversations || {}).length,
+    messagesCount: (memoryStore.messages || []).length,
+    contactsCount: Object.keys(memoryStore.contacts || {}).length
+  };
+}
+
 async function exportBackup() {
+  const now = new Date().toISOString();
+  memoryStore.settings['LAST_BACKUP_TIME'] = now;
+  saveStoreSync();
   return {
     version: '2.0',
-    exported_at: new Date().toISOString(),
+    exported_at: now,
     store: {
       settings: memoryStore.settings,
       contacts: memoryStore.contacts,
@@ -519,11 +562,27 @@ async function restoreBackup(backupData) {
     }
   }
 
-  scheduleSave();
+  const now = new Date().toISOString();
+  memoryStore.settings['LAST_RESTORE_TIME'] = now;
+  saveStoreSync();
   return {
     success: true,
     message: 'Backup restored successfully',
-    restored_at: new Date().toISOString()
+    restored_at: now,
+    conversationsCount: Object.keys(memoryStore.conversations || {}).length,
+    messagesCount: (memoryStore.messages || []).length
+  };
+}
+
+async function getBackupStatus() {
+  const lastBackup = memoryStore.settings['LAST_BACKUP_TIME'] || null;
+  const lastRestore = memoryStore.settings['LAST_RESTORE_TIME'] || null;
+  return {
+    lastBackup,
+    lastRestore,
+    conversationsCount: Object.keys(memoryStore.conversations || {}).length,
+    messagesCount: (memoryStore.messages || []).length,
+    contactsCount: Object.keys(memoryStore.contacts || {}).length
   };
 }
 
@@ -539,8 +598,10 @@ module.exports = {
   registerUser,
   loginUser,
   getUser,
+  createBackupNow,
   exportBackup,
   restoreBackup,
+  getBackupStatus,
   isOptedOut,
   setOptOut,
   getOptOutList,

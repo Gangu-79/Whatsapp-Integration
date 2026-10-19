@@ -1003,6 +1003,12 @@
     }
 
     @media screen and (max-width: 760px) {
+      #inboxModal .modal-container {
+        height: 94vh !important;
+        max-width: 100% !important;
+        margin: 2vh 6px !important;
+        border-radius: 14px !important;
+      }
       .inbox-wrapper {
         flex-direction: column;
       }
@@ -1016,6 +1022,32 @@
       }
       .hide-mobile-chat {
         display: none !important;
+      }
+      .chat-header {
+        padding: 8px 12px !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+      }
+      .chat-header > div:first-child {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+      #activeChatWindowBadge {
+        margin-left: auto;
+        font-size: 10.5px !important;
+        white-space: normal !important;
+        text-align: right;
+      }
+      #inboxTemplateBar {
+        padding: 6px 12px !important;
+        font-size: 11px !important;
+      }
+      #inboxReplyTemplateSelect {
+        max-width: 170px !important;
+      }
+      .chat-footer-bar {
+        padding: 8px 10px !important;
+        gap: 6px !important;
       }
     }
 
@@ -1981,6 +2013,10 @@
               <div class="stat-label">WhatsApp Status</div>
               <div class="stat-val log-err" id="stC">Not configured</div>
             </div>
+            <div class="stat-box">
+              <div class="stat-label">Verified Meta Limit</div>
+              <div class="stat-val" id="stLimit" style="color:var(--cyan); font-size:12.5px;">Dynamic Limit</div>
+            </div>
           </div>
 
           <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
@@ -2176,6 +2212,7 @@
           <div style="margin-bottom:16px;">
             <div id="activePhoneDisplay" style="font-size:22px; font-weight:900; color:#fff; font-family:var(--font-mono); letter-spacing:0.5px;">+91 99665 59281</div>
             <div id="verifiedBusinessName" style="font-size:13px; color:var(--txt-secondary); margin-top:3px; font-weight:600;">Insurance Company</div>
+            <div id="activeMessagingLimit" style="font-size:12px; color:#38bdf8; margin-top:5px; font-weight:700;">Account Tier: Dynamic Limit</div>
           </div>
 
           <!-- WhatsApp Business Profile & Website URL Management -->
@@ -2241,11 +2278,34 @@
             <p style="font-size: 11.5px; color: var(--txt-muted);">Persistent chat history · Direct client replies · Zero messages lost</p>
           </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <button onclick="toggleInboxBackupBar()" id="btnToggleBackup" class="btn" style="background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #10b981; font-size: 11.5px; font-weight: 700; padding: 6px 12px; border-radius: 100px; display: inline-flex; align-items: center; gap: 5px;">
+            <span>💾 Backup & Restore</span>
+          </button>
           <button onclick="fetchInbox()" class="btn" style="background: rgba(255,255,255,0.06); color: var(--txt-secondary); font-size: 12px; padding: 6px 14px; border-radius: 100px;">
             ⟳ Refresh
           </button>
           <button onclick="closeInbox()" style="background: transparent; border: none; color: #fff; font-size: 20px; cursor: pointer; padding: 4px 8px;">✕</button>
+        </div>
+      </div>
+
+      <!-- INBOX CHAT BACKUP & RESTORE DRAWER (Requirement 1) -->
+      <div id="inboxBackupBar" style="display: none; background: #0c0a17; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px 18px; font-size: 12px; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="font-weight: 800; color: #fff;">💾 Persistent Chat Storage:</span>
+          <span id="backupStatusText" style="color: var(--txt-muted); font-size: 11.5px;">Last backup: Checking...</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <button type="button" onclick="doCreateBackup()" class="btn" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 8px; background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.4); color: #34d399;">
+            ⚡ Backup Now
+          </button>
+          <button type="button" onclick="doDownloadBackup()" class="btn" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0;">
+            ⬇ Download Backup
+          </button>
+          <button type="button" onclick="$('inboxRestoreFileInput').click()" class="btn" style="font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 8px; background: rgba(139,92,246,0.18); border: 1px solid rgba(139,92,246,0.4); color: #c084fc;">
+            ⬆ Restore Backup
+          </button>
+          <input type="file" id="inboxRestoreFileInput" accept=".json" style="display: none;" onchange="doRestoreBackupFile(event)">
         </div>
       </div>
 
@@ -3289,6 +3349,13 @@
           $('activePhoneDisplay').textContent = '+' + d.phone;
           if ($('verifiedBusinessName')) $('verifiedBusinessName').textContent = d.verifiedName || 'WhatsApp Business Profile';
           if ($('qualityBadge')) $('qualityBadge').textContent = 'Quality: ' + (d.qualityRating || 'GREEN');
+          if ($('stLimit')) {
+            $('stLimit').textContent = d.messagingLimitText || 'Dynamic Meta Limit';
+            $('stLimit').title = `Meta Tier: ${d.messagingLimitTier || 'Dynamic'}`;
+          }
+          if ($('activeMessagingLimit')) {
+            $('activeMessagingLimit').textContent = `Account Tier: ${d.messagingLimitText || 'Dynamic Meta Limit'}`;
+          }
           if (tbDisc) tbDisc.style.display = 'inline-flex';
           if (errBox) errBox.style.display = 'none';
           if (fixerCard) fixerCard.style.display = 'none';
@@ -3580,6 +3647,16 @@
         }
         lastInboxTotal = totalUnread;
 
+        // Persist snapshot to client localStorage for restart/redeploy resilience
+        if (allConversations.length > 0) {
+          try {
+            localStorage.setItem('wa_inbox_cache_v2', JSON.stringify({
+              savedAt: Date.now(),
+              conversations: allConversations
+            }));
+          } catch {}
+        }
+
         ['inboxBadge', 'topbarInboxBadge', 'mobileFabBadge'].forEach(id => {
           const el = $(id);
           if (el) {
@@ -3608,11 +3685,19 @@
       const items = listToRender !== null ? listToRender : allConversations;
 
       if (items.length === 0) {
+        const rawQ = ($('inboxSearchInput')?.value || '').trim();
+        const cleanDigits = rawQ.replace(/\D/g, '');
+        const canStart = cleanDigits.length >= 10;
         listEl.innerHTML = `
           <div style="text-align:center;padding:36px 14px;color:var(--txt-muted);">
             <div style="font-size:32px;margin-bottom:8px;">📬</div>
-            <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">No Conversations Found</div>
-            <div style="font-size:12px;line-height:1.4;">When customers send messages or replies, they will appear here in real time.</div>
+            <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">${rawQ ? 'No Matches Found' : 'No Conversations Found'}</div>
+            <div style="font-size:12px;line-height:1.4;">${rawQ ? 'No previous chats match "' + escapeHtml(rawQ) + '".' : 'When customers send messages or replies, they will appear here in real time.'}</div>
+            ${canStart ? `
+              <button type="button" onclick="openChatWithNumber('${escapeHtml(cleanDigits)}')" class="btn btn-primary" style="margin-top:14px; font-size:12px; font-weight:700; padding:8px 16px; border-radius:100px;">
+                💬 Start Chat with +${escapeHtml(cleanDigits)}
+              </button>
+            ` : ''}
           </div>`;
         return;
       }
@@ -3664,6 +3749,28 @@
         return name.includes(q) || phone.includes(q) || msg.includes(q);
       });
       renderInboxContacts(filtered);
+    }
+
+    function openChatWithNumber(rawNumber) {
+      const clean = String(rawNumber).replace(/\D/g, '');
+      if (clean.length < 10) {
+        return toast('Please enter a valid phone number with country code (10-15 digits)', 'err_');
+      }
+      let conv = allConversations.find(c => c.phone === clean);
+      if (!conv) {
+        conv = {
+          phone: clean,
+          contact_name: '+' + clean,
+          last_message: '',
+          last_timestamp: new Date().toISOString(),
+          is_window_active: false,
+          unread_count: 0
+        };
+        allConversations.unshift(conv);
+      }
+      selectInboxContact(clean);
+      if ($('inboxSearchInput')) $('inboxSearchInput').value = '';
+      renderInboxContacts();
     }
 
     function selectInboxContact(phone) {
@@ -3779,16 +3886,16 @@
           if (isOutgoing) {
             const st = (m.status || '').toLowerCase();
             if (st === 'read') {
-              statusIcon = '<span style="color:#22d3ee;font-weight:900;" title="Read">✓✓</span>';
+              statusIcon = '<span style="color:#38bdf8;font-weight:900;" title="Read (Two blue ticks)">✓✓</span>';
             } else if (st === 'delivered') {
-              statusIcon = '<span style="color:rgba(255,255,255,0.7);" title="Delivered">✓✓</span>';
+              statusIcon = '<span style="color:#94a3b8;font-weight:700;" title="Delivered (Two grey ticks)">✓✓</span>';
             } else if (st === 'sent') {
-              statusIcon = '<span style="color:rgba(255,255,255,0.6);" title="Sent">✓</span>';
+              statusIcon = '<span style="color:#94a3b8;font-weight:700;" title="Sent & Accepted by Meta (One grey tick)">✓</span>';
             } else if (st === 'failed') {
-              const errStr = escapeHtml(m.error_message || 'Delivery failed');
+              const errStr = escapeHtml(m.error_message || 'Message delivery failed');
               statusIcon = `<span style="color:#f43f5e;font-weight:900;" title="${errStr}">✕</span>`;
             } else {
-              statusIcon = '<span style="color:rgba(255,255,255,0.6);">✓</span>';
+              statusIcon = '<span style="color:#94a3b8;font-weight:700;" title="Sent">✓</span>';
             }
           }
 
@@ -3880,6 +3987,7 @@
         $('btnBackToContacts').style.display = 'none';
       }
       fetchInbox();
+      loadBackupStatus();
       if (inboxPollingTimer) clearInterval(inboxPollingTimer);
       inboxPollingTimer = setInterval(() => {
         if ($('inboxModal').style.display !== 'none') {
@@ -3894,6 +4002,117 @@
         clearInterval(inboxPollingTimer);
         inboxPollingTimer = null;
       }
+    }
+
+    // ─── CHAT BACKUP & RESTORE METHODS (Requirement 1) ───
+    function toggleInboxBackupBar() {
+      const bar = $('inboxBackupBar');
+      if (!bar) return;
+      const isShown = bar.style.display !== 'none';
+      bar.style.display = isShown ? 'none' : 'flex';
+      if (!isShown) {
+        loadBackupStatus();
+      }
+    }
+
+    async function loadBackupStatus() {
+      try {
+        const res = await apiFetch('/api/backup/status');
+        const d = await res.json();
+        const txt = $('backupStatusText');
+        if (txt && d.success) {
+          if (d.lastBackup) {
+            const time = new Date(d.lastBackup).toLocaleString();
+            txt.textContent = `Last backup: ${time} (${d.messagesCount || 0} messages, ${d.conversationsCount || 0} chats saved)`;
+          } else {
+            txt.textContent = `Live store: ${d.messagesCount || 0} messages, ${d.conversationsCount || 0} conversations recorded`;
+          }
+        }
+      } catch (e) {
+        console.error('[Backup Status Error]:', e);
+      }
+    }
+
+    async function doCreateBackup() {
+      try {
+        toast('Saving persistent database backup...', '');
+        const res = await apiFetch('/api/backup/create', { method: 'POST' });
+        const d = await res.json();
+        if (d.success) {
+          toast(`Backup saved successfully! (${d.messagesCount || 0} messages secured)`, 'ok_');
+          loadBackupStatus();
+          try {
+            const exportRes = await apiFetch('/api/backup/export?raw=1');
+            const exportData = await exportRes.json();
+            if (exportData && exportData.store) {
+              localStorage.setItem('wa_inbox_full_backup', JSON.stringify(exportData));
+            }
+          } catch {}
+        } else {
+          toast('Backup error: ' + (d.error || 'Failed to create backup'), 'err_');
+        }
+      } catch (e) {
+        toast('Backup failed: ' + e.message, 'err_');
+      }
+    }
+
+    function doDownloadBackup() {
+      toast('Downloading complete chat database backup JSON...', 'ok_');
+      window.open('/api/backup/export', '_blank');
+    }
+
+    async function doRestoreBackupFile(event) {
+      const file = event.target?.files?.[0];
+      if (!file) return;
+      event.target.value = '';
+
+      if (!confirm(`Restore chat history and settings from "${file.name}"? This will safely merge all messages and conversations.`)) {
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('backupFile', file);
+
+      try {
+        toast('Restoring chat history and conversations...', '');
+        const res = await fetch('/api/backup/restore', {
+          method: 'POST',
+          body: formData
+        });
+        const d = await res.json();
+        if (d.success) {
+          toast('Backup restored successfully! All chats and messages recovered.', 'ok_');
+          loadBackupStatus();
+          fetchInbox();
+          if (activeChatPhone) fetchActiveChatMessages(activeChatPhone, false);
+        } else {
+          toast('Restore failed: ' + (d.error || 'Invalid backup file'), 'err_');
+        }
+      } catch (e) {
+        toast('Failed to restore backup: ' + e.message, 'err_');
+      }
+    }
+
+    async function checkAutoRestoreResilience() {
+      try {
+        const res = await apiFetch('/api/backup/status');
+        const d = await res.json();
+        if (d.success && d.messagesCount === 0 && d.conversationsCount === 0) {
+          const cached = localStorage.getItem('wa_inbox_full_backup');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed && parsed.store && (parsed.store.messages?.length > 0 || Object.keys(parsed.store.conversations || {}).length > 0)) {
+              console.log('[Resilience] Restoring chat history from browser cache after server redeployment...');
+              await apiFetch('/api/backup/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(parsed)
+              });
+              fetchInbox();
+            }
+          }
+        }
+      } catch (e) {}
     }
     function openReportsModal() { $('reportsModal').style.display = 'flex'; loadDeliveryReports(); }
     function closeReportsModal() { $('reportsModal').style.display = 'none'; }
@@ -4020,11 +4239,11 @@
                 const st = (l.status || '').toLowerCase();
                 let badge = '';
                 if (st === 'read') {
-                  badge = '<span style="background:rgba(16,185,129,0.18); color:#10b981; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;">✓✓ READ</span>';
+                  badge = '<span style="background:rgba(56,189,248,0.16); color:#38bdf8; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;">✓✓ READ</span>';
                 } else if (st === 'delivered') {
-                  badge = '<span style="background:rgba(6,182,212,0.18); color:#22d3ee; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;">✓ DELIVERED</span>';
+                  badge = '<span style="background:rgba(148,163,184,0.16); color:#94a3b8; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;">✓✓ DELIVERED</span>';
                 } else if (st === 'sent') {
-                  badge = '<span style="background:rgba(139,92,246,0.18); color:#c084fc; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;">ACCEPTED</span>';
+                  badge = '<span style="background:rgba(148,163,184,0.1); color:#94a3b8; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;">✓ SENT</span>';
                 } else {
                   const titleStr = (l.error_details || '').replace(/"/g, '&quot;');
                   badge = `<span style="background:rgba(244,63,94,0.18); color:#f43f5e; padding:3px 9px; border-radius:100px; font-weight:800; font-size:10.5px;" title="${titleStr}">✕ FAILED</span>`;
@@ -4110,6 +4329,7 @@
     updateSoundUi();
     loadMsg();
     checkFilesStatus();
+    checkAutoRestoreResilience();
     poll();
     fetchInbox();
     refreshReachSummary();

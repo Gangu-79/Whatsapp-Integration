@@ -78,7 +78,7 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
   }
 
   try {
-    const url = `${GRAPH_BASE_URL}/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,status`;
+    const url = `${GRAPH_BASE_URL}/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,status,messaging_limit_tier,throughput`;
     const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 12000
@@ -86,6 +86,15 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
 
     const data = response.data;
     const phone = (data.display_phone_number || '').replace(/\D/g, '');
+    const limitTier = data.messaging_limit_tier || 'TIER_UNKNOWN';
+    let messagingLimitText = 'Dynamic Meta Limit';
+    if (limitTier === 'TIER_50') messagingLimitText = '50 unique recipients / 24h (Trial)';
+    else if (limitTier === 'TIER_250') messagingLimitText = '250 unique recipients / 24h';
+    else if (limitTier === 'TIER_1K') messagingLimitText = '1,000 unique recipients / 24h (Tier 1)';
+    else if (limitTier === 'TIER_10K') messagingLimitText = '10,000 unique recipients / 24h (Tier 2)';
+    else if (limitTier === 'TIER_100K') messagingLimitText = '100,000 unique recipients / 24h (Tier 3)';
+    else if (limitTier === 'TIER_UNLIMITED') messagingLimitText = 'Unlimited recipients / 24h (Tier 4)';
+    else if (limitTier && limitTier !== 'TIER_UNKNOWN') messagingLimitText = `${limitTier} (Meta Verified)`;
 
     return {
       valid: true,
@@ -94,6 +103,9 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
       verifiedName: data.verified_name || 'Verified WhatsApp Business',
       qualityRating: data.quality_rating || 'GREEN',
       codeStatus: data.code_verification_status || 'VERIFIED',
+      messagingLimitTier: limitTier,
+      messagingLimitText: messagingLimitText,
+      throughput: data.throughput || null,
       status: data.status || 'CONNECTED'
     };
   } catch (err) {
