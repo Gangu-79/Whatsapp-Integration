@@ -1313,11 +1313,13 @@ function launchBackgroundCampaignJob({
       try {
         const tplsRes = await metaApi.fetchApprovedTemplates(job.token, job.wabaId);
         if (tplsRes.success) {
-          const approved = tplsRes.templates || [];
-          if (!effectiveTemplate && approved.length > 0) {
-            effectiveTemplate = approved[0].name;
-            effectiveLang = approved[0].language || 'en_US';
+          const nonHelloWorld = (tplsRes.templates || []).filter(t => !t.isHelloWorld && t.name.toLowerCase() !== 'hello_world');
+          if (!effectiveTemplate && nonHelloWorld.length > 0) {
+            effectiveTemplate = nonHelloWorld[0].name;
+            effectiveLang = nonHelloWorld[0].language || 'en_US';
             addLog(`[Policy Compliance] Contacts outside 24h window require a Meta Template. Auto-selected approved template: '${effectiveTemplate}' (${effectiveLang})`, 'ok');
+          } else if (!effectiveTemplate && (tplsRes.inReview || []).length > 0) {
+            addLog(`[Policy Notice] Custom template(s) '${tplsRes.inReview.map(t => t.name).join(', ')}' are currently PENDING Meta approval. Meta restricts 'hello_world' on live numbers. Once Meta finishes review, click ⟳ Refresh.`, 'warn');
           }
           if (effectiveTemplate) {
             matchedTemplate = (tplsRes.allTemplates || []).find(t => t.name.toLowerCase() === effectiveTemplate.toLowerCase());

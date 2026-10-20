@@ -3358,6 +3358,17 @@
           return;
         }
 
+        const isLiveNumber = activeSenderPhone && !activeSenderPhone.startsWith('1555');
+        if (chosenTpl.toLowerCase() === 'hello_world' && isLiveNumber) {
+          toast(`Meta restricts 'hello_world' on live numbers. Please wait for your custom template to be approved.`, 'err_');
+          alert(`⚠️ Meta Cloud API Notice (Error 131058):\n\nMeta restricts 'hello_world' to sandbox test numbers (+1 555-xxx).\n\nYour phone number (+${activeSenderPhone}) is an official live business number. Meta requires your own custom template ('client_notification') to be APPROVED before sending to contacts outside the 24-hr window.\n\n👉 Both 'client_notification' and 'customer_update' are currently under review by Meta. Click '⟳ Refresh' in a few minutes to check when Meta approves them!`);
+          b.disabled = false;
+          b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+          if (btnPause) btnPause.style.display = 'none';
+          if (btnCancel) btnCancel.style.display = 'none';
+          return;
+        }
+
         let streamUrl = '/api/stream-campaign?sessionId=' + encodeURIComponent(getSessionId());
         if (chosenTpl) {
           streamUrl += '&template=' + encodeURIComponent(chosenTpl);
