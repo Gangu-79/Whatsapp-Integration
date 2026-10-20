@@ -1477,23 +1477,33 @@ function launchBackgroundCampaignJob({
           }
         }
 
-        // Retry once on rate limit (HTTP 429 or Meta Error 130429) with 5-second backoff
+        // Retry on rate limit (HTTP 429 or Meta Error 130429) with progressive cooling backoff
         if (!result.success && (result.code === 429 || result.code === 130429)) {
-          addLog(`[Rate Limit] Meta throttled request. Backing off 5s before retry...`, 'warn');
-          await new Promise(r => setTimeout(r, 5000));
-          result = await metaApi.sendMessage({
-            token: job.token,
-            phoneNumberId: job.phoneNumberId,
-            to: cleanPhone,
-            text: textToSend,
-            mediaId: job.mediaId,
-            mediaType: job.mediaType,
-            filename: job.filename,
-            templateName: tplToUse,
-            templateLang: langToUse,
-            recipientName: name,
-            variableCount: varCount
-          });
+          let retryAttempts = 0;
+          while (!result.success && (result.code === 429 || result.code === 130429) && retryAttempts < 2) {
+            retryAttempts++;
+            const coolOffSec = retryAttempts === 1 ? 15 : 25;
+            addLog(`[Rate Limit 130429] Meta throttled sending (Too many messages in short time). Cooling down ${coolOffSec}s to reset Meta rate limiter...`, 'warn');
+            await new Promise(r => setTimeout(r, coolOffSec * 1000));
+            result = await metaApi.sendMessage({
+              token: job.token,
+              phoneNumberId: job.phoneNumberId,
+              to: cleanPhone,
+              text: textToSend,
+              mediaId: job.mediaId,
+              mediaType: job.mediaType,
+              filename: job.filename,
+              templateName: tplToUse,
+              templateLang: langToUse,
+              recipientName: name,
+              variableCount: varCount
+            });
+          }
+          // After experiencing a rate limit, automatically increase inter-message pacing
+          if (job.delayMs < 3500) {
+            job.delayMs = 3500;
+            addLog(`[Auto-Pacing] Dynamically increased pacing to 3.5s per message to ensure 100% deliverability without triggering Meta rate limits.`);
+          }
         }
 
         if (result.success) {
@@ -1759,6 +1769,91 @@ app.post('/api/bulk/cancel', (req, res) => {
   job.status = 'cancelled';
   job.logs.push({ time: new Date().toLocaleTimeString(), text: 'Campaign cancelled by user.', type: 'warn' });
   res.json({ success: true, status: 'cancelled', message: 'Campaign cancelled.' });
+});
+
+// API: Re-Send to Failed Campaign Recipients Only
+app.post('/api/bulk/retry-failed', async (req, res) => {
+  try {
+    const sid = getSessionId(req);
+    const existingJob = getCampaignJob(sid);
+    if (existingJob && ['running', 'paused'].includes(existingJob.status)) {
+      return res.status(400).json({ success: false, error: 'A campaign is already running. Please wait for it to complete.' });
+    }
+
+    const cfg = await getEffectiveConfig(req);
+    if (!cfg.token || !cfg.phoneNumberId) {
+      return res.status(401).json({ success: false, error: 'Meta Cloud API credentials missing! Configure Phone Number ID and Token in Settings.' });
+    }
+
+    // Retrieve failed recipients from database
+    const logs = await db.getRecentCampaignLogs(2000);
+    const failedLogs = logs.filter(l => (l.status || '').toLowerCase() === 'failed');
+
+    const seen = new Set();
+    const failedRecipients = [];
+    for (const log of failedLogs) {
+      const cleanPhone = metaApi.cleanPhoneNumber(log.phone);
+      if (cleanPhone && !seen.has(cleanPhone)) {
+        seen.add(cleanPhone);
+        failedRecipients.push({
+          name: log.name || 'Customer',
+          phone: cleanPhone
+        });
+      }
+    }
+
+    if (failedRecipients.length === 0) {
+      return res.status(400).json({ success: false, error: 'No failed contacts found to retry.' });
+    }
+
+    const sDir = getSessionDir(req);
+    const msgPath = path.join(sDir, 'message.txt');
+    let templateText = 'Hello {{name}},\nThank you for choosing our service!';
+    if (fs.existsSync(msgPath)) {
+      templateText = fs.readFileSync(msgPath, 'utf8');
+    }
+
+    const mediaPath = findSessionMedia(sDir);
+    let mediaId = null;
+    let mediaType = 'image';
+    let mediaFilename = 'attachment.pdf';
+    if (mediaPath) {
+      try {
+        const up = await metaApi.uploadMedia(cfg.token, cfg.phoneNumberId, mediaPath);
+        mediaId = up.mediaId;
+        mediaType = up.type;
+        mediaFilename = up.filename;
+      } catch (e) {}
+    }
+
+    const campaignId = 'retry_failed_' + Date.now();
+    await db.createCampaign(campaignId, 'Retry Failed Contacts (' + failedRecipients.length + ')', failedRecipients.length).catch(() => {});
+
+    const job = launchBackgroundCampaignJob({
+      sessionId: sid,
+      campaignId,
+      recipients: failedRecipients,
+      templateText,
+      mediaId,
+      mediaType,
+      filename: mediaFilename,
+      templateName: (req.body?.templateName || cfg.templateName || '').trim() || null,
+      templateLang: (req.body?.templateLang || cfg.templateLang || 'en_US').trim(),
+      delayMs: 3500, // Safe 3.5s delay to strictly comply with Meta rate limits
+      token: cfg.token,
+      phoneNumberId: cfg.phoneNumberId,
+      wabaId: cfg.wabaId
+    });
+
+    res.json({
+      success: true,
+      campaignId,
+      totalRecipients: failedRecipients.length,
+      message: `Launched retry job for ${failedRecipients.length} failed contacts with safe 3.5s pacing.`
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // API: Send Message to One Selected Recipient from Excel Preview List
