@@ -78,7 +78,7 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
   }
 
   try {
-    const url = `${GRAPH_BASE_URL}/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,status,messaging_limit_tier,throughput,whatsapp_business_account`;
+    const url = `${GRAPH_BASE_URL}/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,status,messaging_limit_tier,throughput`;
     const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 12000
@@ -96,8 +96,6 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
     else if (limitTier === 'TIER_UNLIMITED') messagingLimitText = 'Unlimited recipients / 24h (Tier 4)';
     else if (limitTier && limitTier !== 'TIER_UNKNOWN') messagingLimitText = `${limitTier} (Meta Verified)`;
 
-    const wabaId = data.whatsapp_business_account?.id || null;
-
     return {
       valid: true,
       phone: phone || phoneNumberId,
@@ -108,7 +106,7 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
       messagingLimitTier: limitTier,
       messagingLimitText: messagingLimitText,
       throughput: data.throughput || null,
-      wabaId,
+      wabaId: wabaId || null,
       status: data.status || 'CONNECTED'
     };
   } catch (err) {
@@ -338,20 +336,35 @@ async function uploadMedia(token, phoneNumberId, filePath) {
 }
 
 /**
- * Auto-discover WABA ID directly from Meta Graph API using Phone Number ID.
+ * Auto-discover WABA ID directly from Meta Graph API using user token and business accounts.
  */
-async function autoDiscoverWabaId(token, phoneNumberId) {
-  if (!token || !phoneNumberId) return null;
+async function autoDiscoverWabaId(token, phoneNumberId = null) {
+  if (!token) return null;
+
+  // 1. Check if token directly owns any WhatsApp Business Accounts
   try {
-    const url = `${GRAPH_BASE_URL}/${phoneNumberId}?fields=whatsapp_business_account`;
-    const res = await axios.get(url, {
+    const res = await axios.get(`${GRAPH_BASE_URL}/me?fields=whatsapp_business_accounts`, {
       headers: { Authorization: `Bearer ${token}` },
-      timeout: 10000
+      timeout: 8000
     });
-    return res.data?.whatsapp_business_account?.id || null;
-  } catch (err) {
-    return null;
-  }
+    const list = res.data?.whatsapp_business_accounts?.data || [];
+    if (list.length > 0 && list[0].id) return list[0].id;
+  } catch (err) {}
+
+  // 2. Check businesses owned by the token
+  try {
+    const res = await axios.get(`${GRAPH_BASE_URL}/me/businesses?fields=owned_whatsapp_business_accounts`, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 8000
+    });
+    const bList = res.data?.data || [];
+    for (const b of bList) {
+      const wList = b.owned_whatsapp_business_accounts?.data || [];
+      if (wList.length > 0 && wList[0].id) return wList[0].id;
+    }
+  } catch (err) {}
+
+  return null;
 }
 
 /**

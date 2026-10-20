@@ -183,7 +183,7 @@ app.get('/api/status', async (req, res) => {
     }
 
     // Live verification with Meta Graph API
-    const verifyResult = await metaApi.verifyCredentials(cfg.token, cfg.phoneNumberId);
+    const verifyResult = await metaApi.verifyCredentials(cfg.token, cfg.phoneNumberId, cfg.wabaId);
 
     if (verifyResult.valid) {
       // Save profile info to DB
@@ -415,7 +415,7 @@ app.post('/api/config', async (req, res) => {
 
     // Run verification
     const effective = await getEffectiveConfig(req);
-    const verify = await metaApi.verifyCredentials(effective.token, effective.phoneNumberId);
+    const verify = await metaApi.verifyCredentials(effective.token, effective.phoneNumberId, effective.wabaId);
 
     if (verify.valid && verify.wabaId && !dataToSave.waba_id) {
       await db.setSetting('WHATSAPP_BUSINESS_ACCOUNT_ID', verify.wabaId).catch(() => {});
