@@ -2019,6 +2019,33 @@
             </div>
           </div>
 
+          <!-- Meta Billing Currency Alert Banner (Error 131042) -->
+          <div id="error131042CurrencyCard" style="display:none; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(185, 28, 28, 0.25)); border: 1.5px solid #ef4444; border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.2);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+              <div style="display:flex; gap:12px; align-items:flex-start; flex:1; min-width:280px;">
+                <span style="font-size:24px; line-height:1;">⚠️</span>
+                <div>
+                  <div style="font-size:14px; font-weight:800; color:#fee2e2; letter-spacing:0.3px;">Meta Billing Blocker: Currency Not Configured (Error 131042)</div>
+                  <div style="font-size:12px; color:#fca5a5; margin-top:4px; line-height:1.5;">
+                    Your WhatsApp Business Account (<strong id="billingWabaIdDisplay">1142185591806768</strong>) has no billing currency configured in Meta Business Manager (<strong id="billingBizIdDisplay">1396896010170779</strong>).
+                    Meta Cloud API accepts messages but drops handset delivery until a billing currency (e.g. <strong>INR - Indian Rupee</strong>) is selected.
+                  </div>
+                  <div style="margin-top:8px; font-size:11.5px; color:#fecaca; display:flex; gap:14px; flex-wrap:wrap;">
+                    <span>📍 <strong>Step 1:</strong> Click 'Configure Currency in Meta'</span>
+                    <span>🇮🇳 <strong>Step 2:</strong> Select Country (India) & Currency (INR)</span>
+                    <span>💾 <strong>Step 3:</strong> Save changes in Meta</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px; align-self:center;">
+                <a id="btnOpenMetaCurrencyWizard" href="https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account" target="_blank" rel="noopener noreferrer" class="btn" style="background:#ef4444; color:#fff; font-weight:800; padding:10px 18px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(239,68,68,0.4); text-align:center; white-space:nowrap;">
+                  <span>🔗 Configure Currency in Meta</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
           <!-- Meta Policy 24-hr Window & Approved Template Selector -->
           <div style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -2215,6 +2242,35 @@
               </a>
               <a href="https://business.facebook.com/wa/manage/home/" target="_blank" class="btn" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; font-weight:700; font-size:11.5px; padding:7px 14px; border-radius:8px; text-decoration:none;">
                 📱 WhatsApp Manager
+              </a>
+            </div>
+          </div>
+
+          <!-- Error 131042 Currency Guided Fixer Card (Specific to Currency not configured) -->
+          <div id="error131042FixerCard" style="display:none; margin-top:16px; background:linear-gradient(135deg, rgba(239,68,68,0.12), rgba(185,28,28,0.18)); border:1.5px solid #ef4444; border-radius:16px; padding:18px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span style="font-size:20px;">⚠️</span>
+              <h4 style="font-size:14.5px; font-weight:800; color:#fca5a5;">Meta Billing Blocker: Currency Not Configured (Error 131042)</h4>
+            </div>
+            <p style="font-size:12.5px; color:#e2e8f0; line-height:1.6; margin-bottom:12px;">
+              Meta Cloud API returns <strong>Error 131042: "Message failed to send because your WhatsApp Business account currency is not configured."</strong> While messages may receive a Meta message ID (wamid), Meta's delivery engine drops handset delivery until a billing currency (e.g. <strong>INR - Indian Rupee</strong>) is configured for your WhatsApp Business Account.
+            </p>
+
+            <div style="background:rgba(0,0,0,0.35); border-radius:10px; padding:12px; margin-bottom:14px; font-size:12px; color:#cbd5e1; line-height:1.7;">
+              <strong style="color:#f87171;">How to Resolve in Meta Business Manager:</strong><br>
+              1. <strong>Open Meta Currency Wizard:</strong> Click the direct button below to access Meta's official currency configuration tool.<br>
+              2. <strong>Verify Accounts:</strong> Ensure Business Portfolio ID is <code>1396896010170779</code> and Asset ID is your WABA <code>1142185591806768</code>.<br>
+              3. <strong>Set Country & Currency:</strong> Select Country (<strong>India</strong>) and Currency (<strong>INR - Indian Rupee</strong>).<br>
+              4. <strong>Save Configuration:</strong> Once saved in Meta, all outbound campaign and inbox messages will immediately deliver to handsets!
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <a id="btnSettingsCurrencyWizard" href="https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account" target="_blank" rel="noopener noreferrer" class="btn" style="background:#ef4444; color:#fff; font-weight:800; font-size:12px; padding:9px 16px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(239,68,68,0.35);">
+                <span>🔗 Open Meta Currency Wizard</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </a>
+              <a href="https://business.facebook.com/billing_hub" target="_blank" class="btn" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; font-weight:700; font-size:12px; padding:9px 16px; border-radius:8px; text-decoration:none;">
+                💳 Meta Billing Hub
               </a>
             </div>
           </div>
@@ -2610,10 +2666,25 @@
 
     function toast(m, t = '') {
       const e = $('toast');
-      e.textContent = m;
+      e.innerHTML = m;
       e.className = 'toast ' + t;
       requestAnimationFrame(() => e.classList.add('on'));
-      setTimeout(() => e.classList.remove('on'), 3500);
+      const duration = (m && m.length > 80) ? 8000 : 3500;
+      setTimeout(() => e.classList.remove('on'), duration);
+    }
+
+    function showMessageDeliveryError(errStr) {
+      if (!errStr) errStr = 'Message delivery failed (recipient phone unreachable or not on WhatsApp)';
+      if (errStr.includes('131042') || errStr.toLowerCase().includes('currency')) {
+        const wizardUrl = 'https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account';
+        toast(`⚠️ <strong>Delivery Failed (Error 131042):</strong> Account currency not configured in Meta.<br><a href="${wizardUrl}" target="_blank" rel="noopener noreferrer" style="color:#fde047; text-decoration:underline; font-weight:800; display:inline-block; margin-top:4px;">Click to configure currency in Meta Business Manager ↗</a>`, 'err_');
+        const card = $('error131042CurrencyCard');
+        if (card) card.style.display = 'block';
+        const fixer = $('error131042FixerCard');
+        if (fixer) fixer.style.display = 'block';
+        return;
+      }
+      toast('Delivery Failed: ' + errStr, 'err_');
     }
 
     function formatFileSize(bytes) {
@@ -2962,6 +3033,16 @@
             adviceText = `<strong>24-Hour Customer Window Expired (Error 131047):</strong><br>
               Meta WhatsApp Cloud API policy requires the customer to send at least one inbound message to your business number (<strong>+91 99665 59281</strong>) to open the 24-hour conversation window.<br><br>
               💡 <em>Quick Fix:</em> Have the recipient send a message (e.g., <strong>"Hi"</strong>) from WhatsApp to your business number. Once received, you can send unlimited customized messages!`;
+          } else if (d.code === 131042 || d.billingBlocked) {
+            const billingUrl = d.billingUrl || 'https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account';
+            adviceText = `<strong>Meta Account Currency Not Configured (Error 131042):</strong><br>
+              Your WhatsApp Business Account currency is not configured. Meta Cloud API blocks message delivery to handsets until currency is set in Meta Business Manager.<br><br>
+              <a href="${billingUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="display:inline-flex; align-items:center; gap:6px; background:#ef4444; color:#fff; font-weight:800; font-size:12px; padding:8px 16px; border-radius:6px; text-decoration:none;">
+                <span>🔗 Configure Currency in Meta Business Manager</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </a>`;
+            const card = $('error131042CurrencyCard');
+            if (card) card.style.display = 'block';
           }
           
           resBox.innerHTML = `✗ <b>Meta API Error (${d.code || ''})</b><br><div style="margin-top:6px; line-height:1.6;">${adviceText}</div>`;
@@ -3234,8 +3315,24 @@
               </span>
             </div>
             <div style="color:var(--txt-secondary); margin-top:4px; line-height:1.5;">${s.detail}</div>
+            ${s.actionUrl ? `
+              <div style="margin-top:8px;">
+                <a href="${s.actionUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="display:inline-flex; align-items:center; gap:6px; background:#ef4444; color:#fff; font-size:11.5px; font-weight:800; padding:6px 12px; border-radius:6px; text-decoration:none;">
+                  <span>🔗 Configure in Meta Business Suite</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </a>
+              </div>
+            ` : ''}
           </div>
         `).join('');
+
+        const has131042 = diag.steps.some(s => s.code === 131042 || (s.detail && s.detail.includes('131042')));
+        if (has131042) {
+          const card = $('error131042CurrencyCard');
+          if (card) card.style.display = 'block';
+          const fixer = $('error131042FixerCard');
+          if (fixer) fixer.style.display = 'block';
+        }
       } catch (e) {
         list.innerHTML = `<div style="color:#f43f5e;">Diagnostics error: ${e.message}</div>`;
       }
@@ -3391,9 +3488,21 @@
 
           if (msg.type === 'log') {
             addLine(msg.text, msg.text.includes('ACCEPTED') ? 'log-ok' : msg.text.includes('FAILED') ? 'log-err' : '');
+            if (msg.text.includes('131042') || msg.text.includes('currency is not configured') || msg.text.includes('currency is missing')) {
+              const card = $('error131042CurrencyCard');
+              if (card) card.style.display = 'block';
+            }
           } else if (msg.type === 'error') {
             addLine(msg.text, 'log-err');
+            if (msg.text.includes('131042') || msg.text.includes('currency is not configured') || msg.text.includes('currency is missing')) {
+              const card = $('error131042CurrencyCard');
+              if (card) card.style.display = 'block';
+            }
           } else if (msg.type === 'finish') {
+            if (msg.exitCode === 131042 || (msg.error && msg.error.includes('131042'))) {
+              const card = $('error131042CurrencyCard');
+              if (card) card.style.display = 'block';
+            }
             src.close();
             b.disabled = false;
             b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
@@ -3490,6 +3599,20 @@
           if (tbDisc) tbDisc.style.display = 'inline-flex';
           if (errBox) errBox.style.display = 'none';
           if (fixerCard) fixerCard.style.display = 'none';
+          if (d.currencyConfigured === false) {
+            const currencyCard = $('error131042CurrencyCard');
+            if (currencyCard) currencyCard.style.display = 'block';
+            const fixer131042 = $('error131042FixerCard');
+            if (fixer131042) fixer131042.style.display = 'block';
+          }
+          if (d.wabaId) {
+            const wabaDisplays = document.querySelectorAll('#billingWabaIdDisplay');
+            wabaDisplays.forEach(el => el.textContent = d.wabaId);
+            const wizardBtns = document.querySelectorAll('#btnOpenMetaCurrencyWizard, #btnSettingsCurrencyWizard');
+            wizardBtns.forEach(btn => {
+              btn.href = `https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=${d.wabaId}&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account`;
+            });
+          }
           if ($('metaWabaId') && d.wabaId && !$('metaWabaId').value) {
             $('metaWabaId').value = d.wabaId;
           }
@@ -3669,6 +3792,14 @@
               </span>
             </div>
             <div style="color:var(--txt-secondary); margin-top:3px; line-height:1.5;">${s.detail}</div>
+            ${s.actionUrl ? `
+              <div style="margin-top:6px;">
+                <a href="${s.actionUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="display:inline-flex; align-items:center; gap:6px; background:#ef4444; color:#fff; font-size:11px; font-weight:800; padding:4px 10px; border-radius:6px; text-decoration:none;">
+                  <span>🔗 Configure in Meta</span>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </a>
+              </div>
+            ` : ''}
           </div>
         `).join('');
 
@@ -3677,6 +3808,17 @@
         const fixerCard = $('error200FixerCard');
         if (fixerCard && hasError200) {
           fixerCard.style.display = 'block';
+        }
+
+        // If Error 131042 detected, expand the currency fixer cards
+        const hasError131042 = diag.steps.some(s => s.code === 131042 || (s.detail && s.detail.includes('131042')) || (s.detail && s.detail.includes('currency is NOT configured')));
+        const fixerCard131042 = $('error131042FixerCard');
+        if (fixerCard131042 && hasError131042) {
+          fixerCard131042.style.display = 'block';
+        }
+        const currencyBanner = $('error131042CurrencyCard');
+        if (currencyBanner && hasError131042) {
+          currencyBanner.style.display = 'block';
         }
 
         toast(diag.summary, diag.ok ? 'ok_' : 'err_');
@@ -4059,7 +4201,7 @@
               statusIcon = '<span style="color:#94a3b8;font-weight:700;" title="Sent & Accepted by Meta (One grey tick)">✓</span>';
             } else if (st === 'failed') {
               const errStr = escapeHtml(m.error_message || 'Message delivery failed (recipient phone unreachable or not on WhatsApp)');
-              statusIcon = `<span style="color:#f43f5e;font-weight:900;cursor:pointer;" onclick="toast('Delivery Failed: ' + (this.getAttribute('data-err') || 'Undeliverable by Meta'), 'err_')" data-err="${errStr}" title="${errStr} (Click for details)">✕</span>`;
+              statusIcon = `<span style="color:#f43f5e;font-weight:900;cursor:pointer;" onclick="showMessageDeliveryError(this.getAttribute('data-err'))" data-err="${errStr}" title="${errStr} (Click for details)">✕</span>`;
             } else {
               statusIcon = '<span style="color:#94a3b8;font-weight:700;" title="Sent">✓</span>';
             }
@@ -4152,6 +4294,11 @@
         } else {
           if (d.code === 131047) {
             toast(`Meta 24-hr Policy (131047): Outside 24-hr window. Click "⚡ Customer Replied" if they messaged you, or select an approved template above.`, 'err_');
+          } else if (d.code === 131042 || d.billingBlocked) {
+            const wizardUrl = d.billingUrl || 'https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account';
+            toast(`⚠️ <strong>Meta Currency Not Configured (131042):</strong><br><a href="${wizardUrl}" target="_blank" rel="noopener noreferrer" style="color:#fde047; text-decoration:underline; font-weight:800; display:inline-block; margin-top:4px;">Click to configure currency in Meta Business Manager ↗</a>`, 'err_');
+            const card = $('error131042CurrencyCard');
+            if (card) card.style.display = 'block';
           } else {
             toast(`Meta API Error (${d.code || ''}): ${d.explanation || d.error}`, 'err_');
           }

@@ -341,7 +341,9 @@ def send_meta_message(token: str, phone_number_id: str, phone: str, text: str, m
             error_details = error_obj.get("error_data", {}).get("details", "")
 
             explanation = error_msg
-            if error_code == 131058:
+            if error_code == 131042:
+                explanation = "Meta Account Currency Not Configured (Error 131042): Message delivery failed because your WhatsApp Business Account currency is not configured. Configure currency in Meta Business Manager: https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account"
+            elif error_code == 131058:
                 explanation = "Hello World templates can only be sent from Public Test Numbers. Real registered numbers must use an approved template created in Meta WhatsApp Manager."
             elif error_code == 131047:
                 explanation = "24-Hour Customer Window Expired: Outside 24hr window, Meta requires an approved message template."
@@ -547,12 +549,15 @@ def main():
             print(f"    Reason: {explanation} {err_details}", flush=True)
             failed_count += 1
 
-            # HALT ON POLICY / ACCOUNT RESTRICTION / AUTH TOKEN ERRORS
+            # HALT ON POLICY / ACCOUNT RESTRICTION / AUTH TOKEN / BILLING ERRORS
+            # 131042: Account currency not configured
             # 131031: Account is restricted
             # 190: Invalid or expired access token
-            if err_code in [190, 131031]:
+            if err_code in [190, 131031, 131042]:
                 print(f"\n[CRITICAL ERROR] Stopping campaign: Meta reported fatal code {err_code}.", flush=True)
-                if err_code == 131031:
+                if err_code == 131042:
+                    print("--> WhatsApp Business Account currency is not configured. Configure currency in Meta Business Manager to proceed.", flush=True)
+                elif err_code == 131031:
                     print("--> Your Meta WhatsApp Account is restricted. Resolve restrictions in Meta Business Suite.", flush=True)
                 elif err_code == 190:
                     print("--> Access Token is invalid or expired. Generate a Permanent System User Token in Meta Business Suite.", flush=True)

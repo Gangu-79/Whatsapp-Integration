@@ -220,6 +220,8 @@ app.get('/api/status', async (req, res) => {
         throughput: verifyResult.throughput || null,
         phoneNumberId: cfg.phoneNumberId,
         wabaId: effectiveWaba,
+        currency: verifyResult.currency || null,
+        currencyConfigured: verifyResult.currencyConfigured !== undefined ? verifyResult.currencyConfigured : true,
         maskedToken: metaApi.maskToken(cfg.token),
         templateName: cfg.templateName || '',
         templateLang: cfg.templateLang || 'en_US'
@@ -793,7 +795,9 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
         code: result.code,
         error: result.error,
         explanation: result.explanation,
-        details: result.details
+        details: result.details,
+        billingBlocked: result.billingBlocked || false,
+        billingUrl: result.billingUrl || null
       });
     }
   } catch (err) {
@@ -1336,6 +1340,34 @@ function launchBackgroundCampaignJob({
       }
     }
 
+    // 3. Pre-flight Billing Currency Check (Protects against Error 131042)
+    if (job.wabaId && job.token) {
+      try {
+        const currCheck = await metaApi.getWabaCurrency(job.token, job.wabaId);
+        if (currCheck.success && currCheck.currencyConfigured === false) {
+          const billingUrl = `https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=${job.wabaId}&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account`;
+          const billingErrMsg = `Meta Account Currency Not Configured (Error 131042): WhatsApp Business Account currency is missing in Meta Business Manager. Meta Cloud API blocks message delivery to handsets. Please configure your billing currency at: ${billingUrl}`;
+          addLog(`\n[CRITICAL HALT - BILLING BLOCKER 131042]`, 'err');
+          addLog(billingErrMsg, 'err');
+          job.status = 'failed';
+          job.completedAt = new Date().toISOString();
+          await db.updateCampaignStats(job.id, job.sent, job.failed, 'failed').catch(() => {});
+          broadcast({
+            type: 'finish',
+            exitCode: 131042,
+            sentCount: 0,
+            failedCount: job.total,
+            status: 'failed',
+            error: billingErrMsg,
+            billingUrl
+          });
+          return;
+        }
+      } catch (e) {
+        console.warn('[WABA Currency Pre-check Error]:', e.message);
+      }
+    }
+
     try {
       for (let i = job.currentIndex; i < job.total; i++) {
         // Handle Pause state
@@ -1504,7 +1536,7 @@ function launchBackgroundCampaignJob({
           }).catch(() => {});
 
           // Automatic halt on fatal credentials or account error
-          if ([190, 131031].includes(result.code)) {
+          if ([190, 131031, 131042].includes(result.code)) {
             job.status = 'failed';
             addLog(`[CRITICAL HALT] Meta returned fatal error ${result.code}. Halting campaign to protect account.`, 'err');
             break;
@@ -1967,17 +1999,21 @@ app.post('/api/webhook', async (req, res) => {
             const metaId = status.id;
             const deliveryStatus = status.status; // 'sent' | 'delivered' | 'read' | 'failed'
             let errorDetails = null;
+            let errorCode = null;
             if (status.errors && status.errors.length > 0) {
               const err0 = status.errors[0];
-              const code = err0.code || '';
+              errorCode = err0.code ? parseInt(err0.code) : null;
               const detail = err0.error_data?.details || err0.message || err0.title || 'Message delivery failed';
-              errorDetails = code ? `Error ${code}: ${detail}` : detail;
+              errorDetails = errorCode ? `Error ${errorCode}: ${detail}` : detail;
+              if (errorCode === 131042) {
+                console.error(`[Meta Webhook] FATAL BILLING BLOCKER 131042: WhatsApp Business Account currency is not configured. Configure currency in Meta Business Manager: https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account`);
+              }
             } else if (status.errors) {
               errorDetails = typeof status.errors === 'string' ? status.errors : JSON.stringify(status.errors);
             }
 
-            console.log(`[Meta Webhook] Delivery: ${deliveryStatus} | Recipient: ${status.recipient_id} | MetaID: ${metaId}`);
-            await db.updateMessageDeliveryStatus(metaId, deliveryStatus, errorDetails).catch(() => {});
+            console.log(`[Meta Webhook] Delivery: ${deliveryStatus} | Code: ${errorCode || 'N/A'} | Recipient: ${status.recipient_id} | MetaID: ${metaId}`);
+            await db.updateMessageDeliveryStatus(metaId, deliveryStatus, errorDetails, errorCode).catch(() => {});
           }
         }
 
@@ -2235,7 +2271,9 @@ app.post('/api/inbox/reply', async (req, res) => {
         code: result.code,
         error: result.error,
         explanation: result.explanation,
-        details: result.details
+        details: result.details,
+        billingBlocked: result.billingBlocked || false,
+        billingUrl: result.billingUrl || null
       });
     }
   } catch (e) {

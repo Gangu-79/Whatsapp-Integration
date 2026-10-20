@@ -360,7 +360,7 @@ const STATUS_RANK = {
   failed: 50
 };
 
-async function updateMessageDeliveryStatus(metaMessageId, status, errorDetails = null) {
+async function updateMessageDeliveryStatus(metaMessageId, status, errorDetails = null, errorCode = null) {
   if (!metaMessageId) return;
   const newRank = STATUS_RANK[status] || 0;
 
@@ -372,6 +372,7 @@ async function updateMessageDeliveryStatus(metaMessageId, status, errorDetails =
         msg.status = status;
       }
       if (errorDetails) msg.error_message = errorDetails;
+      if (errorCode !== null && errorCode !== undefined) msg.error_code = errorCode;
     }
   }
 
@@ -382,6 +383,7 @@ async function updateMessageDeliveryStatus(metaMessageId, status, errorDetails =
         log.status = status;
       }
       if (errorDetails) log.error_details = errorDetails;
+      if (errorCode !== null && errorCode !== undefined) log.error_code = errorCode;
     }
   }
 

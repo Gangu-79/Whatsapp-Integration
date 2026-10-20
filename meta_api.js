@@ -96,6 +96,21 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
     else if (limitTier === 'TIER_UNLIMITED') messagingLimitText = 'Unlimited recipients / 24h (Tier 4)';
     else if (limitTier && limitTier !== 'TIER_UNKNOWN') messagingLimitText = `${limitTier} (Meta Verified)`;
 
+    let currency = null;
+    let currencyConfigured = true;
+    if (wabaId && String(wabaId).trim()) {
+      try {
+        const wabaRes = await axios.get(`${GRAPH_BASE_URL}/${String(wabaId).trim()}?fields=currency,name`, {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 8000
+        });
+        currency = wabaRes.data?.currency || null;
+        if (!currency) {
+          currencyConfigured = false;
+        }
+      } catch (e) {}
+    }
+
     return {
       valid: true,
       phone: phone || phoneNumberId,
@@ -107,6 +122,8 @@ async function verifyCredentials(token, phoneNumberId, wabaId = null) {
       messagingLimitText: messagingLimitText,
       throughput: data.throughput || null,
       wabaId: wabaId || null,
+      currency,
+      currencyConfigured,
       status: data.status || 'CONNECTED'
     };
   } catch (err) {
@@ -255,18 +272,29 @@ async function deepDiagnoseCredentials(token, phoneNumberId, wabaId = null) {
     }
   }
 
-  // Probe 4: WABA ID Accessibility (Optional)
+  // Probe 4: WABA ID Accessibility & Billing Currency
   if (wabaId && wabaId.trim()) {
     try {
       const res = await axios.get(`${GRAPH_BASE_URL}/${wabaId.trim()}?fields=id,name,currency,timezone_id`, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 10000
       });
-      steps.push({
-        name: 'WhatsApp Business Account (WABA)',
-        passed: true,
-        detail: `WABA ID ${res.data.id} (${res.data.name || 'Active'}) verified.`
-      });
+      const currency = res.data?.currency || null;
+      if (!currency) {
+        steps.push({
+          name: 'WhatsApp Business Account (WABA) Currency',
+          passed: false,
+          code: 131042,
+          detail: `Error 131042: WABA ID ${res.data.id} (${res.data.name || 'Active'}) has NO billing currency configured. Meta Cloud API blocks message delivery to handsets until currency is set in Meta Business Manager.`,
+          actionUrl: `https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=${res.data.id}&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account`
+        });
+      } else {
+        steps.push({
+          name: 'WhatsApp Business Account (WABA) Currency',
+          passed: true,
+          detail: `WABA ID ${res.data.id} (${res.data.name || 'Active'}) verified. Billing Currency: ${currency}.`
+        });
+      }
     } catch (err) {
       const errObj = err.response?.data?.error || {};
       steps.push({
@@ -686,7 +714,14 @@ async function sendMessage({
     const errorDetails = redactSensitive(rawErrorDetails);
 
     let explanation = errorMsg;
-    if (errorCode === 190) {
+    let billingBlocked = false;
+    let billingUrl = null;
+
+    if (errorCode === 131042) {
+      billingBlocked = true;
+      billingUrl = 'https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account';
+      explanation = `Meta Billing Configuration Blocker (Error 131042): Message delivery failed because your WhatsApp Business Account currency is not configured. Meta Cloud API cannot deliver messages until you select your country and currency in Meta Business Manager: ${billingUrl}`;
+    } else if (errorCode === 190) {
       explanation = "Meta Error (190): Access token has expired, is invalid, or was revoked. Please generate a new Permanent System User Token in Meta Business Suite (business.facebook.com) > Settings > System Users, and update your token in Meta API Settings.";
     } else if (errorCode === 131058) {
       explanation = "Meta Error (131058): The 'hello_world' sample template can only be sent from Meta Public Test Numbers. Real registered production numbers must use an approved template created in Meta WhatsApp Manager or send direct messages within the active 24-hr customer window.";
@@ -711,7 +746,9 @@ async function sendMessage({
       code: errorCode,
       error: errorMsg,
       details: errorDetails,
-      explanation: redactSensitive(explanation)
+      explanation: redactSensitive(explanation),
+      billingBlocked,
+      billingUrl
     };
   }
 }
@@ -790,7 +827,7 @@ async function dispatchCampaignBatch({
       if (onLog) onLog(`--> FAILED ✗ [Code ${result.code}]: ${result.explanation || result.error}`, 'err');
 
       // Critical error halts campaign early
-      if ([190, 131031].includes(result.code)) {
+      if ([190, 131031, 131042].includes(result.code)) {
         if (onLog) onLog(`\n[CRITICAL HALT] Meta reported fatal error ${result.code}. Halting campaign to protect account.`, 'err');
         break;
       }
@@ -902,6 +939,38 @@ async function removeProfileWebsites(token, phoneNumberId) {
   }
 }
 
+/**
+ * Check if the WhatsApp Business Account has a valid billing currency configured in Meta.
+ * Returns { success, wabaId, name, currency, currencyConfigured, error }
+ */
+async function getWabaCurrency(token, wabaId) {
+  if (!token || !wabaId) {
+    return { success: false, currency: null, currencyConfigured: false, error: 'Token and WABA ID are required.' };
+  }
+  try {
+    const res = await axios.get(`${GRAPH_BASE_URL}/${String(wabaId).trim()}?fields=id,name,currency,timezone_id`, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 10000
+    });
+    const currency = res.data?.currency || null;
+    return {
+      success: true,
+      wabaId: res.data?.id || wabaId,
+      name: res.data?.name || '',
+      currency,
+      currencyConfigured: !!(currency && String(currency).trim().length > 0)
+    };
+  } catch (err) {
+    const errData = err.response?.data?.error || {};
+    return {
+      success: false,
+      error: errData.message || err.message,
+      currency: null,
+      currencyConfigured: false
+    };
+  }
+}
+
 module.exports = {
   GRAPH_API_VERSION,
   GRAPH_BASE_URL,
@@ -918,6 +987,7 @@ module.exports = {
   sendMessage,
   dispatchCampaignBatch,
   getBusinessProfile,
-  removeProfileWebsites
+  removeProfileWebsites,
+  getWabaCurrency
 };
 

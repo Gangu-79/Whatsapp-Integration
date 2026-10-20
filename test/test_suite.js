@@ -376,6 +376,53 @@ async function runAllTests() {
   });
 
   // --------------------------------------------------------------------------
+  // SUITE 8: Meta Billing Configuration & Error 131042 Resolution
+  // --------------------------------------------------------------------------
+  console.log('\n=== Suite 8: Meta Billing Configuration & Error 131042 Resolution ===');
+
+  await runTest('updateMessageDeliveryStatus should store Error 131042 code and error details on failure webhook', async () => {
+    const testMetaId = 'wamid_test_131042_' + Date.now();
+    const testPhone = '919876500001';
+
+    // 1. Log outgoing campaign message
+    await db.saveOutgoingReply({
+      phone: testPhone,
+      text: 'Marketing notification',
+      metaMessageId: testMetaId,
+      status: 'sent'
+    });
+    await db.logCampaignRecipient('camp_test_billing', testPhone, 'Test User', 'sent', testMetaId);
+
+    // 2. Simulate Meta Webhook delivery status "failed" with Error 131042
+    const errorDetails = 'Error 131042: Message failed to send because your WhatsApp Business account currency is not configured. Visit https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account to resolve this issue.';
+    await db.updateMessageDeliveryStatus(testMetaId, 'failed', errorDetails, 131042);
+
+    const msgs = await db.getMessagesForContact(testPhone);
+    const targetMsg = msgs.find(m => m.meta_message_id === testMetaId);
+    assert.strictEqual(targetMsg.status, 'failed', 'Message status must be failed');
+    assert.strictEqual(targetMsg.error_code, 131042, 'Message error code must be 131042');
+    assert(targetMsg.error_message.includes('131042'), 'Error message must contain 131042');
+
+    const logs = await db.getRecentCampaignLogs(10);
+    const targetLog = logs.find(l => l.meta_id === testMetaId);
+    assert(targetLog != null, 'Campaign log must exist');
+    assert.strictEqual(targetLog.status, 'failed', 'Campaign log status must be failed');
+    assert.strictEqual(targetLog.error_code, 131042, 'Campaign log error code must be 131042');
+    assert(targetLog.error_details.includes('CHANGE_COUNTRY_CURRENCY'), 'Log must contain Meta currency wizard URL');
+  });
+
+  await runTest('getWabaCurrency should safely handle missing token or wabaId', async () => {
+    const { getWabaCurrency } = require('../meta_api');
+    const res1 = await getWabaCurrency('', '');
+    assert.strictEqual(res1.success, false);
+    assert.strictEqual(res1.currencyConfigured, false);
+
+    const res2 = await getWabaCurrency('fake_token', '');
+    assert.strictEqual(res2.success, false);
+    assert.strictEqual(res2.currencyConfigured, false);
+  });
+
+  // --------------------------------------------------------------------------
   // SUMMARY
   // --------------------------------------------------------------------------
   console.log('\n======================================================');
