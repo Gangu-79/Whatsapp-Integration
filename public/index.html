@@ -2177,7 +2177,7 @@
               <label class="lbl" for="metaToken" style="margin-bottom:0;">Permanent Access Token (System User Token) <span style="color:#f43f5e;">*</span></label>
               <button type="button" onclick="toggleTokenVisibility()" style="background:none; border:none; color:var(--pur); font-size:12px; font-weight:700; cursor:pointer;" id="tokenToggleBtn">👁 Show Token</button>
             </div>
-            <input type="password" id="metaToken" class="inp" placeholder="EAAG... (Must have whatsapp_business_messaging)">
+            <input type="password" id="metaToken" class="inp" placeholder="EAAG... (Must have whatsapp_business_messaging)" autocomplete="new-password" spellcheck="false">
           </div>
 
           <div class="meta-two-col-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
@@ -3838,6 +3838,11 @@
 
       if (!phoneId || !token) {
         toast('Phone Number ID and Access Token are required!', 'err_');
+        return;
+      }
+
+      if (!token.startsWith('EAA') || token.length < 50) {
+        toast('⚠️ Invalid Token Format: Meta access tokens start with "EAA...". Your browser may have autofilled your account password! Please paste the real System User Token.', 'err_');
         return;
       }
 
