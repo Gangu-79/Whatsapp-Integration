@@ -2172,8 +2172,24 @@ app.post('/api/inbox/reply', async (req, res) => {
       });
     }
 
-    // Determine template language
-    const chosenLang = templateLang || cfg.templateLang || 'en_US';
+    // Determine template language and resolve template details from WABA
+    let chosenLang = templateLang || cfg.templateLang || 'en_US';
+    let varCount = null;
+
+    if (effectiveTemplate && cfg.wabaId) {
+      try {
+        const val = await metaApi.validateTemplate({
+          token: cfg.token,
+          wabaId: cfg.wabaId,
+          templateName: effectiveTemplate,
+          templateLang: chosenLang
+        });
+        if (val.valid && val.template) {
+          if (val.template.language) chosenLang = val.template.language;
+          if (typeof val.template.variableCount === 'number') varCount = val.template.variableCount;
+        }
+      } catch (e) {}
+    }
 
     // Attempt sending message via Meta Cloud API
     let result = await metaApi.sendMessage({
@@ -2183,7 +2199,8 @@ app.post('/api/inbox/reply', async (req, res) => {
       text: message.trim(),
       templateName: effectiveTemplate,
       templateLang: chosenLang,
-      recipientName: conv?.contact_name || ''
+      recipientName: conv?.contact_name || '',
+      variableCount: varCount
     });
 
     // Language mismatch auto-retry: if 132001 (template not found for language), try alternate en/en_US

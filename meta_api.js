@@ -731,6 +731,8 @@ async function sendMessage({
       explanation = `Template '${templateName}' does not exist or is not approved in language '${templateLang}'. Check Meta WhatsApp Manager > Message Templates.`;
     } else if (errorCode === 132000) {
       explanation = `Template variable/parameter mismatch for '${templateName}'. Please verify the required variables (e.g. {{1}}) and header media format match the template in WhatsApp Manager.`;
+    } else if (errorCode === 131049) {
+      explanation = "Meta Ecosystem Protection (Error 131049): Message delivery blocked because this specific recipient reached Meta's per-user daily marketing message limit across WhatsApp. Meta does NOT charge for this message. To reach them immediately: have them send a WhatsApp message ('Hi') to +91 99665 59281 to open the 24-hr service window, or send an approved Utility template.";
     } else if (errorCode === 130429) {
       explanation = 'Meta Rate Limit Reached: Cloud API rate limit exceeded. Please wait or throttle message dispatch speed.';
     } else if (errorCode === 131031) {

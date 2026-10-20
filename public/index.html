@@ -2684,6 +2684,10 @@
         if (fixer) fixer.style.display = 'block';
         return;
       }
+      if (errStr.includes('131049') || errStr.toLowerCase().includes('healthy ecosystem engagement') || errStr.toLowerCase().includes('ecosystem')) {
+        toast(`🛡️ <strong>Meta Per-User Marketing Cap (Error 131049):</strong><br>Meta temporarily held this message because this recipient received too many marketing messages today across WhatsApp. <em>(Meta did NOT charge you for this failed message)</em>.<br><br>💡 <strong>How to reach them right now:</strong><br>1. Ask contact to send "Hi" to <strong>+91 99665 59281</strong> to open the free 24-hr window (or click ⚡ Customer Replied).<br>2. Or send an approved <strong>Utility</strong> template instead of Marketing.`, 'err_', 10000);
+        return;
+      }
       toast('Delivery Failed: ' + errStr, 'err_');
     }
 
@@ -2907,9 +2911,10 @@
       }
     }
 
-    function populateInboxTemplateSelect() {
+    function populateInboxTemplateSelect(preferTemplate = false) {
       const tplSelect = $('inboxReplyTemplateSelect');
       if (!tplSelect) return;
+      const prevVal = tplSelect.value;
       let opts = '<option value="__direct__">💬 Direct Message (Send Directly)</option>';
       opts += '<option value="" data-lang="">⚙️ Auto-use Approved Template</option>';
       if (metaApprovedTemplates && metaApprovedTemplates.length > 0) {
@@ -2923,6 +2928,15 @@
         opts += `</optgroup>`;
       }
       tplSelect.innerHTML = opts;
+
+      if (prevVal && prevVal !== '__direct__' && Array.from(tplSelect.options).some(o => o.value === prevVal)) {
+        tplSelect.value = prevVal;
+      } else if (preferTemplate && metaApprovedTemplates && metaApprovedTemplates.length > 0) {
+        const validTpl = metaApprovedTemplates.find(t => !t.isHelloWorld) || metaApprovedTemplates[0];
+        if (validTpl) tplSelect.value = validTpl.name;
+      } else if (prevVal && Array.from(tplSelect.options).some(o => o.value === prevVal)) {
+        tplSelect.value = prevVal;
+      }
     }
 
     function populateBulkTemplateSelect() {
@@ -4117,7 +4131,7 @@
           badgeEl.innerHTML = `<span style="background:rgba(244,63,94,0.18); color:#f43f5e; padding:3px 9px; border-radius:100px; font-weight:700; font-size:11px;" title="Replies outside 24h window use approved Meta template">🔴 Window Closed (Template Reply)</span>`;
           if (tplBar) {
             tplBar.style.display = 'flex';
-            populateInboxTemplateSelect();
+            populateInboxTemplateSelect(true);
           }
           if ($('chatReplyInput')) $('chatReplyInput').placeholder = 'Type reply message (press Enter to send)...';
         }
@@ -4278,6 +4292,8 @@
 
       const tplSelect = $('inboxReplyTemplateSelect');
       let selectedTpl = (tplSelect ? tplSelect.value : '').trim();
+      const selectedOpt = tplSelect && tplSelect.selectedIndex >= 0 ? tplSelect.options[tplSelect.selectedIndex] : null;
+      const selectedLang = selectedOpt ? selectedOpt.getAttribute('data-lang') : null;
 
       try {
         const res = await apiFetch('/api/inbox/reply', {
@@ -4286,7 +4302,8 @@
           body: JSON.stringify({
             to: activeChatPhone,
             message: text,
-            templateName: selectedTpl || undefined
+            templateName: selectedTpl || undefined,
+            templateLang: selectedLang || undefined
           })
         });
         const d = await res.json();
@@ -4299,6 +4316,8 @@
         } else {
           if (d.code === 131047) {
             toast(`Meta 24-hr Policy (131047): Outside 24-hr window. Click "⚡ Customer Replied" if they messaged you, or select an approved template above.`, 'err_');
+          } else if (d.code === 131049) {
+            toast(`🛡️ <strong>Meta Per-User Marketing Limit (Error 131049):</strong><br>Meta blocked this message because this recipient reached their daily promotional limit on WhatsApp.<br><em>(Meta does NOT charge for this failed message)</em>.<br>Ask them to send "Hi" to <strong>+91 99665 59281</strong> to chat freely!`, 'err_', 9000);
           } else if (d.code === 131042 || d.billingBlocked) {
             const wizardUrl = d.billingUrl || 'https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account';
             toast(`⚠️ <strong>Meta Currency Not Configured (131042):</strong><br><a href="${wizardUrl}" target="_blank" rel="noopener noreferrer" style="color:#fde047; text-decoration:underline; font-weight:800; display:inline-block; margin-top:4px;">Click to configure currency in Meta Business Manager ↗</a>`, 'err_');
