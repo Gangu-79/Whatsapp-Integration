@@ -2015,27 +2015,27 @@
             </div>
           </div>
 
-          <!-- Meta Billing Currency Alert Banner (Error 131042) -->
+          <!-- Meta Billing Currency & Available Funds Alert Banner (Error 131042) -->
           <div id="error131042CurrencyCard" style="display:none; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(185, 28, 28, 0.25)); border: 1.5px solid #ef4444; border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.2);">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
               <div style="display:flex; gap:12px; align-items:flex-start; flex:1; min-width:280px;">
                 <span style="font-size:24px; line-height:1;">⚠️</span>
                 <div>
-                  <div style="font-size:14px; font-weight:800; color:#fee2e2; letter-spacing:0.3px;">Meta Billing Blocker: Currency Not Configured (Error 131042)</div>
+                  <div style="font-size:14px; font-weight:800; color:#fee2e2; letter-spacing:0.3px;">Meta Billing Alert: Business Eligibility / Available Funds ₹ 0.00 (Error 131042)</div>
                   <div style="font-size:12px; color:#fca5a5; margin-top:4px; line-height:1.5;">
-                    Your WhatsApp Business Account (<strong id="billingWabaIdDisplay">1142185591806768</strong>) has no billing currency configured in Meta Business Manager (<strong id="billingBizIdDisplay">1396896010170779</strong>).
-                    Meta Cloud API accepts messages but drops handset delivery until a billing currency (e.g. <strong>INR - Indian Rupee</strong>) is selected.
+                    Your WhatsApp Business Account (<strong id="billingWabaIdDisplay">1142185591806768</strong>) has <strong>₹ 0.00 Available Funds</strong> or requires payment setup in Meta Business Manager.
+                    As Meta notes on your Billing Hub: <em>"We'll deduct funds as you send messages. If funds run out, your messages will stop sending."</em>
                   </div>
                   <div style="margin-top:8px; font-size:11.5px; color:#fecaca; display:flex; gap:14px; flex-wrap:wrap;">
-                    <span>📍 <strong>Step 1:</strong> Click 'Configure Currency in Meta'</span>
-                    <span>🇮🇳 <strong>Step 2:</strong> Select Country (India) & Currency (INR)</span>
-                    <span>💾 <strong>Step 3:</strong> Save changes in Meta</span>
+                    <span>📍 <strong>Step 1:</strong> Click 'Open Meta Billing Hub'</span>
+                    <span>💳 <strong>Step 2:</strong> Add Available Funds (e.g. ₹50 or ₹100 via UPI/Card)</span>
+                    <span>🚀 <strong>Step 3:</strong> Resend messages to handsets instantly!</span>
                   </div>
                 </div>
               </div>
               <div style="display:flex; flex-direction:column; gap:8px; align-self:center;">
-                <a id="btnOpenMetaCurrencyWizard" href="https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account" target="_blank" rel="noopener noreferrer" class="btn" style="background:#ef4444; color:#fff; font-weight:800; padding:10px 18px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(239,68,68,0.4); text-align:center; white-space:nowrap;">
-                  <span>🔗 Configure Currency in Meta</span>
+                <a id="btnOpenMetaCurrencyWizard" href="https://business.facebook.com/billing_hub/payment_settings?asset_id=1142185591806768&business_id=1396896010170779" target="_blank" rel="noopener noreferrer" class="btn" style="background:#ef4444; color:#fff; font-weight:800; padding:10px 18px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(239,68,68,0.4); text-align:center; white-space:nowrap;">
+                  <span>💳 Open Meta Billing Hub & Add Funds</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                 </a>
               </div>
@@ -2269,31 +2269,31 @@
             </div>
           </div>
 
-          <!-- Error 131042 Currency Guided Fixer Card (Specific to Currency not configured) -->
+          <!-- Error 131042 Currency & Available Funds Guided Fixer Card -->
           <div id="error131042FixerCard" style="display:none; margin-top:16px; background:linear-gradient(135deg, rgba(239,68,68,0.12), rgba(185,28,28,0.18)); border:1.5px solid #ef4444; border-radius:16px; padding:18px;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
               <span style="font-size:20px;">⚠️</span>
-              <h4 style="font-size:14.5px; font-weight:800; color:#fca5a5;">Meta Billing Blocker: Currency Not Configured (Error 131042)</h4>
+              <h4 style="font-size:14.5px; font-weight:800; color:#fca5a5;">Meta Billing Issue: Business Eligibility / Available Funds ₹ 0.00 (Error 131042)</h4>
             </div>
             <p style="font-size:12.5px; color:#e2e8f0; line-height:1.6; margin-bottom:12px;">
-              Meta Cloud API returns <strong>Error 131042: "Message failed to send because your WhatsApp Business account currency is not configured."</strong> While messages may receive a Meta message ID (wamid), Meta's delivery engine drops handset delivery until a billing currency (e.g. <strong>INR - Indian Rupee</strong>) is configured for your WhatsApp Business Account.
+              Meta Cloud API returns <strong>Error 131042: "Business Eligibility Payment Issue"</strong>. This happens when your WhatsApp Business Account has <strong>₹ 0.00 Available Funds</strong> or no active payment method linked. As Meta states in Billing Hub: <em>"If funds run out, your messages will stop sending."</em>
             </p>
 
             <div style="background:rgba(0,0,0,0.35); border-radius:10px; padding:12px; margin-bottom:14px; font-size:12px; color:#cbd5e1; line-height:1.7;">
               <strong style="color:#f87171;">How to Resolve in Meta Business Manager:</strong><br>
-              1. <strong>Open Meta Currency Wizard:</strong> Click the direct button below to access Meta's official currency configuration tool.<br>
-              2. <strong>Verify Accounts:</strong> Ensure Business Portfolio ID is <code>1396896010170779</code> and Asset ID is your WABA <code>1142185591806768</code>.<br>
-              3. <strong>Set Country & Currency:</strong> Select Country (<strong>India</strong>) and Currency (<strong>INR - Indian Rupee</strong>).<br>
-              4. <strong>Save Configuration:</strong> Once saved in Meta, all outbound campaign and inbox messages will immediately deliver to handsets!
+              1. <strong>Open Meta Billing Hub:</strong> Click the direct button below to open Payment Settings for WABA <code>1142185591806768</code>.<br>
+              2. <strong>Add Available Funds:</strong> Click <strong>Add funds</strong> and recharge e.g. <strong>₹ 50 or ₹ 100</strong> via UPI (GPay/PhonePe/Paytm), Card, or Net Banking.<br>
+              3. <strong>GST Info (Optional):</strong> If you do not have a GST number, you can simply click <em>Dismiss</em> on the tax prompt.<br>
+              4. <strong>Delivery Resumes Instantly:</strong> Once available funds show a positive balance, Meta immediately accepts and delivers all campaign messages to handsets!
             </div>
 
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <a id="btnSettingsCurrencyWizard" href="https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account" target="_blank" rel="noopener noreferrer" class="btn" style="background:#ef4444; color:#fff; font-weight:800; font-size:12px; padding:9px 16px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(239,68,68,0.35);">
-                <span>🔗 Open Meta Currency Wizard</span>
+              <a id="btnSettingsCurrencyWizard" href="https://business.facebook.com/billing_hub/payment_settings?asset_id=1142185591806768&business_id=1396896010170779" target="_blank" rel="noopener noreferrer" class="btn" style="background:#ef4444; color:#fff; font-weight:800; font-size:12px; padding:9px 16px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(239,68,68,0.35);">
+                <span>💳 Open Meta Billing Hub & Add Funds</span>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
               </a>
               <a href="https://business.facebook.com/billing_hub" target="_blank" class="btn" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; font-weight:700; font-size:12px; padding:9px 16px; border-radius:8px; text-decoration:none;">
-                💳 Meta Billing Hub
+                📊 All Billing Portfolios
               </a>
             </div>
           </div>
@@ -2698,9 +2698,9 @@
 
     function showMessageDeliveryError(errStr) {
       if (!errStr) errStr = 'Message delivery failed (recipient phone unreachable or not on WhatsApp)';
-      if (errStr.includes('131042') || errStr.toLowerCase().includes('currency')) {
+      if (errStr.includes('131042') || errStr.toLowerCase().includes('currency') || errStr.toLowerCase().includes('payment')) {
         const wizardUrl = 'https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account';
-        toast(`⚠️ <strong>Delivery Failed (Error 131042):</strong> Account currency not configured in Meta.<br><a href="${wizardUrl}" target="_blank" rel="noopener noreferrer" style="color:#fde047; text-decoration:underline; font-weight:800; display:inline-block; margin-top:4px;">Click to configure currency in Meta Business Manager ↗</a>`, 'err_');
+        toast(`⚠️ <strong>Meta Payment / Balance Issue (Error 131042):</strong><br>Available funds are ₹ 0.00 or payment method is pending in Meta.<br><em>Meta halts message delivery when available funds run out.</em><br><a href="${wizardUrl}" target="_blank" rel="noopener noreferrer" style="color:#fde047; text-decoration:underline; font-weight:800; display:inline-block; margin-top:6px;">Add Funds (e.g. ₹50) in Meta Billing Hub ↗</a>`, 'err_', 10000);
         const card = $('error131042CurrencyCard');
         if (card) card.style.display = 'block';
         const fixer = $('error131042FixerCard');

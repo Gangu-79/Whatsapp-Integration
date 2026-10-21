@@ -798,8 +798,8 @@ async function sendMessage({
 
     if (errorCode === 131042) {
       billingBlocked = true;
-      billingUrl = 'https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=1142185591806768&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account';
-      explanation = `Meta Billing Configuration Blocker (Error 131042): Message delivery failed because your WhatsApp Business Account currency is not configured. Meta Cloud API cannot deliver messages until you select your country and currency in Meta Business Manager: ${billingUrl}`;
+      billingUrl = 'https://business.facebook.com/billing_hub/payment_settings?asset_id=1142185591806768&business_id=1396896010170779';
+      explanation = `Meta Business Eligibility / Payment Blocker (Error 131042): Message delivery failed because your WhatsApp Business Account has ₹ 0.00 Available Funds or requires an active payment method. Meta requires positive prepaid funds (e.g. ₹ 50 - ₹ 100) to deliver template messages to recipient handsets: ${billingUrl}`;
     } else if (errorCode === 190) {
       explanation = "Meta Error (190): Access token has expired, is invalid, or was revoked. Please generate a new Permanent System User Token in Meta Business Suite (business.facebook.com) > Settings > System Users, and update your token in Meta API Settings.";
     } else if (errorCode === 131058) {
