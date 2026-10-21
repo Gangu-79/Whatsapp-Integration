@@ -561,45 +561,26 @@ async function validateTemplate({ token, wabaId, templateName, templateLang }) {
  * - Image Message with caption
  * - Direct Text Message
  */
-async function sendMessage({
-  token,
-  phoneNumberId,
+/**
+ * Build the exact JSON payload for Meta Graph Cloud API /messages.
+ * Strictly complies with Meta template rules:
+ * - Omits header parameters if template has no media header (prevents Error 132018).
+ * - Enforces exact parameter counts for template body variables.
+ */
+function buildMessagePayload({
   to,
   text = '',
   mediaId = null,
   mediaType = 'image',
-  filename = 'document.pdf',
+  filename = 'attachment.pdf',
   templateName = null,
   templateLang = 'en_US',
   recipientName = '',
   variableCount = null,
-  templateVariables = null
+  templateVariables = null,
+  hasMediaHeader = false
 }) {
   const cleanPhone = cleanPhoneNumber(to);
-  if (!isValidE164(cleanPhone)) {
-    return {
-      success: false,
-      code: 400,
-      error: `Invalid E.164 phone number: '${to}'. Must contain 10-15 digits.`
-    };
-  }
-
-  // Pre-check: Reject hello_world on registered production numbers
-  if (templateName && templateName.toLowerCase().trim() === 'hello_world') {
-    return {
-      success: false,
-      code: 131058,
-      error: "Meta API Error (131058): Hello World templates can only be sent from the Public Test Numbers.",
-      explanation: "Your registered number is a live production number. Meta restricts 'hello_world' to test numbers. Please choose an approved template created in Meta WhatsApp Manager or send direct messages within the active 24-hr customer window."
-    };
-  }
-
-  const url = `${GRAPH_BASE_URL}/${phoneNumberId}/messages`;
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  };
-
   let payload = {};
 
   // Case 1: Meta Approved Template Message
@@ -617,8 +598,8 @@ async function sendMessage({
 
     const components = [];
 
-    // Header component if media attachment is present
-    if (mediaId) {
+    // Header component ONLY if mediaId is present AND template actually supports a media header in Meta
+    if (mediaId && hasMediaHeader) {
       if (mediaType === 'document') {
         components.push({
           type: 'header',
@@ -643,15 +624,17 @@ async function sendMessage({
       }
     }
 
-    // Body component with dynamic variables
+    // Body component with dynamic variables (Strict count matching to prevent Meta Error 132018)
     if (templateName.trim() !== 'hello_world') {
       const bodyParams = [];
-      if (Array.isArray(templateVariables) && templateVariables.length > 0) {
-        for (const tv of templateVariables) {
+      if (variableCount === 0) {
+        // Template has 0 variables - strictly NO body parameters!
+      } else if (Array.isArray(templateVariables) && templateVariables.length > 0) {
+        const count = (typeof variableCount === 'number' && variableCount > 0) ? variableCount : templateVariables.length;
+        for (let idx = 0; idx < count; idx++) {
+          const tv = templateVariables[idx];
           bodyParams.push({ type: 'text', text: String(tv !== undefined && tv !== null ? tv : '-') });
         }
-      } else if (variableCount === 0) {
-        // Template has 0 variables - no body parameters
       } else if (variableCount === 1) {
         const val1 = (recipientName && recipientName.trim()) ? recipientName.trim() : (text && text.trim() ? text.trim() : 'Customer');
         bodyParams.push({ type: 'text', text: val1 });
@@ -666,7 +649,7 @@ async function sendMessage({
         for (let v = 2; v < variableCount; v++) {
           bodyParams.push({ type: 'text', text: '-' });
         }
-      } else if (recipientName && recipientName.trim()) {
+      } else if (recipientName && recipientName.trim() && variableCount !== 0) {
         bodyParams.push({ type: 'text', text: recipientName.trim() });
       }
 
@@ -736,6 +719,63 @@ async function sendMessage({
     };
   }
 
+  return payload;
+}
+
+async function sendMessage({
+  token,
+  phoneNumberId,
+  to,
+  text = '',
+  mediaId = null,
+  mediaType = 'image',
+  filename = 'document.pdf',
+  templateName = null,
+  templateLang = 'en_US',
+  recipientName = '',
+  variableCount = null,
+  templateVariables = null,
+  hasMediaHeader = false
+}) {
+  const cleanPhone = cleanPhoneNumber(to);
+  if (!isValidE164(cleanPhone)) {
+    return {
+      success: false,
+      code: 400,
+      error: `Invalid E.164 phone number: '${to}'. Must contain 10-15 digits.`
+    };
+  }
+
+  // Pre-check: Reject hello_world on registered production numbers
+  if (templateName && templateName.toLowerCase().trim() === 'hello_world') {
+    return {
+      success: false,
+      code: 131058,
+      error: "Meta API Error (131058): Hello World templates can only be sent from the Public Test Numbers.",
+      explanation: "Your registered number is a live production number. Meta restricts 'hello_world' to test numbers. Please choose an approved template created in Meta WhatsApp Manager or send direct messages within the active 24-hr customer window."
+    };
+  }
+
+  const url = `${GRAPH_BASE_URL}/${phoneNumberId}/messages`;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  };
+
+  const payload = buildMessagePayload({
+    to: cleanPhone,
+    text,
+    mediaId,
+    mediaType,
+    filename,
+    templateName,
+    templateLang,
+    recipientName,
+    variableCount,
+    templateVariables,
+    hasMediaHeader
+  });
+
   try {
     const response = await axios.post(url, payload, { headers, timeout: 25000 });
     const msgId = response.data?.messages?.[0]?.id || 'ACCEPTED';
@@ -768,8 +808,8 @@ async function sendMessage({
       explanation = '24-Hour Window Expired: Outside the 24-hr customer service window, Meta strictly requires an approved Message Template. Freeform messages cannot be sent until the recipient messages you or you send an approved template.';
     } else if (errorCode === 132001) {
       explanation = `Template '${templateName}' does not exist or is not approved in language '${templateLang}'. Check Meta WhatsApp Manager > Message Templates.`;
-    } else if (errorCode === 132000) {
-      explanation = `Template variable/parameter mismatch for '${templateName}'. Please verify the required variables (e.g. {{1}}) and header media format match the template in WhatsApp Manager.`;
+    } else if (errorCode === 132018 || errorCode === 132000) {
+      explanation = `Template Parameter Issue (Error ${errorCode}): There's an issue with the parameters in your template '${templateName}'. Meta rejects dispatches if media parameters are passed to a text-only template, or if the number of body variables passed does not exactly match the template definition.`;
     } else if (errorCode === 131049) {
       explanation = "Meta Ecosystem Protection (Error 131049): Message delivery blocked because this specific recipient reached Meta's per-user daily marketing message limit across WhatsApp. Meta does NOT charge for this message. To reach them immediately: have them send a WhatsApp message ('Hi') to +91 99665 59281 to open the 24-hr service window, or send an approved Utility template.";
     } else if (errorCode === 130429) {
@@ -1025,6 +1065,7 @@ module.exports = {
   fetchApprovedTemplates,
   validateTemplate,
   uploadMedia,
+  buildMessagePayload,
   sendMessage,
   dispatchCampaignBatch,
   getBusinessProfile,

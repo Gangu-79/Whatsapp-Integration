@@ -447,6 +447,65 @@ async function runAllTests() {
     }
   });
 
+  await runTest('buildMessagePayload should strictly omit header parameter when hasMediaHeader is false (prevents Meta Error 132018)', () => {
+    const { buildMessagePayload } = require('../meta_api');
+    const payload = buildMessagePayload({
+      to: '919966559281',
+      templateName: 'client_notification',
+      templateLang: 'en',
+      recipientName: 'Gangu',
+      mediaId: 'lingering_session_media_123',
+      hasMediaHeader: false,
+      variableCount: 1
+    });
+
+    assert.strictEqual(payload.type, 'template');
+    assert.strictEqual(payload.template.name, 'client_notification');
+    const comps = payload.template.components || [];
+    const hasHeader = comps.some(c => c.type === 'header');
+    assert.strictEqual(hasHeader, false, 'Header component MUST NOT be present when template has no media header!');
+
+    const bodyComp = comps.find(c => c.type === 'body');
+    assert(bodyComp, 'Body component must be present');
+    assert.strictEqual(bodyComp.parameters.length, 1, 'Body must have exactly 1 parameter');
+    assert.strictEqual(bodyComp.parameters[0].text, 'Gangu');
+  });
+
+  await runTest('buildMessagePayload should include header parameter only when hasMediaHeader is true and mediaId exists', () => {
+    const { buildMessagePayload } = require('../meta_api');
+    const payload = buildMessagePayload({
+      to: '919966559281',
+      templateName: 'media_flyer_template',
+      templateLang: 'en',
+      recipientName: 'Bablu',
+      mediaId: 'media_id_verified_456',
+      mediaType: 'image',
+      hasMediaHeader: true,
+      variableCount: 1
+    });
+
+    const comps = payload.template.components || [];
+    const headerComp = comps.find(c => c.type === 'header');
+    assert(headerComp, 'Header component MUST be present when hasMediaHeader is true');
+    assert.strictEqual(headerComp.parameters[0].type, 'image');
+    assert.strictEqual(headerComp.parameters[0].image.id, 'media_id_verified_456');
+  });
+
+  await runTest('buildMessagePayload should strictly omit body component when variableCount is 0', () => {
+    const { buildMessagePayload } = require('../meta_api');
+    const payload = buildMessagePayload({
+      to: '919966559281',
+      templateName: 'static_announcement',
+      templateLang: 'en',
+      recipientName: 'Bablu',
+      variableCount: 0
+    });
+
+    const comps = payload.template.components || [];
+    const bodyComp = comps.find(c => c.type === 'body');
+    assert.strictEqual(bodyComp, undefined, 'Body component MUST NOT be added when variableCount is 0');
+  });
+
   await runTest('Column variable replacement should interpolate {{name}}, {{phone}}, and custom spreadsheet columns', () => {
     const rawRow = {
       Name: 'Rahul Sharma',

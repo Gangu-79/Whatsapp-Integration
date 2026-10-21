@@ -712,6 +712,7 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
       }
 
       // Pre-validate against WABA if WABA ID is configured
+      let hasMediaHdr = false;
       if (cfg.wabaId) {
         const val = await metaApi.validateTemplate({
           token: cfg.token,
@@ -733,8 +734,13 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
         if (val.template && typeof val.template.variableCount === 'number') {
           varCount = val.template.variableCount;
         }
+        if (val.template && typeof val.template.hasMediaHeader === 'boolean') {
+          hasMediaHdr = val.template.hasMediaHeader;
+        }
       }
     }
+
+    const mediaIdToSend = (effectiveTemplate ? (hasMediaHdr ? mediaId : null) : mediaId);
 
     // Send via Meta API
     const result = await metaApi.sendMessage({
@@ -742,13 +748,14 @@ app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
       phoneNumberId: cfg.phoneNumberId,
       to: cleanPhone,
       text: (text || '').trim(),
-      mediaId,
+      mediaId: mediaIdToSend,
       mediaType,
       filename: mediaFilename,
       templateName: effectiveTemplate,
       templateLang: effectiveLang,
       recipientName: recipientName || '',
-      variableCount: varCount
+      variableCount: varCount,
+      hasMediaHeader: hasMediaHdr
     });
 
     // Save outgoing message to database
@@ -930,13 +937,32 @@ app.post('/api/upload/image', upload.single('file'), (req, res) => {
   res.json({ success: true, filename: req.file.originalname, saved: 'campaign.jpg', type: 'image' });
 });
 
-// API: Delete Media Attachment
+// API: Delete Media Attachment (Cleans all candidate media across sDir, sess_default, and workspace)
+function clearAllSessionMedia(sDir) {
+  const dirs = [sDir, path.join(sessionsBaseDir, 'sess_default'), __dirname];
+  const candidates = [
+    'campaign_media.pdf', 'campaign_media.mp4', 'campaign_media.3gp', 'campaign_media.3gpp',
+    'campaign_media.png', 'campaign_media.jpg', 'campaign_media.jpeg',
+    'campaign.mp4', 'campaign.jpg', 'campaign.jpeg', 'campaign.png', 'campaign.pdf'
+  ];
+  let deletedCount = 0;
+  for (const d of dirs) {
+    if (!d || !fs.existsSync(d)) continue;
+    for (const c of candidates) {
+      const p = path.join(d, c);
+      if (fs.existsSync(p)) {
+        try { fs.unlinkSync(p); deletedCount++; } catch (err) {}
+      }
+    }
+  }
+  return deletedCount;
+}
+
 app.delete('/api/delete-media', (req, res) => {
   try {
     const sDir = getSessionDir(req);
-    const mediaPath = findSessionMedia(sDir);
-    if (mediaPath && fs.existsSync(mediaPath)) fs.unlinkSync(mediaPath);
-    res.json({ success: true });
+    const count = clearAllSessionMedia(sDir);
+    res.json({ success: true, deleted: count });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -944,9 +970,8 @@ app.delete('/api/delete-media', (req, res) => {
 app.delete('/api/delete-image', (req, res) => {
   try {
     const sDir = getSessionDir(req);
-    const mediaPath = findSessionMedia(sDir);
-    if (mediaPath && fs.existsSync(mediaPath)) fs.unlinkSync(mediaPath);
-    res.json({ success: true });
+    const count = clearAllSessionMedia(sDir);
+    res.json({ success: true, deleted: count });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -1358,7 +1383,9 @@ function launchBackgroundCampaignJob({
             addLog(`[Policy Notice] Custom template(s) '${tplsRes.inReview.map(t => t.name).join(', ')}' are currently PENDING Meta approval. Meta restricts 'hello_world' on live numbers. Once Meta finishes review, click ⟳ Refresh.`, 'warn');
           }
           if (effectiveTemplate) {
-            matchedTemplate = (tplsRes.allTemplates || []).find(t => t.name.toLowerCase() === effectiveTemplate.toLowerCase());
+            const cleanTpl = effectiveTemplate.trim().toLowerCase();
+            const sameName = (tplsRes.allTemplates || []).filter(t => (t.name || '').trim().toLowerCase() === cleanTpl);
+            matchedTemplate = sameName.find(t => t.language === effectiveLang) || sameName[0] || null;
             if (matchedTemplate) {
               if (matchedTemplate.language) effectiveLang = matchedTemplate.language;
               if (matchedTemplate.status !== 'APPROVED') {
@@ -1429,6 +1456,12 @@ function launchBackgroundCampaignJob({
         const tplToUse = isWindowActive ? (job.templateName || null) : (effectiveTemplate || job.templateName || null);
         const langToUse = effectiveLang || job.templateLang || 'en_US';
         const varCount = matchedTemplate ? matchedTemplate.variableCount : null;
+        const hasMediaHdr = matchedTemplate ? !!matchedTemplate.hasMediaHeader : false;
+        const mediaIdToSend = (tplToUse ? (hasMediaHdr ? job.mediaId : null) : job.mediaId);
+
+        if (job.mediaId && tplToUse && !hasMediaHdr && i === job.currentIndex) {
+          addLog(`[Template Safety] Approved template '${tplToUse}' has no media header in Meta. Media parameter safely omitted to strictly comply with Meta Cloud API rules (prevents Error 132018).`, 'ok');
+        }
 
         // Dynamic Variable Replacement: {{name}}, {{phone}}, and any spreadsheet column {{col_name}}
         let textToSend = (job.templateText || '');
@@ -1506,14 +1539,15 @@ function launchBackgroundCampaignJob({
           phoneNumberId: job.phoneNumberId,
           to: cleanPhone,
           text: textToSend,
-          mediaId: job.mediaId,
+          mediaId: mediaIdToSend,
           mediaType: job.mediaType,
           filename: job.filename,
           templateName: tplToUse,
           templateLang: langToUse,
           recipientName: name,
           variableCount: varCount,
-          templateVariables: tplVars
+          templateVariables: tplVars,
+          hasMediaHeader: hasMediaHdr
         });
 
         // Language mismatch auto-retry: if 132001 (template not found for language), try alternate en/en_US
@@ -1526,13 +1560,15 @@ function launchBackgroundCampaignJob({
               phoneNumberId: job.phoneNumberId,
               to: cleanPhone,
               text: textToSend,
-              mediaId: job.mediaId,
+              mediaId: mediaIdToSend,
               mediaType: job.mediaType,
               filename: job.filename,
               templateName: tplToUse,
               templateLang: altLang,
               recipientName: name,
-              variableCount: varCount
+              variableCount: varCount,
+              templateVariables: tplVars,
+              hasMediaHeader: hasMediaHdr
             });
           }
         }
@@ -1550,13 +1586,15 @@ function launchBackgroundCampaignJob({
               phoneNumberId: job.phoneNumberId,
               to: cleanPhone,
               text: textToSend,
-              mediaId: job.mediaId,
+              mediaId: mediaIdToSend,
               mediaType: job.mediaType,
               filename: job.filename,
               templateName: tplToUse,
               templateLang: langToUse,
               recipientName: name,
-              variableCount: varCount
+              variableCount: varCount,
+              templateVariables: tplVars,
+              hasMediaHeader: hasMediaHdr
             });
           }
           // After experiencing a rate limit, automatically increase inter-message pacing
@@ -1954,17 +1992,40 @@ app.post('/api/bulk/send-single-recipient', async (req, res) => {
       } catch (e) {}
     }
 
+    let tplToUse = (templateName || cfg.templateName || '').trim() || null;
+    let tplLangToUse = templateLang || cfg.templateLang || 'en_US';
+    let varCount = null;
+    let hasMediaHdr = false;
+    if (tplToUse && cfg.wabaId) {
+      try {
+        const val = await metaApi.validateTemplate({
+          token: cfg.token,
+          wabaId: cfg.wabaId,
+          templateName: tplToUse,
+          templateLang: tplLangToUse
+        });
+        if (val.valid && val.template) {
+          if (val.template.language) tplLangToUse = val.template.language;
+          if (typeof val.template.variableCount === 'number') varCount = val.template.variableCount;
+          if (typeof val.template.hasMediaHeader === 'boolean') hasMediaHdr = val.template.hasMediaHeader;
+        }
+      } catch (e) {}
+    }
+    const mediaIdToSend = (tplToUse ? (hasMediaHdr ? mediaId : null) : mediaId);
+
     const result = await metaApi.sendMessage({
       token: cfg.token,
       phoneNumberId: cfg.phoneNumberId,
       to: cleanPhone,
       text: textToSend,
-      mediaId,
+      mediaId: mediaIdToSend,
       mediaType,
       filename: mediaFilename,
-      templateName: (templateName || cfg.templateName || '').trim() || null,
-      templateLang: templateLang || cfg.templateLang || 'en_US',
-      recipientName: name || 'Customer'
+      templateName: tplToUse,
+      templateLang: tplLangToUse,
+      recipientName: name || 'Customer',
+      variableCount: varCount,
+      hasMediaHeader: hasMediaHdr
     });
 
     if (result.success) {
@@ -2331,6 +2392,7 @@ app.post('/api/inbox/reply', async (req, res) => {
     let chosenLang = templateLang || cfg.templateLang || 'en_US';
     let varCount = null;
 
+    let hasMediaHdr = false;
     if (effectiveTemplate && cfg.wabaId) {
       try {
         const val = await metaApi.validateTemplate({
@@ -2342,6 +2404,7 @@ app.post('/api/inbox/reply', async (req, res) => {
         if (val.valid && val.template) {
           if (val.template.language) chosenLang = val.template.language;
           if (typeof val.template.variableCount === 'number') varCount = val.template.variableCount;
+          if (typeof val.template.hasMediaHeader === 'boolean') hasMediaHdr = val.template.hasMediaHeader;
         }
       } catch (e) {}
     }
@@ -2355,7 +2418,8 @@ app.post('/api/inbox/reply', async (req, res) => {
       templateName: effectiveTemplate,
       templateLang: chosenLang,
       recipientName: conv?.contact_name || '',
-      variableCount: varCount
+      variableCount: varCount,
+      hasMediaHeader: hasMediaHdr
     });
 
     // Language mismatch auto-retry: if 132001 (template not found for language), try alternate en/en_US
@@ -2370,7 +2434,9 @@ app.post('/api/inbox/reply', async (req, res) => {
           text: message.trim(),
           templateName: effectiveTemplate,
           templateLang: altLang,
-          recipientName: conv?.contact_name || ''
+          recipientName: conv?.contact_name || '',
+          variableCount: varCount,
+          hasMediaHeader: hasMediaHdr
         });
         if (retryResult.success) {
           result = retryResult;
