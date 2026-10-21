@@ -202,6 +202,61 @@ async function getOptOutList() {
     .map(c => ({ phone: c.phone, opt_out_reason: c.opt_out_reason, updated_at: c.updated_at }));
 }
 
+async function saveContact({ phone, name = null, customData = {} }) {
+  const clean = String(phone).replace(/\D/g, '');
+  if (!clean) return null;
+  const now = new Date().toISOString();
+  const current = memoryStore.contacts[clean] || {};
+  const updated = {
+    ...current,
+    phone: clean,
+    name: name || current.name || ('+' + clean),
+    custom_data: { ...(current.custom_data || {}), ...customData },
+    is_opted_out: current.is_opted_out || 0,
+    updated_at: now,
+    created_at: current.created_at || now
+  };
+  memoryStore.contacts[clean] = updated;
+
+  // Auto-upsert conversation so contact appears in Live Inbox immediately
+  if (!memoryStore.conversations[clean]) {
+    memoryStore.conversations[clean] = {
+      phone: clean,
+      contact_name: updated.name,
+      last_message: 'Contact imported',
+      last_timestamp: now,
+      unread_count: 0,
+      created_at: now,
+      window_expires_at: null,
+      target_phone_id: null
+    };
+  } else if (name && (!memoryStore.conversations[clean].contact_name || memoryStore.conversations[clean].contact_name.startsWith('+'))) {
+    memoryStore.conversations[clean].contact_name = name;
+  }
+
+  scheduleSave();
+  return updated;
+}
+
+async function syncContactsBatch(contactList = []) {
+  let count = 0;
+  for (const c of contactList) {
+    if (c && c.phone) {
+      await saveContact({
+        phone: c.phone,
+        name: c.name,
+        customData: c.raw_row || c.customData || {}
+      });
+      count++;
+    }
+  }
+  return count;
+}
+
+async function getContacts() {
+  return Object.values(memoryStore.contacts);
+}
+
 // ─── INBOX & CONVERSATION METHODS ───
 async function getConversations(targetPhoneId = null) {
   const now = new Date();
@@ -282,6 +337,21 @@ async function saveIncomingMessage({ id, phone, name, text, type = 'text', media
     created_at: currentConv.created_at || msgTime
   };
 
+  // Upsert contact in contacts directory
+  if (!memoryStore.contacts[cleanPhone]) {
+    memoryStore.contacts[cleanPhone] = {
+      phone: cleanPhone,
+      name: name || ('+' + cleanPhone),
+      is_opted_out: 0,
+      custom_data: {},
+      created_at: msgTime,
+      updated_at: msgTime
+    };
+  } else if (name && (!memoryStore.contacts[cleanPhone].name || memoryStore.contacts[cleanPhone].name.startsWith('+'))) {
+    memoryStore.contacts[cleanPhone].name = name;
+    memoryStore.contacts[cleanPhone].updated_at = msgTime;
+  }
+
   const newMsg = {
     id: msgId,
     phone: cleanPhone,
@@ -329,6 +399,21 @@ async function saveOutgoingReply({ id, phone, name = null, text, type = 'text', 
     window_expires_at: currentConv.window_expires_at || null,
     target_phone_id: targetPhoneId || currentConv.target_phone_id || null
   };
+
+  // Upsert contact in contacts directory
+  if (!memoryStore.contacts[cleanPhone]) {
+    memoryStore.contacts[cleanPhone] = {
+      phone: cleanPhone,
+      name: name || ('+' + cleanPhone),
+      is_opted_out: 0,
+      custom_data: {},
+      created_at: now,
+      updated_at: now
+    };
+  } else if (name && (!memoryStore.contacts[cleanPhone].name || memoryStore.contacts[cleanPhone].name.startsWith('+'))) {
+    memoryStore.contacts[cleanPhone].name = name;
+    memoryStore.contacts[cleanPhone].updated_at = now;
+  }
 
   const msgId = id || 'reply_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
   const newMsg = {
@@ -664,6 +749,9 @@ module.exports = {
   isOptedOut,
   setOptOut,
   getOptOutList,
+  saveContact,
+  syncContactsBatch,
+  getContacts,
   getConversations,
   getMessagesForContact,
   saveIncomingMessage,

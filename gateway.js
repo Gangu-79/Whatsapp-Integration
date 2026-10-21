@@ -119,7 +119,7 @@ async function getEffectiveConfig(req) {
   return { token, phoneNumberId, wabaId, templateName, templateLang };
 }
 
-// Multer Storage: Handles Excel, Images (JPG, PNG), and Documents (PDF)
+// Multer Storage: Handles Excel, Images (JPG, PNG), Documents (PDF), and Videos (MP4, 3GP)
 const uploadStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, getSessionDir(req)),
   filename: (req, file, cb) => {
@@ -128,6 +128,10 @@ const uploadStorage = multer.diskStorage({
       cb(null, 'recipients.xlsx');
     } else if (ext === '.pdf') {
       cb(null, 'campaign_media.pdf');
+    } else if (ext === '.mp4') {
+      cb(null, 'campaign_media.mp4');
+    } else if (ext === '.3gp' || ext === '.3gpp') {
+      cb(null, 'campaign_media.3gp');
     } else if (ext === '.png') {
       cb(null, 'campaign_media.png');
     } else {
@@ -138,7 +142,7 @@ const uploadStorage = multer.diskStorage({
 
 const upload = multer({
   storage: uploadStorage,
-  limits: { fileSize: 25 * 1024 * 1024 } // 25MB limit (Meta document limit is 100MB, image is 5MB)
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit (Meta document limit: 100MB, video: 16MB, image: 5MB)
 });
 
 // Serve Frontend UI (Anti-cache headers prevent stale browser caching)
@@ -828,17 +832,24 @@ function findSessionExcel(req) {
 }
 
 // API: Upload Excel recipients file (mirrors to session, sess_default, and root so it never gets lost)
-app.post('/api/upload/excel', upload.single('file'), (req, res) => {
+app.post('/api/upload/excel', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+  let syncedCount = 0;
   try {
     const defaultDir = path.join(sessionsBaseDir, 'sess_default');
     if (!fs.existsSync(defaultDir)) fs.mkdirSync(defaultDir, { recursive: true });
     fs.copyFileSync(req.file.path, path.join(defaultDir, 'recipients.xlsx'));
     fs.copyFileSync(req.file.path, path.join(__dirname, 'recipients.xlsx'));
+
+    // Automatically parse spreadsheet and sync contacts into DB so Live Inbox has all contacts immediately
+    const parsed = parseRecipientsExcel(req.file.path);
+    if (parsed.success && parsed.preview && parsed.preview.length > 0) {
+      syncedCount = await db.syncContactsBatch(parsed.preview);
+    }
   } catch (e) {
-    console.warn('[Excel Copy Warning]:', e.message);
+    console.warn('[Excel Copy/Sync Warning]:', e.message);
   }
-  res.json({ success: true, filename: req.file.originalname, saved: 'recipients.xlsx' });
+  res.json({ success: true, filename: req.file.originalname, saved: 'recipients.xlsx', syncedContacts: syncedCount });
 });
 
 // API: Delete Excel recipients file
@@ -856,7 +867,7 @@ app.delete('/api/delete-excel', (req, res) => {
   }
 });
 
-// Helper to find session media file (image or pdf) with fallback
+// Helper to find session media file (image, video, or pdf) with fallback
 function findSessionMedia(sDir) {
   const dirs = [
     sDir,
@@ -865,8 +876,11 @@ function findSessionMedia(sDir) {
   ];
   const candidates = [
     'campaign_media.pdf',
+    'campaign_media.mp4',
+    'campaign_media.3gp',
     'campaign_media.png',
     'campaign_media.jpg',
+    'campaign.mp4',
     'campaign.jpg',
     'campaign.png',
     'campaign.pdf'
@@ -881,11 +895,14 @@ function findSessionMedia(sDir) {
   return null;
 }
 
-// API: Upload Media Attachment (Supports PDF documents, PNG, and JPG images)
+// API: Upload Media Attachment (Supports PDF documents, PNG/JPG images, and MP4/3GP videos)
 app.post('/api/upload/media', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
   const ext = path.extname(req.file.originalname).toLowerCase();
-  const type = ext === '.pdf' ? 'document' : 'image';
+  let type = 'image';
+  if (ext === '.pdf') type = 'document';
+  else if (ext === '.mp4' || ext === '.3gp' || ext === '.3gpp') type = 'video';
+
   try {
     const defaultDir = path.join(sessionsBaseDir, 'sess_default');
     if (!fs.existsSync(defaultDir)) fs.mkdirSync(defaultDir, { recursive: true });
@@ -945,7 +962,9 @@ app.get('/api/files-status', async (req, res) => {
   let mediaFilename = null;
   if (mediaPath) {
     const ext = path.extname(mediaPath).toLowerCase();
-    mediaType = ext === '.pdf' ? 'document' : 'image';
+    if (ext === '.pdf') mediaType = 'document';
+    else if (ext === '.mp4' || ext === '.3gp' || ext === '.3gpp') mediaType = 'video';
+    else mediaType = 'image';
     mediaFilename = path.basename(mediaPath);
   }
 
@@ -1134,6 +1153,9 @@ app.get('/api/recipients', async (req, res) => {
     } catch (e) {}
 
     const parsed = parseRecipientsExcel(exPath, optOutSet);
+    if (parsed.success && parsed.preview && parsed.preview.length > 0) {
+      db.syncContactsBatch(parsed.preview).catch(err => console.warn('[Contact Sync Background]:', err.message));
+    }
     res.json(parsed);
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to process Excel file: ' + err.message });
@@ -1196,6 +1218,16 @@ app.get('/api/preview-image', (req, res) => {
         type: 'document',
         filename: path.basename(mediaPath),
         isPdf: true,
+        isVideo: false,
+        image: null
+      });
+    }
+    if (ext === '.mp4' || ext === '.3gp' || ext === '.3gpp') {
+      return res.json({
+        type: 'video',
+        filename: path.basename(mediaPath),
+        isPdf: false,
+        isVideo: true,
         image: null
       });
     }
@@ -1398,8 +1430,35 @@ function launchBackgroundCampaignJob({
         const langToUse = effectiveLang || job.templateLang || 'en_US';
         const varCount = matchedTemplate ? matchedTemplate.variableCount : null;
 
-        // Variable replacement: {{name}}
-        let textToSend = (job.templateText || '').replace(/\{\{name\}\}/gi, name);
+        // Dynamic Variable Replacement: {{name}}, {{phone}}, and any spreadsheet column {{col_name}}
+        let textToSend = (job.templateText || '');
+        if (recip.raw_row && typeof recip.raw_row === 'object') {
+          for (const [col, val] of Object.entries(recip.raw_row)) {
+            const regex = new RegExp(`\\{\\{${col}\\}\\}`, 'gi');
+            textToSend = textToSend.replace(regex, String(val !== undefined && val !== null ? val : ''));
+          }
+        }
+        textToSend = textToSend.replace(/\{\{name\}\}/gi, name).replace(/\{\{phone\}\}/gi, cleanPhone);
+
+        // Build template variables array for approved templates with variable parameters
+        let tplVars = null;
+        if (varCount && varCount > 0) {
+          tplVars = [];
+          tplVars.push(name || 'Customer');
+          if (varCount >= 2) {
+            if (recip.raw_row) {
+              const candidateVal = recip.raw_row['var2'] || recip.raw_row['variable2'] || recip.raw_row['Policy'] || recip.raw_row['Notes'] || recip.raw_row['Amount'] || (textToSend !== job.templateText ? textToSend : 'Notification');
+              tplVars.push(String(candidateVal || 'Notification'));
+            } else {
+              tplVars.push(textToSend || 'Notification');
+            }
+          }
+          for (let v = tplVars.length; v < varCount; v++) {
+            const colName = `var${v + 1}`;
+            const extraVal = (recip.raw_row && recip.raw_row[colName]) ? recip.raw_row[colName] : '-';
+            tplVars.push(String(extraVal));
+          }
+        }
 
         // Strict Policy Enforcement: Never dispatch free-form text outside 24h window!
         if (!isWindowActive && !tplToUse) {
@@ -1453,7 +1512,8 @@ function launchBackgroundCampaignJob({
           templateName: tplToUse,
           templateLang: langToUse,
           recipientName: name,
-          variableCount: varCount
+          variableCount: varCount,
+          templateVariables: tplVars
         });
 
         // Language mismatch auto-retry: if 132001 (template not found for language), try alternate en/en_US

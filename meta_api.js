@@ -330,9 +330,23 @@ async function uploadMedia(token, phoneNumberId, filePath) {
 
   const ext = path.extname(filePath).toLowerCase();
   let mimeType = 'image/jpeg';
-  if (ext === '.png') mimeType = 'image/png';
-  else if (ext === '.pdf') mimeType = 'application/pdf';
-  else if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
+  let mediaType = 'image';
+  if (ext === '.png') {
+    mimeType = 'image/png';
+    mediaType = 'image';
+  } else if (ext === '.pdf') {
+    mimeType = 'application/pdf';
+    mediaType = 'document';
+  } else if (ext === '.mp4') {
+    mimeType = 'video/mp4';
+    mediaType = 'video';
+  } else if (ext === '.3gp' || ext === '.3gpp') {
+    mimeType = 'video/3gpp';
+    mediaType = 'video';
+  } else if (ext === '.jpg' || ext === '.jpeg') {
+    mimeType = 'image/jpeg';
+    mediaType = 'image';
+  }
 
   const form = new FormData();
   form.append('file', fs.createReadStream(filePath), {
@@ -356,7 +370,7 @@ async function uploadMedia(token, phoneNumberId, filePath) {
       mediaId: response.data.id,
       mimeType,
       filename: path.basename(filePath),
-      type: mimeType === 'application/pdf' ? 'document' : 'image'
+      type: mediaType
     };
   } else {
     throw new Error(`Meta media upload returned no ID: ${JSON.stringify(response.data)}`);
@@ -558,7 +572,8 @@ async function sendMessage({
   templateName = null,
   templateLang = 'en_US',
   recipientName = '',
-  variableCount = null
+  variableCount = null,
+  templateVariables = null
 }) {
   const cleanPhone = cleanPhoneNumber(to);
   if (!isValidE164(cleanPhone)) {
@@ -611,6 +626,13 @@ async function sendMessage({
             { type: 'document', document: { id: mediaId, filename: filename || 'attachment.pdf' } }
           ]
         });
+      } else if (mediaType === 'video') {
+        components.push({
+          type: 'header',
+          parameters: [
+            { type: 'video', video: { id: mediaId } }
+          ]
+        });
       } else {
         components.push({
           type: 'header',
@@ -624,7 +646,11 @@ async function sendMessage({
     // Body component with dynamic variables
     if (templateName.trim() !== 'hello_world') {
       const bodyParams = [];
-      if (variableCount === 0) {
+      if (Array.isArray(templateVariables) && templateVariables.length > 0) {
+        for (const tv of templateVariables) {
+          bodyParams.push({ type: 'text', text: String(tv !== undefined && tv !== null ? tv : '-') });
+        }
+      } else if (variableCount === 0) {
         // Template has 0 variables - no body parameters
       } else if (variableCount === 1) {
         const val1 = (recipientName && recipientName.trim()) ? recipientName.trim() : (text && text.trim() ? text.trim() : 'Customer');
@@ -670,7 +696,20 @@ async function sendMessage({
       }
     };
   }
-  // Case 3: Image Message (within 24hr window)
+  // Case 3: Video Message (within 24hr window)
+  else if (mediaId && mediaType === 'video') {
+    payload = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: cleanPhone,
+      type: 'video',
+      video: {
+        id: mediaId,
+        caption: text || ''
+      }
+    };
+  }
+  // Case 4: Image Message (within 24hr window)
   else if (mediaId) {
     payload = {
       messaging_product: 'whatsapp',
@@ -683,7 +722,7 @@ async function sendMessage({
       }
     };
   }
-  // Case 4: Standard Text Message (within 24hr window)
+  // Case 5: Standard Text Message (within 24hr window)
   else {
     payload = {
       messaging_product: 'whatsapp',

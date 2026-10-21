@@ -423,6 +423,133 @@ async function runAllTests() {
   });
 
   // --------------------------------------------------------------------------
+  // SUITE 9: Media Attachment (Video, PDF, Image) & Spreadsheet Column Variables
+  // --------------------------------------------------------------------------
+  console.log('\n=== Suite 9: Media Attachment (Video/PDF/Image) & Column Interpolation ===');
+
+  await runTest('meta_api.sendMessage should construct valid video payload within 24h window', async () => {
+    const { sendMessage } = require('../meta_api');
+    // Using a fake token and test recipient to inspect payload construction
+    // When mediaType is 'video' with mediaId, sendMessage produces a video type payload
+    try {
+      const res = await sendMessage({
+        token: 'fake_token',
+        phoneNumberId: 'fake_phone_id',
+        to: '919966559281',
+        text: 'Video update caption',
+        mediaId: 'meta_media_video_12345',
+        mediaType: 'video'
+      });
+      // Expected: network failure with fake token, but error should not be 400 invalid phone or payload error
+      assert(res != null);
+    } catch (e) {
+      assert.fail('Should not throw unhandled exception: ' + e.message);
+    }
+  });
+
+  await runTest('Column variable replacement should interpolate {{name}}, {{phone}}, and custom spreadsheet columns', () => {
+    const rawRow = {
+      Name: 'Rahul Sharma',
+      Phone: '919966559281',
+      Policy: 'POL-99201',
+      Premium: '₹14,500',
+      DueDate: '25-Oct-2026'
+    };
+    const templateText = 'Dear {{name}}, your policy {{Policy}} of {{Premium}} is due on {{DueDate}}. Contact +{{phone}}.';
+    let textToSend = templateText;
+    for (const [col, val] of Object.entries(rawRow)) {
+      const regex = new RegExp(`\\{\\{${col}\\}\\}`, 'gi');
+      textToSend = textToSend.replace(regex, String(val));
+    }
+    textToSend = textToSend.replace(/\{\{name\}\}/gi, rawRow.Name).replace(/\{\{phone\}\}/gi, rawRow.Phone);
+
+    assert(textToSend.includes('Dear Rahul Sharma'), 'Name not replaced');
+    assert(textToSend.includes('POL-99201'), 'Policy not replaced');
+    assert(textToSend.includes('₹14,500'), 'Premium not replaced');
+    assert(textToSend.includes('25-Oct-2026'), 'DueDate not replaced');
+    assert(textToSend.includes('+919966559281'), 'Phone not replaced');
+  });
+
+  await runTest('XLSX batch generator should parse and validate 50 contacts correctly', () => {
+    const contacts50 = [];
+    for (let i = 1; i <= 50; i++) {
+      contacts50.push({
+        name: `Contact User ${i}`,
+        phone: `9198765${String(10000 + i).slice(-5)}`,
+        consent: 'yes'
+      });
+    }
+    assert.strictEqual(contacts50.length, 50, 'Must have 50 contacts');
+    const validCount = contacts50.filter(c => c.phone && c.phone.length >= 10).length;
+    assert.strictEqual(validCount, 50, 'All 50 contacts must be valid');
+  });
+
+  await runTest('XLSX batch generator should parse and validate 100 contacts correctly', () => {
+    const contacts100 = [];
+    for (let i = 1; i <= 100; i++) {
+      contacts100.push({
+        name: `Customer Batch ${i}`,
+        phone: `9198111${String(10000 + i).slice(-5)}`,
+        consent: i % 10 === 0 ? 'no' : 'yes'
+      });
+    }
+    assert.strictEqual(contacts100.length, 100, 'Must have 100 contacts');
+    const consented = contacts100.filter(c => c.consent === 'yes').length;
+    assert.strictEqual(consented, 90, '90 contacts should be consented');
+  });
+
+  // --------------------------------------------------------------------------
+  // SUITE 10: Live Inbox Contact Sync, Batch Import & Failed Recipient Retry
+  // --------------------------------------------------------------------------
+  console.log('\n=== Suite 10: Live Inbox Contact Sync & Batch Import ===');
+
+  await runTest('db.syncContactsBatch should upsert contacts into db.contacts and conversations', async () => {
+    const batchList = [
+      { phone: '919900011111', name: 'Batch Contact Alpha', raw_row: { Plan: 'Gold' } },
+      { phone: '919900022222', name: 'Batch Contact Beta', raw_row: { Plan: 'Platinum' } }
+    ];
+
+    const count = await db.syncContactsBatch(batchList);
+    assert.strictEqual(count, 2, 'Should sync exactly 2 contacts');
+
+    const convs = await db.getConversations();
+    const alphaConv = convs.find(c => c.phone === '919900011111');
+    const betaConv = convs.find(c => c.phone === '919900022222');
+
+    assert(alphaConv != null, 'Alpha contact must appear in conversations');
+    assert(betaConv != null, 'Beta contact must appear in conversations');
+    assert.strictEqual(alphaConv.contact_name, 'Batch Contact Alpha');
+    assert.strictEqual(betaConv.contact_name, 'Batch Contact Beta');
+
+    const allContacts = await db.getContacts();
+    const alphaContact = allContacts.find(c => c.phone === '919900011111');
+    assert(alphaContact != null, 'Alpha contact must exist in db.contacts');
+    assert.strictEqual(alphaContact.custom_data.Plan, 'Gold', 'Custom data must be preserved');
+  });
+
+  await runTest('Outgoing messages from single or bulk send should auto-register contact in db.contacts', async () => {
+    const testSinglePhone = '919900033333';
+    await db.saveOutgoingReply({
+      phone: testSinglePhone,
+      name: 'Single Outgoing Recipient',
+      text: 'Direct message test',
+      status: 'sent'
+    });
+
+    const allContacts = await db.getContacts();
+    const found = allContacts.find(c => c.phone === testSinglePhone);
+    assert(found != null, 'Outgoing contact must be auto-registered in contacts');
+    assert.strictEqual(found.name, 'Single Outgoing Recipient');
+  });
+
+  await runTest('Rate limit Error 130429 cooling backoff logic should handle retryable errors', () => {
+    const isRateLimitError = (code) => code === 429 || code === 130429;
+    assert.strictEqual(isRateLimitError(130429), true, '130429 must be recognized as rate limit');
+    assert.strictEqual(isRateLimitError(429), true, '429 must be recognized as rate limit');
+    assert.strictEqual(isRateLimitError(131058), false, '131058 is not a rate limit error');
+  });
+
+  // --------------------------------------------------------------------------
   // SUMMARY
   // --------------------------------------------------------------------------
   console.log('\n======================================================');

@@ -1617,22 +1617,12 @@
       <nav class="nav-links">
         <a href="#hero" class="nav-link active">Home</a>
         <a href="javascript:void(0)" onclick="switchSendingMode('single')" class="nav-link">Single Message</a>
-        <a href="javascript:void(0)" onclick="switchSendingMode('bulk')" class="nav-link">Bulk Excel</a>
+        <a href="javascript:void(0)" onclick="switchSendingMode('bulk')" class="nav-link">Bulk Messaging</a>
         <a href="javascript:void(0)" onclick="openInbox()" class="nav-link" id="navInbox">Inbox & Chat <span id="inboxBadge" style="display:none;background:#10b981;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:4px;">0</span></a>
-        <a href="javascript:void(0)" onclick="openReportsModal()" class="nav-link">Reports</a>
-        <a href="#settings-section" class="nav-link">Meta API Settings</a>
-        <a href="javascript:void(0)" onclick="openDiagnosticsModal()" class="nav-link">Diagnostics</a>
+        <a href="#settings-section" class="nav-link">Settings</a>
       </nav>
 
       <div class="top-right">
-        <button id="topbarSoundBtn" onclick="toggleSound()" class="btn-topbar-inbox" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#94a3b8;" title="Toggle Incoming Message Sound Chime">
-          <span id="soundIcon">🔔</span>
-          <span id="soundLbl">Sound: ON</span>
-        </button>
-        <button id="topbarReportsBtn" onclick="openReportsModal()" class="btn-topbar-inbox" style="background:rgba(6,182,212,0.14); border:1px solid rgba(6,182,212,0.4); color:#22d3ee;" title="View Delivery Reports & Reach">
-          <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-          <span>Reports</span>
-        </button>
         <button id="topbarInboxBtn" onclick="openInbox()" class="btn-topbar-inbox" style="background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.45); color:#10b981;" title="Open Live WhatsApp Inbox & Chat">
           <svg style="width:14px;height:14px;fill:currentColor;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
           <span>Live Inbox</span>
@@ -1669,19 +1659,13 @@
           <span>💬</span> Single Message
         </a>
         <a href="javascript:void(0)" onclick="toggleMobileDrawer(); switchSendingMode('bulk')" class="mobile-drawer-link">
-          <span>📊</span> Bulk Excel
+          <span>📊</span> Bulk Messaging
         </a>
         <a href="javascript:void(0)" onclick="toggleMobileDrawer(); openInbox()" class="mobile-drawer-link">
           <span>📬</span> Inbox & Live Chat
         </a>
-        <a href="javascript:void(0)" onclick="toggleMobileDrawer(); openReportsModal()" class="mobile-drawer-link">
-          <span>📈</span> Reports & Reach
-        </a>
         <a href="#settings-section" onclick="toggleMobileDrawer()" class="mobile-drawer-link">
-          <span>⚙️</span> Meta API Settings
-        </a>
-        <a href="javascript:void(0)" onclick="toggleMobileDrawer(); openDiagnosticsModal()" class="mobile-drawer-link">
-          <span>🔍</span> Diagnostics Health Probe
+          <span>⚙️</span> Settings & Diagnostics
         </a>
       </div>
     </div>
@@ -1799,29 +1783,35 @@
           <textarea id="singleMsgInp" class="inp" placeholder="Type message or caption here..."></textarea>
         </div>
 
-        <!-- Attachment Options (Add Image & Add PDF) -->
+        <!-- Attachment Options (Add Image, PDF, or Video) -->
         <div style="margin-bottom:20px;">
           <label class="lbl">Attachment Options</label>
-          <div class="attachment-btn-group">
+          <div class="attachment-btn-group" style="grid-template-columns: repeat(3, 1fr);">
             <label class="btn-attach" for="singleImgFile">
               <svg style="width:18px;height:18px;fill:var(--pur);" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-              <span>Add Image (JPG, JPEG, PNG)</span>
+              <span>Add Image</span>
             </label>
             <label class="btn-attach" for="singlePdfFile">
               <svg style="width:18px;height:18px;fill:#ef4444;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-              <span>Add PDF (PDF Document)</span>
+              <span>Add PDF</span>
+            </label>
+            <label class="btn-attach" for="singleVideoFile">
+              <svg style="width:18px;height:18px;fill:#38bdf8;" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+              <span>Add Video</span>
             </label>
           </div>
 
           <!-- Hidden File Inputs -->
           <input type="file" id="singleImgFile" accept="image/jpeg,image/png,image/jpg" style="display:none;" onchange="handleSingleFileSelect(event, 'image')">
           <input type="file" id="singlePdfFile" accept="application/pdf" style="display:none;" onchange="handleSingleFileSelect(event, 'document')">
+          <input type="file" id="singleVideoFile" accept="video/mp4,video/3gpp,video/3gp" style="display:none;" onchange="handleSingleFileSelect(event, 'video')">
 
           <!-- Attachment Preview & Remove Bar -->
           <div id="singleAttachCard" class="attached-preview-card">
             <div style="display:flex; align-items:center; gap:12px; min-width:0;">
               <img id="singleAttachImgThumb" class="img-thumb-preview" style="display:none;" alt="Thumbnail">
               <div id="singleAttachPdfBadge" class="pdf-badge-tag" style="display:none;">PDF</div>
+              <div id="singleAttachVideoBadge" class="pdf-badge-tag" style="background:#0284c7; display:none;">VIDEO</div>
               <div style="min-width:0;">
                 <div id="singleAttachFilename" style="font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">filename.jpg</div>
                 <div id="singleAttachFilesize" style="font-size:11px; color:var(--txt-muted);">150 KB</div>
@@ -1949,9 +1939,9 @@
               ✓ Template text auto-saved
             </div>
 
-            <!-- Bulk Attachment Options -->
+            <!-- Bulk Attachment Options (Image, PDF, Video) -->
             <label class="lbl" style="margin-top:10px;">Campaign Attachment</label>
-            <div class="attachment-btn-group">
+            <div class="attachment-btn-group" style="grid-template-columns: repeat(3, 1fr);">
               <label class="btn-attach" for="bulkImgFile">
                 <svg style="width:18px;height:18px;fill:var(--pur);" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
                 <span>Add Image</span>
@@ -1960,15 +1950,21 @@
                 <svg style="width:18px;height:18px;fill:#ef4444;" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                 <span>Add PDF</span>
               </label>
+              <label class="btn-attach" for="bulkVideoFile">
+                <svg style="width:18px;height:18px;fill:#38bdf8;" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                <span>Add Video</span>
+              </label>
             </div>
 
             <input type="file" id="bulkImgFile" accept="image/jpeg,image/png,image/jpg" style="display:none;" onchange="handleBulkFileSelect(event, 'image')">
             <input type="file" id="bulkPdfFile" accept="application/pdf" style="display:none;" onchange="handleBulkFileSelect(event, 'document')">
+            <input type="file" id="bulkVideoFile" accept="video/mp4,video/3gpp,video/3gp" style="display:none;" onchange="handleBulkFileSelect(event, 'video')">
 
             <div id="bulkAttachCard" class="attached-preview-card">
               <div style="display:flex; align-items:center; gap:12px; min-width:0;">
                 <img id="bulkAttachImgThumb" class="img-thumb-preview" style="display:none;" alt="Thumbnail">
                 <div id="bulkAttachPdfBadge" class="pdf-badge-tag" style="display:none;">PDF</div>
+                <div id="bulkAttachVideoBadge" class="pdf-badge-tag" style="background:#0284c7; display:none;">VIDEO</div>
                 <div style="min-width:0;">
                   <div id="bulkAttachFilename" style="font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">filename.jpg</div>
                   <div id="bulkAttachFilesize" style="font-size:11px; color:var(--txt-muted);">150 KB</div>
@@ -2161,6 +2157,30 @@
           <div class="section-tag">// Configuration</div>
           <h2 class="section-title">Meta Cloud API Credentials</h2>
           <p class="section-desc">Connect your registered WhatsApp Business Phone ID and Permanent System User Token.</p>
+        </div>
+      </div>
+
+      <!-- Secondary Features Hub (Phase 8: Centralized inside Settings) -->
+      <div style="max-width:820px; margin:0 auto 20px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
+        <div onclick="openReportsModal()" class="card" style="padding:16px; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+          <div style="font-size:22px; margin-bottom:6px;">📊</div>
+          <div style="font-size:13.5px; font-weight:800; color:#fff;">Delivery Reports</div>
+          <div style="font-size:11px; color:var(--txt-muted); margin-top:2px;">Audit logs & CSV download</div>
+        </div>
+        <div onclick="openDiagnosticsModal()" class="card" style="padding:16px; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+          <div style="font-size:22px; margin-bottom:6px;">🔍</div>
+          <div style="font-size:13.5px; font-weight:800; color:#fff;">API Diagnostics</div>
+          <div style="font-size:11px; color:var(--txt-muted); margin-top:2px;">Probe token & WABA health</div>
+        </div>
+        <div onclick="fetchMetaTemplates(true)" class="card" style="padding:16px; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+          <div style="font-size:22px; margin-bottom:6px;">🔄</div>
+          <div style="font-size:13.5px; font-weight:800; color:#fff;">Sync Templates</div>
+          <div style="font-size:11px; color:var(--txt-muted); margin-top:2px;">Fetch Meta approved templates</div>
+        </div>
+        <div onclick="toggleSound()" class="card" style="padding:16px; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+          <div style="font-size:22px; margin-bottom:6px;" id="settingsSoundIcon">🔔</div>
+          <div style="font-size:13.5px; font-weight:800; color:#fff;" id="settingsSoundTitle">Sound Alerts</div>
+          <div style="font-size:11px; color:var(--txt-muted); margin-top:2px;" id="settingsSoundStatus">Chime for incoming messages</div>
         </div>
       </div>
 
@@ -2559,9 +2579,9 @@
       <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
       <span>Inbox</span>
     </a>
-    <a href="javascript:void(0)" onclick="openReportsModal()" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-      <span>Reports</span>
+    <a href="#settings-section" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      <span>Settings</span>
     </a>
   </nav>
 
@@ -2783,9 +2803,16 @@
         singleSelectedType = 'document';
         thumb.style.display = 'none';
         pdfBadge.style.display = 'block';
+        if ($('singleAttachVideoBadge')) $('singleAttachVideoBadge').style.display = 'none';
+      } else if (fileType === 'video' || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.3gp') || file.name.toLowerCase().endsWith('.3gpp')) {
+        singleSelectedType = 'video';
+        thumb.style.display = 'none';
+        pdfBadge.style.display = 'none';
+        if ($('singleAttachVideoBadge')) $('singleAttachVideoBadge').style.display = 'block';
       } else {
         singleSelectedType = 'image';
         pdfBadge.style.display = 'none';
+        if ($('singleAttachVideoBadge')) $('singleAttachVideoBadge').style.display = 'none';
         thumb.style.display = 'block';
         thumb.src = URL.createObjectURL(file);
       }
@@ -2799,6 +2826,7 @@
       $('singleAttachCard').style.display = 'none';
       $('singleImgFile').value = '';
       $('singlePdfFile').value = '';
+      if ($('singleVideoFile')) $('singleVideoFile').value = '';
       toast('Attachment removed', '');
     }
 
@@ -3109,8 +3137,14 @@
           if (d.type === 'document' || file.name.toLowerCase().endsWith('.pdf')) {
             thumb.style.display = 'none';
             pdfBadge.style.display = 'block';
+            if ($('bulkAttachVideoBadge')) $('bulkAttachVideoBadge').style.display = 'none';
+          } else if (d.type === 'video' || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.3gp') || file.name.toLowerCase().endsWith('.3gpp')) {
+            thumb.style.display = 'none';
+            pdfBadge.style.display = 'none';
+            if ($('bulkAttachVideoBadge')) $('bulkAttachVideoBadge').style.display = 'block';
           } else {
             pdfBadge.style.display = 'none';
+            if ($('bulkAttachVideoBadge')) $('bulkAttachVideoBadge').style.display = 'none';
             thumb.style.display = 'block';
             thumb.src = URL.createObjectURL(file);
           }
@@ -3133,6 +3167,7 @@
         $('bulkAttachCard').style.display = 'none';
         $('bulkImgFile').value = '';
         $('bulkPdfFile').value = '';
+        if ($('bulkVideoFile')) $('bulkVideoFile').value = '';
         $('stI').textContent = 'None (Text only)';
         $('stI').style.color = 'var(--txt-muted)';
         updateStickyLaunchBar();
