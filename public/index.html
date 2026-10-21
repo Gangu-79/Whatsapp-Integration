@@ -1758,8 +1758,13 @@
             <!-- Panel 1: QR Code Method -->
             <div id="wwebPanelQr">
               <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center; justify-content:center;">
-                <div style="background:#fff; padding:12px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.3); text-align:center;">
-                  <img id="wwebQrImg" src="" alt="WhatsApp Web QR Code" style="width:190px; height:190px; display:block; margin:0 auto;" />
+                <div style="background:#fff; padding:12px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.3); text-align:center; min-width:190px; min-height:190px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                  <img id="wwebQrImg" src="" alt="WhatsApp Web QR Code" style="width:190px; height:190px; display:none; margin:0 auto;" />
+                  <div id="wwebQrPlaceholder" style="width:190px; height:190px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#64748b; font-size:12px; gap:8px;">
+                    <div style="font-size:32px;">⏳</div>
+                    <div style="font-weight:700; color:#334155;">Generating QR...</div>
+                    <div style="font-size:11px; color:#64748b;">(or click "Link with Phone Number" above)</div>
+                  </div>
                   <div style="font-size:11px; color:#475569; font-weight:700; margin-top:6px;">Scan with WhatsApp</div>
                 </div>
                 <div style="flex:1; min-width:260px;">
@@ -3085,18 +3090,23 @@
       });
     }
 
+    let lastAutoInitTimestamp = 0;
+
     function updateWWebUI(wweb) {
       if (!wweb) return;
       const qrState = $('wwebStateQr');
       const connState = $('wwebStateConnected');
       const waitState = $('wwebStateConnecting');
       const qrImg = $('wwebQrImg');
+      const qrPlaceholder = $('wwebQrPlaceholder');
       const nameEl = $('wwebConnectedName');
       const phoneEl = $('wwebConnectedPhone');
 
+      // Never block the user screen with connecting spinner
+      if (waitState) waitState.style.display = 'none';
+
       if (wweb.connected) {
         if (qrState) qrState.style.display = 'none';
-        if (waitState) waitState.style.display = 'none';
         if (connState) connState.style.display = 'block';
         if (nameEl) nameEl.textContent = wweb.user?.name || 'Linked WhatsApp Account';
         if (phoneEl) phoneEl.textContent = '+' + (wweb.user?.phone || 'Phone');
@@ -3109,11 +3119,29 @@
           if (lbl) lbl.textContent = 'Free Web · +' + (wweb.user?.phone || 'Linked');
           if (badge) badge.className = 'conn-badge live';
         }
-      } else if (wweb.qrCode || wweb.pairingCode || wweb.status === 'code_ready' || wweb.status === 'qr_ready') {
+      } else {
+        // Not connected: Always show QR & Pairing Code tabs immediately
         if (connState) connState.style.display = 'none';
-        if (waitState) waitState.style.display = 'none';
         if (qrState) qrState.style.display = 'block';
-        if (qrImg && wweb.qrCode) qrImg.src = wweb.qrCode;
+
+        if (wweb.qrCode) {
+          if (qrImg) { qrImg.src = wweb.qrCode; qrImg.style.display = 'block'; }
+          if (qrPlaceholder) qrPlaceholder.style.display = 'none';
+        } else {
+          if (qrImg) qrImg.style.display = 'none';
+          if (qrPlaceholder) qrPlaceholder.style.display = 'flex';
+
+          // If disconnected and no QR code, trigger fresh socket init (throttled)
+          const now = Date.now();
+          if (now - lastAutoInitTimestamp > 8000) {
+            lastAutoInitTimestamp = now;
+            apiFetch('/api/wweb/init', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ force: false })
+            }).then(r => r.json()).then(d => { if (d) updateWWebUI(d); }).catch(() => {});
+          }
+        }
 
         if (wweb.pairingCode) {
           const display = $('wwebCodeDisplay');
@@ -3127,13 +3155,9 @@
           const lbl = $('clbl');
           const badge = $('cbadge');
           if (dot_) dot_.className = 'dot';
-          if (lbl) lbl.textContent = wweb.pairingCode ? 'Free Web · Enter Code' : 'Free Web · Scan QR';
+          if (lbl) lbl.textContent = wweb.pairingCode ? 'Free Web · Enter Code' : (wweb.qrCode ? 'Free Web · Scan QR' : 'Free Web · Ready');
           if (badge) badge.className = 'conn-badge';
         }
-      } else {
-        if (connState) connState.style.display = 'none';
-        if (qrState) qrState.style.display = 'none';
-        if (waitState) waitState.style.display = 'block';
       }
     }
 

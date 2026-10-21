@@ -156,6 +156,9 @@ async function initWhatsAppWeb(forceNew = false) {
             fs.mkdirSync(AUTH_DIR, { recursive: true });
           } catch (e) {}
           console.log('[WhatsApp Web] Device logged out. Session credentials cleared.');
+          reconnectTimer = setTimeout(() => {
+            initWhatsAppWeb().catch((e) => console.warn('[WhatsApp Web Re-init Error]:', e.message));
+          }, 2000);
         } else {
           connectionStatus = 'connecting';
           console.log('[WhatsApp Web] Reconnecting in 4 seconds...');
@@ -193,6 +196,11 @@ async function initWhatsAppWeb(forceNew = false) {
     connectionStatus = 'disconnected';
     lastError = err.message;
     console.error('[WhatsApp Web Init Error]:', err.message);
+    if (!reconnectTimer) {
+      reconnectTimer = setTimeout(() => {
+        initWhatsAppWeb().catch((e) => console.warn('[WhatsApp Web Retry Error]:', e.message));
+      }, 5000);
+    }
     throw err;
   }
 }
@@ -201,6 +209,9 @@ async function initWhatsAppWeb(forceNew = false) {
  * Get current status of WhatsApp Web engine
  */
 function getWhatsAppWebStatus() {
+  if (connectionStatus === 'disconnected' && !sock && !reconnectTimer) {
+    initWhatsAppWeb().catch(() => {});
+  }
   return {
     status: connectionStatus,
     connected: connectionStatus === 'connected',
