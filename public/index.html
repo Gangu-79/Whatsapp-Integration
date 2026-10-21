@@ -1730,13 +1730,21 @@
               Choose <b>100% Free WhatsApp Web Mode (Zero Cost · No Meta Fees)</b> or <b>Meta Cloud API (Paid)</b>
             </div>
           </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
             <button type="button" id="engineBtnWeb" onclick="switchEngineMode('web')" class="btn" style="background:#10b981; color:#0f172a; font-weight:800; font-size:12.5px; padding:9px 16px; border-radius:10px; border:none; cursor:pointer; display:flex; align-items:center; gap:6px;">
               ⚡ Free WhatsApp Web (₹0 Cost)
             </button>
             <button type="button" id="engineBtnMeta" onclick="switchEngineMode('meta')" class="btn" style="background:rgba(255,255,255,0.08); color:#cbd5e1; font-weight:700; font-size:12.5px; padding:9px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); cursor:pointer; display:flex; align-items:center; gap:6px;">
               🏢 Meta Cloud API (Paid)
             </button>
+            <div id="wwebHeaderSpeedBadge" style="display:flex; align-items:center; gap:6px; background:#0f172a; border:1.5px solid rgba(16,185,129,0.5); border-radius:10px; padding:7px 12px; margin-left:auto;">
+              <span style="font-size:12px; color:#34d399; font-weight:800;">🛡️ Anti-Ban Speed:</span>
+              <select id="wwebTopPacingSelect" onchange="syncPacingSelect(this.value)" style="background:transparent; border:none; color:#fff; font-size:12px; font-weight:700; outline:none; cursor:pointer;">
+                <option value="6000" selected>🟢 Ultra Safe (6s–9s delay)</option>
+                <option value="10000">🛡️ Maximum Protection (10s–14s delay)</option>
+                <option value="4000">🟡 Normal (4s–6s delay)</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -2246,7 +2254,7 @@
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <label style="font-size:12px; color:#94a3b8; font-weight:700;">Safety Speed:</label>
-                <select id="wwebPacingSelect" style="background:#0f172a; border:1px solid rgba(16,185,129,0.5); border-radius:8px; color:#fff; padding:6px 12px; font-size:12px; font-weight:700; outline:none;">
+                <select id="wwebPacingSelect" onchange="syncPacingSelect(this.value)" style="background:#0f172a; border:1px solid rgba(16,185,129,0.5); border-radius:8px; color:#fff; padding:6px 12px; font-size:12px; font-weight:700; outline:none; cursor:pointer;">
                   <option value="6000" selected>🟢 Ultra Safe (6s–9s delay · Recommended)</option>
                   <option value="4000">🟡 Normal (4s–6s delay)</option>
                   <option value="10000">🛡️ Maximum Protection (10s–14s delay for new SIMs)</option>
