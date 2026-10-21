@@ -10,3 +10,5 @@ data/*.db-wal
 data/*.db-shm
 data/*.tmp
 sessions/
+data/baileys_auth/
+baileys_auth/

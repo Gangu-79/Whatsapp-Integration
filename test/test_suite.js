@@ -609,6 +609,35 @@ async function runAllTests() {
   });
 
   // --------------------------------------------------------------------------
+  // SUITE 11: 100% Free WhatsApp Web Engine (Zero Cost Mode)
+  // --------------------------------------------------------------------------
+  console.log('\n=== Suite 11: 100% Free WhatsApp Web Engine (Zero Cost & Anti-Ban Pacing) ===');
+
+  await runTest('whatsapp_web.cleanPhoneNumber should normalize 10-digit Indian numbers with country prefix', () => {
+    const { cleanPhoneNumber } = require('../whatsapp_web');
+    assert.strictEqual(cleanPhoneNumber('9876543210'), '919876543210');
+    assert.strictEqual(cleanPhoneNumber('+91 98765 43210'), '919876543210');
+    assert.strictEqual(cleanPhoneNumber('12025550199'), '12025550199');
+    assert.strictEqual(cleanPhoneNumber(''), '');
+  });
+
+  await runTest('whatsapp_web.getWhatsAppWebStatus should return status object with connected boolean', () => {
+    const { getWhatsAppWebStatus } = require('../whatsapp_web');
+    const status = getWhatsAppWebStatus();
+    assert(typeof status === 'object' && status !== null);
+    assert(typeof status.connected === 'boolean');
+    assert(typeof status.status === 'string');
+    assert('qrCode' in status);
+  });
+
+  await runTest('whatsapp_web.sendWhatsAppWebMessage should reject cleanly when not connected', async () => {
+    const { sendWhatsAppWebMessage } = require('../whatsapp_web');
+    const res = await sendWhatsAppWebMessage({ to: '919876543210', text: 'Test free message' });
+    assert.strictEqual(res.success, false);
+    assert(res.code === 'NOT_CONNECTED' || res.error.includes('not connected'));
+  });
+
+  // --------------------------------------------------------------------------
   // SUMMARY
   // --------------------------------------------------------------------------
   console.log('\n======================================================');

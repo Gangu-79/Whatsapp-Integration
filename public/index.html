@@ -1718,6 +1718,96 @@
         </div>
       </div>
 
+      <!-- ─── ZERO-COST ENGINE SELECTOR: FREE WHATSAPP WEB VS META API ─── -->
+      <div class="engine-mode-card" style="max-width:760px; margin:0 auto 24px auto; background:linear-gradient(135deg, rgba(16,185,129,0.14), rgba(6,182,212,0.12)); border:1.5px solid rgba(16,185,129,0.4); border-radius:18px; padding:20px 22px; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="background:#10b981; color:#0f172a; font-size:11px; font-weight:900; padding:2px 8px; border-radius:12px; text-transform:uppercase; letter-spacing:0.5px;">Engine Selector</span>
+              <span style="font-size:16px; font-weight:800; color:#fff;">Messaging Engine</span>
+            </div>
+            <div style="font-size:12.5px; color:#cbd5e1; margin-top:4px;">
+              Choose <b>100% Free WhatsApp Web Mode (Zero Cost · No Meta Fees)</b> or <b>Meta Cloud API (Paid)</b>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" id="engineBtnWeb" onclick="switchEngineMode('web')" class="btn" style="background:#10b981; color:#0f172a; font-weight:800; font-size:12.5px; padding:9px 16px; border-radius:10px; border:none; cursor:pointer; display:flex; align-items:center; gap:6px;">
+              ⚡ Free WhatsApp Web (₹0 Cost)
+            </button>
+            <button type="button" id="engineBtnMeta" onclick="switchEngineMode('meta')" class="btn" style="background:rgba(255,255,255,0.08); color:#cbd5e1; font-weight:700; font-size:12.5px; padding:9px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); cursor:pointer; display:flex; align-items:center; gap:6px;">
+              🏢 Meta Cloud API (Paid)
+            </button>
+          </div>
+        </div>
+
+        <!-- WHATSAPP WEB DEVICE LINKING CONTAINER (Shown when engine === 'web') -->
+        <div id="wwebDeviceSection" style="display:block; background:rgba(15,23,42,0.7); border:1px solid rgba(16,185,129,0.3); border-radius:14px; padding:18px;">
+          
+          <!-- State 1: Disconnected / QR Ready -->
+          <div id="wwebStateQr" style="display:none;">
+            <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center; justify-content:center;">
+              <div style="background:#fff; padding:12px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.3); text-align:center;">
+                <img id="wwebQrImg" src="" alt="WhatsApp Web QR Code" style="width:190px; height:190px; display:block; margin:0 auto;" />
+                <div style="font-size:11px; color:#475569; font-weight:700; margin-top:6px;">Scan with WhatsApp</div>
+              </div>
+              <div style="flex:1; min-width:260px;">
+                <div style="font-size:15px; font-weight:800; color:#10b981; margin-bottom:6px;">
+                  📱 Scan QR Code for 100% Free Bulk Messaging
+                </div>
+                <div style="font-size:12px; color:#cbd5e1; line-height:1.5; margin-bottom:12px;">
+                  Send unlimited bulk messages with <b>Zero Money Spent (₹0 Meta API Cost)</b>! No Meta Token, No Credit Card, and No Template approvals needed.
+                </div>
+                <ol style="margin:0 0 14px 18px; padding:0; font-size:12px; color:#e2e8f0; line-height:1.7;">
+                  <li>Open <b>WhatsApp</b> on your phone (మీ మొబైల్‌లో వాట్సాప్ ఓపెన్ చేయండి).</li>
+                  <li>Tap <b>Menu (⋮)</b> or <b>Settings</b> ➔ <b>Linked Devices</b> (లింక్డ్ డివైజెస్).</li>
+                  <li>Tap <b>Link a Device</b> and point camera here (ఈ QR కోడ్‌ని స్కాన్ చేయండి).</li>
+                  <li><b>Done!</b> Launch 1-click bulk Excel campaigns for free!</li>
+                </ol>
+                <div style="display:flex; gap:10px; align-items:center;">
+                  <button type="button" onclick="refreshWWebQr()" class="btn" style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#10b981; font-size:12px; font-weight:700; padding:7px 14px; border-radius:8px; cursor:pointer;">
+                    🔄 Refresh QR Code
+                  </button>
+                  <span id="wwebQrLoading" style="display:none; font-size:12px; color:#94a3b8;">Generating new QR...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- State 2: Connected & Active -->
+          <div id="wwebStateConnected" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; align-items:center; gap:14px;">
+                <div style="width:48px; height:48px; border-radius:50%; background:rgba(16,185,129,0.18); border:2px solid #10b981; display:flex; align-items:center; justify-content:center; color:#10b981; font-size:22px; font-weight:bold;">
+                  ✓
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:15px; font-weight:800; color:#fff;" id="wwebConnectedName">WhatsApp User</span>
+                    <span style="background:rgba(16,185,129,0.25); color:#10b981; border:1px solid rgba(16,185,129,0.5); font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px;">🟢 LINKED & READY</span>
+                  </div>
+                  <div style="font-size:13px; color:#94a3b8; font-family:var(--font-mono); margin-top:2px;" id="wwebConnectedPhone">
+                    +91 XXXXXXXXXX
+                  </div>
+                  <div style="font-size:12px; color:#10b981; font-weight:600; margin-top:4px;">
+                    ⚡ 100% Free Mode Active (Zero Meta API Fees · No Templates Needed · Anti-Ban Pacing: 5-8s Active)
+                  </div>
+                </div>
+              </div>
+              <button type="button" onclick="disconnectWWebDevice()" class="btn" style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); color:#ef4444; font-size:12px; font-weight:700; padding:8px 16px; border-radius:8px; cursor:pointer;">
+                Disconnect Device
+              </button>
+            </div>
+          </div>
+
+          <!-- State 3: Connecting / Loading -->
+          <div id="wwebStateConnecting" style="text-align:center; padding:16px 0;">
+            <div style="font-size:14px; font-weight:700; color:#e2e8f0;">⏳ Initializing WhatsApp Web Engine...</div>
+            <div style="font-size:12px; color:#94a3b8; margin-top:4px;">Please wait while the multi-device socket establishes connection...</div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- MODE TOGGLE TABS (Clearly Visible Options) -->
       <div class="mode-switch-wrap">
         <button type="button" id="tabBtnSingle" class="mode-tab-btn active" onclick="switchSendingMode('single')">
@@ -2747,6 +2837,138 @@
       }
     }
 
+    // ─── ENGINE SWITCHING: 100% FREE WHATSAPP WEB vs. META CLOUD API ───
+    let currentEngineMode = 'web'; // Default to 100% Free WhatsApp Web mode
+
+    function switchEngineMode(mode) {
+      currentEngineMode = mode;
+      const btnWeb = $('engineBtnWeb');
+      const btnMeta = $('engineBtnMeta');
+      const wwebSec = $('wwebDeviceSection');
+      const bulkLaunchBtn = $('btnL');
+
+      if (mode === 'web') {
+        if (btnWeb) {
+          btnWeb.style.background = '#10b981';
+          btnWeb.style.color = '#0f172a';
+          btnWeb.style.fontWeight = '800';
+        }
+        if (btnMeta) {
+          btnMeta.style.background = 'rgba(255,255,255,0.08)';
+          btnMeta.style.color = '#cbd5e1';
+          btnMeta.style.fontWeight = '700';
+        }
+        if (wwebSec) wwebSec.style.display = 'block';
+        if (bulkLaunchBtn && !bulkLaunchBtn.disabled) {
+          bulkLaunchBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> 🚀 Launch Free Bulk Campaign Now';
+        }
+        toast('Switched to 100% Free WhatsApp Web Mode (Zero Meta Fees)', 'ok_');
+      } else {
+        if (btnMeta) {
+          btnMeta.style.background = '#3b82f6';
+          btnMeta.style.color = '#fff';
+          btnMeta.style.fontWeight = '800';
+        }
+        if (btnWeb) {
+          btnWeb.style.background = 'rgba(255,255,255,0.08)';
+          btnWeb.style.color = '#cbd5e1';
+          btnWeb.style.fontWeight = '700';
+        }
+        if (wwebSec) wwebSec.style.display = 'none';
+        if (bulkLaunchBtn && !bulkLaunchBtn.disabled) {
+          bulkLaunchBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+        }
+        toast('Switched to Meta Cloud API Mode (Paid)', '');
+      }
+    }
+
+    function updateWWebUI(wweb) {
+      if (!wweb) return;
+      const qrState = $('wwebStateQr');
+      const connState = $('wwebStateConnected');
+      const waitState = $('wwebStateConnecting');
+      const qrImg = $('wwebQrImg');
+      const nameEl = $('wwebConnectedName');
+      const phoneEl = $('wwebConnectedPhone');
+
+      if (wweb.connected) {
+        if (qrState) qrState.style.display = 'none';
+        if (waitState) waitState.style.display = 'none';
+        if (connState) connState.style.display = 'block';
+        if (nameEl) nameEl.textContent = wweb.user?.name || 'Linked WhatsApp Account';
+        if (phoneEl) phoneEl.textContent = '+' + (wweb.user?.phone || 'Phone');
+
+        if (currentEngineMode === 'web') {
+          const dot_ = $('dot');
+          const lbl = $('clbl');
+          const badge = $('cbadge');
+          if (dot_) dot_.className = 'dot on';
+          if (lbl) lbl.textContent = 'Free Web · +' + (wweb.user?.phone || 'Linked');
+          if (badge) badge.className = 'conn-badge live';
+        }
+      } else if (wweb.qrCode) {
+        if (connState) connState.style.display = 'none';
+        if (waitState) waitState.style.display = 'none';
+        if (qrState) qrState.style.display = 'block';
+        if (qrImg) qrImg.src = wweb.qrCode;
+
+        if (currentEngineMode === 'web') {
+          const dot_ = $('dot');
+          const lbl = $('clbl');
+          const badge = $('cbadge');
+          if (dot_) dot_.className = 'dot';
+          if (lbl) lbl.textContent = 'Free Web · Scan QR';
+          if (badge) badge.className = 'conn-badge';
+        }
+      } else {
+        if (connState) connState.style.display = 'none';
+        if (qrState) qrState.style.display = 'none';
+        if (waitState) waitState.style.display = 'block';
+      }
+    }
+
+    async function refreshWWebQr() {
+      const loading = $('wwebQrLoading');
+      if (loading) loading.style.display = 'inline';
+      try {
+        const res = await apiFetch('/api/wweb/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ force: true })
+        });
+        const data = await res.json();
+        updateWWebUI(data);
+        toast('QR Code refreshed! Scan with your phone.', 'ok_');
+      } catch (e) {
+        toast('Error refreshing QR: ' + e.message, 'err_');
+      } finally {
+        if (loading) loading.style.display = 'none';
+      }
+    }
+
+    async function disconnectWWebDevice() {
+      if (!confirm('Are you sure you want to disconnect your linked WhatsApp device?')) return;
+      try {
+        const res = await apiFetch('/api/wweb/disconnect', { method: 'POST' });
+        const data = await res.json();
+        toast('Device disconnected successfully.', 'ok_');
+        await refreshWWebQr();
+      } catch (e) {
+        toast('Disconnect error: ' + e.message, 'err_');
+      }
+    }
+
+    async function checkWWebStatus() {
+      try {
+        const res = await apiFetch('/api/wweb/status');
+        const data = await res.json();
+        updateWWebUI(data);
+      } catch (e) {}
+    }
+
+    // Auto-poll WhatsApp Web status every 4 seconds
+    setInterval(checkWWebStatus, 4000);
+
     // ─── MODE SWITCHING: SINGLE PERSON vs. BULK EXCEL ───
     function switchSendingMode(mode) {
       const singleView = $('singlePersonView');
@@ -3041,6 +3263,7 @@
       if (singleSelectedFile) {
         fd.append('mediaFile', singleSelectedFile);
       }
+      fd.append('engine', currentEngineMode);
 
       try {
         const r = await apiFetch('/api/send-single', {
@@ -3054,10 +3277,11 @@
           resBox.style.background = 'rgba(16,185,129,0.12)';
           resBox.style.border = '1px solid rgba(16,185,129,0.4)';
           resBox.style.color = '#10b981';
+          const sourceEngine = d.engine === 'whatsapp_web' ? '100% Free WhatsApp Web Engine (₹0 Cost)' : 'Meta Cloud API';
           resBox.innerHTML = `
-            <div style="font-weight:800; font-size:14px; margin-bottom:4px;">✓ Customized Message Sent via Meta Cloud API</div>
+            <div style="font-weight:800; font-size:14px; margin-bottom:4px;">✓ Message Delivered via ${sourceEngine}</div>
             <div>Delivered to: <b>+${d.recipient}</b></div>
-            <div style="font-size:11px; font-family:var(--font-mono); color:var(--txt-secondary); margin-top:3px;">Meta Message ID: ${d.messageId}</div>
+            <div style="font-size:11px; font-family:var(--font-mono); color:var(--txt-secondary); margin-top:3px;">Message ID: ${d.messageId}</div>
             <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
               <button type="button" onclick="openReportsModal()" class="btn" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); padding:6px 14px; font-size:12px; border-radius:8px; color:#fff;">
                 📊 View in Delivery Reports
@@ -3232,28 +3456,29 @@
     }
 
     async function sendSingleFromExcel(phone, name) {
-      if (!ok) {
+      if (!ok && currentEngineMode === 'meta') {
         toast('Please configure your Meta WhatsApp credentials in Settings first!', 'err_');
         $('settings-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
       const defaultText = ($('msgI')?.value || '').trim() || `Hello ${name || 'there'}! This is a test message.`;
-      if (!confirm(`Send individual test message to ${name} (+${phone}) via Meta Cloud API?`)) return;
+      const confirmMsg = currentEngineMode === 'web' ? `Send free test message to ${name} (+${phone}) via linked WhatsApp Web?` : `Send test message to ${name} (+${phone}) via Meta Cloud API?`;
+      if (!confirm(confirmMsg)) return;
 
       try {
         toast(`Sending test message to +${phone}...`, '');
         const r = await apiFetch('/api/bulk/send-single-recipient', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone, name, text: defaultText })
+          body: JSON.stringify({ phone, name, text: defaultText, engine: currentEngineMode })
         });
         const d = await r.json();
         if (d.success) {
-          toast(`Message delivered to ${name} (+${phone})! ✓`, 'ok_');
+          toast(d.engine === 'whatsapp_web' ? `Message delivered to ${name} (+${phone}) via Free WhatsApp Web! ✓` : `Message delivered to ${name} (+${phone})! ✓`, 'ok_');
           fetchInbox();
           refreshReachSummary();
         } else {
-          toast(`Meta API Error (${d.code || ''}): ${d.error || d.explanation}`, 'err_');
+          toast(`Send Error (${d.code || ''}): ${d.error || d.explanation}`, 'err_');
         }
       } catch (e) {
         toast('Send error: ' + e.message, 'err_');
@@ -3461,23 +3686,36 @@
         return;
       }
 
-      // 2. Verify Meta API credentials
-      if (!ok) {
-        toast('Please configure your Meta WhatsApp credentials in Settings first!', 'err_');
-        const setSec = $('settings-section');
-        if (setSec) {
-          setSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          const inp = $('metaToken');
-          if (inp) {
-            inp.focus();
-            inp.style.borderColor = '#fbbf24';
-            setTimeout(() => { if (inp) inp.style.borderColor = ''; }, 3500);
-          }
+      if (currentEngineMode === 'web') {
+        const qrState = $('wwebStateQr');
+        const isQrVisible = qrState && qrState.style.display !== 'none';
+        if (isQrVisible) {
+          toast('Please scan the QR code to link your WhatsApp phone number first!', 'err_');
+          $('wwebDeviceSection')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
         }
-        return;
-      }
+        if (!confirm(`🚀 Launch 100% Free Bulk Campaign to ${activeRecipientsCount} recipients?\n\n• Cost: ₹0.00 (Zero Meta API Fees)\n• Protection: Anti-Ban Human-like Pacing (5-8s per message) protects your account.\n• Click OK to start now!`)) {
+          return;
+        }
+      } else {
+        // Verify Meta API credentials
+        if (!ok) {
+          toast('Please configure your Meta WhatsApp credentials in Settings first!', 'err_');
+          const setSec = $('settings-section');
+          if (setSec) {
+            setSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const inp = $('metaToken');
+            if (inp) {
+              inp.focus();
+              inp.style.borderColor = '#fbbf24';
+              setTimeout(() => { if (inp) inp.style.borderColor = ''; }, 3500);
+            }
+          }
+          return;
+        }
 
-      if (!confirm(`Dispatch campaign to ${activeRecipientsCount} verified recipients via official Meta WhatsApp Cloud API?\n\nPacing: Controlled 1.5s delay with batch pauses every 10 messages.`)) return;
+        if (!confirm(`Dispatch campaign to ${activeRecipientsCount} verified recipients via official Meta WhatsApp Cloud API?\n\nPacing: Controlled 1.5s delay with batch pauses every 10 messages.`)) return;
+      }
 
       savMsg().then(() => {
         const b = $('btnL'), cl = $('clog'), feed = $('cfeed');
@@ -3485,7 +3723,9 @@
         const btnResume = $('btnResumeBulk');
         const btnCancel = $('btnCancelBulk');
         cl.style.display = 'block';
-        feed.innerHTML = '<div class="log-dim">🚀 Initializing official Meta WhatsApp Cloud API campaign engine...</div>';
+        feed.innerHTML = currentEngineMode === 'web'
+          ? '<div class="log-ok">⚡ Initializing 100% Free WhatsApp Web Bulk Engine (Zero Cost Mode · Anti-Ban Human Pacing Active)...</div>'
+          : '<div class="log-dim">🚀 Initializing official Meta WhatsApp Cloud API campaign engine...</div>';
         b.disabled = true;
         b.textContent = '⏳ Dispatching Messages...';
         if (btnPause) btnPause.style.display = 'inline-flex';
@@ -3493,35 +3733,38 @@
         if (btnCancel) btnCancel.style.display = 'inline-flex';
         cl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-        const selTpl = $('bulkCampaignTemplateSelect');
-        const chosenTpl = (selTpl?.value || '').trim();
-        const selectedOpt = selTpl && selTpl.selectedIndex >= 0 ? selTpl.options[selTpl.selectedIndex] : null;
-        const chosenLang = (selectedOpt?.getAttribute('data-lang') || '').trim();
+        let streamUrl = '/api/stream-campaign?sessionId=' + encodeURIComponent(getSessionId()) + '&engine=web';
+        if (currentEngineMode === 'meta') {
+          const selTpl = $('bulkCampaignTemplateSelect');
+          const chosenTpl = (selTpl?.value || '').trim();
+          const selectedOpt = selTpl && selTpl.selectedIndex >= 0 ? selTpl.options[selTpl.selectedIndex] : null;
+          const chosenLang = (selectedOpt?.getAttribute('data-lang') || '').trim();
 
-        if (chosenTpl && selectedOpt && selectedOpt.disabled) {
-          toast(`Selected template '${chosenTpl}' is currently In Review by Meta. Please select an APPROVED template or wait for Meta to approve it.`, 'err_');
-          b.disabled = false;
-          b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
-          if (btnPause) btnPause.style.display = 'none';
-          if (btnCancel) btnCancel.style.display = 'none';
-          return;
-        }
+          if (chosenTpl && selectedOpt && selectedOpt.disabled) {
+            toast(`Selected template '${chosenTpl}' is currently In Review by Meta. Please select an APPROVED template or wait for Meta to approve it.`, 'err_');
+            b.disabled = false;
+            b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+            if (btnPause) btnPause.style.display = 'none';
+            if (btnCancel) btnCancel.style.display = 'none';
+            return;
+          }
 
-        const isLiveNumber = activeSenderPhone && !activeSenderPhone.startsWith('1555');
-        if (chosenTpl.toLowerCase() === 'hello_world' && isLiveNumber) {
-          toast(`Meta restricts 'hello_world' on live numbers. Please wait for your custom template to be approved.`, 'err_');
-          alert(`⚠️ Meta Cloud API Notice (Error 131058):\n\nMeta restricts 'hello_world' to sandbox test numbers (+1 555-xxx).\n\nYour phone number (+${activeSenderPhone}) is an official live business number. Meta requires your own custom template ('client_notification') to be APPROVED before sending to contacts outside the 24-hr window.\n\n👉 Both 'client_notification' and 'customer_update' are currently under review by Meta. Click '⟳ Refresh' in a few minutes to check when Meta approves them!`);
-          b.disabled = false;
-          b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
-          if (btnPause) btnPause.style.display = 'none';
-          if (btnCancel) btnCancel.style.display = 'none';
-          return;
-        }
+          const isLiveNumber = activeSenderPhone && !activeSenderPhone.startsWith('1555');
+          if (chosenTpl.toLowerCase() === 'hello_world' && isLiveNumber) {
+            toast(`Meta restricts 'hello_world' on live numbers. Please wait for your custom template to be approved.`, 'err_');
+            alert(`⚠️ Meta Cloud API Notice (Error 131058):\n\nMeta restricts 'hello_world' to sandbox test numbers (+1 555-xxx).\n\nYour phone number (+${activeSenderPhone}) is an official live business number. Meta requires your own custom template ('client_notification') to be APPROVED before sending to contacts outside the 24-hr window.\n\n👉 Both 'client_notification' and 'customer_update' are currently under review by Meta. Click '⟳ Refresh' in a few minutes to check when Meta approves them!`);
+            b.disabled = false;
+            b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+            if (btnPause) btnPause.style.display = 'none';
+            if (btnCancel) btnCancel.style.display = 'none';
+            return;
+          }
 
-        let streamUrl = '/api/stream-campaign?sessionId=' + encodeURIComponent(getSessionId());
-        if (chosenTpl) {
-          streamUrl += '&template=' + encodeURIComponent(chosenTpl);
-          if (chosenLang) streamUrl += '&templateLang=' + encodeURIComponent(chosenLang);
+          streamUrl = '/api/stream-campaign?sessionId=' + encodeURIComponent(getSessionId()) + '&engine=meta';
+          if (chosenTpl) {
+            streamUrl += '&template=' + encodeURIComponent(chosenTpl);
+            if (chosenLang) streamUrl += '&templateLang=' + encodeURIComponent(chosenLang);
+          }
         }
         const src = new EventSource(streamUrl);
 
@@ -3557,7 +3800,10 @@
             }
             src.close();
             b.disabled = false;
-            b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+            const btnLabel = currentEngineMode === 'web'
+              ? '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> 🚀 Launch Free Bulk Campaign Now'
+              : '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+            b.innerHTML = btnLabel;
             if (btnPause) btnPause.style.display = 'none';
             if (btnResume) btnResume.style.display = 'none';
             if (btnCancel) btnCancel.style.display = 'none';
@@ -3574,7 +3820,10 @@
             refreshReachSummary();
 
             if (msg.exitCode === 0) {
-              addLine(`🎉 Campaign completed! ${msg.sentCount || 0} messages accepted by Meta Cloud API.`, 'log-ok');
+              const finishMsg = currentEngineMode === 'web'
+                ? `🎉 Campaign completed! ${msg.sentCount || 0} messages delivered via 100% Free WhatsApp Web Engine (Zero Meta API Fees)!`
+                : `🎉 Campaign completed! ${msg.sentCount || 0} messages accepted by Meta Cloud API.`;
+              addLine(finishMsg, 'log-ok');
               toast(`Campaign finished: ${msg.sentCount || 0} messages sent! ✓`, 'ok_');
             } else {
               toast('Campaign stopped. Check log details.', 'err_');
@@ -3585,7 +3834,9 @@
         src.onerror = () => {
           src.close();
           b.disabled = false;
-          b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
+          b.innerHTML = currentEngineMode === 'web'
+            ? '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> 🚀 Launch Free Bulk Campaign Now'
+            : '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Launch Bulk Campaign Now';
           if (btnPause) btnPause.style.display = 'none';
           if (btnResume) btnResume.style.display = 'none';
           if (btnCancel) btnCancel.style.display = 'none';
@@ -3695,6 +3946,30 @@
         const tbDisc = $('topbarDisconnectBtn');
         const errBox = $('metaErrorBox');
         const fixerCard = $('error200FixerCard');
+
+        if (d.wweb) {
+          updateWWebUI(d.wweb);
+        }
+
+        if (currentEngineMode === 'web') {
+          if (d.wweb && d.wweb.connected) {
+            ok = true;
+            dot_.className = 'dot on';
+            lbl.textContent = 'Free Web · +' + (d.wweb.user?.phone || 'Linked');
+            badge.className = 'conn-badge live';
+            sc.textContent = 'Free Web Connected ✓ (+' + (d.wweb.user?.phone || '') + ')';
+            sc.className = 'stat-val log-ok';
+          } else {
+            ok = false;
+            dot_.className = 'dot';
+            lbl.textContent = 'Free Web · Scan QR';
+            badge.className = 'conn-badge';
+            sc.textContent = 'WhatsApp Web Not Linked (Scan QR)';
+            sc.className = 'stat-val';
+          }
+          updateStickyLaunchBar();
+          return;
+        }
 
         if (d.connected) {
           ok = true;
@@ -4411,13 +4686,14 @@
             to: activeChatPhone,
             message: text,
             templateName: selectedTpl || undefined,
-            templateLang: selectedLang || undefined
+            templateLang: selectedLang || undefined,
+            engine: currentEngineMode
           })
         });
         const d = await res.json();
         if (d.success) {
           inp.value = '';
-          toast(d.usedTemplate ? `✓ Reply sent via template '${d.usedTemplate}'!` : 'Reply sent successfully! ✓', 'ok_');
+          toast(d.mode === 'whatsapp_web' ? '✓ Reply sent via Free WhatsApp Web!' : (d.usedTemplate ? `✓ Reply sent via template '${d.usedTemplate}'!` : 'Reply sent successfully! ✓'), 'ok_');
           playNotificationChime();
           await fetchActiveChatMessages(activeChatPhone, false);
           fetchInbox();
@@ -4798,6 +5074,7 @@
     loadMsg();
     checkFilesStatus();
     checkAutoRestoreResilience();
+    checkWWebStatus();
     poll();
     fetchInbox();
     refreshReachSummary();

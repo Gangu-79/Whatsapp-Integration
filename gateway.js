@@ -14,9 +14,31 @@ const { spawn } = require('child_process');
 const multer = require('multer');
 const XLSX = require('xlsx');
 
-// Persistent Database & Meta Cloud API Modules
+// Persistent Database, Meta Cloud API & Free WhatsApp Web Modules
 const db = require('./db');
 const metaApi = require('./meta_api');
+const whatsappWeb = require('./whatsapp_web');
+
+// Automatically connect WhatsApp Web incoming message listener to database
+whatsappWeb.onIncomingMessage(async ({ phone, text, name, timestamp, messageId }) => {
+  try {
+    await db.saveIncomingMessage({
+      phone,
+      name: name || phone,
+      text: text || '',
+      metaMessageId: messageId,
+      timestamp: timestamp || new Date().toISOString()
+    });
+    console.log(`[WhatsApp Web] Incoming message saved from +${phone}`);
+  } catch (e) {
+    console.warn('[WhatsApp Web Incoming Save Warning]:', e.message);
+  }
+});
+
+// Boot WhatsApp Web engine asynchronously on server start
+whatsappWeb.initWhatsAppWeb().catch(e => {
+  console.warn('[WhatsApp Web Auto-Init]:', e.message);
+});
 
 // Lightweight local .env parser (without external dotenv dependency)
 const envPath = path.join(__dirname, '.env');
@@ -172,6 +194,7 @@ app.get('/', (req, res) => {
 app.get('/api/status', async (req, res) => {
   try {
     const cfg = await getEffectiveConfig(req);
+    const wwebStatus = whatsappWeb.getWhatsAppWebStatus();
 
     if (!cfg.token || !cfg.phoneNumberId) {
       return res.json({
@@ -182,6 +205,7 @@ app.get('/api/status', async (req, res) => {
         phone: '',
         verifiedName: '',
         qualityRating: 'UNKNOWN',
+        wweb: wwebStatus,
         message: 'Meta Cloud API credentials not configured. Please enter your Permanent Access Token and Phone Number ID.'
       });
     }
@@ -228,7 +252,8 @@ app.get('/api/status', async (req, res) => {
         currencyConfigured: verifyResult.currencyConfigured !== undefined ? verifyResult.currencyConfigured : true,
         maskedToken: metaApi.maskToken(cfg.token),
         templateName: cfg.templateName || '',
-        templateLang: cfg.templateLang || 'en_US'
+        templateLang: cfg.templateLang || 'en_US',
+        wweb: wwebStatus
       });
     } else {
       // Return clear, detailed error diagnosis with masked secrets
@@ -249,6 +274,7 @@ app.get('/api/status', async (req, res) => {
         fbtraceId: verifyResult.fbtraceId,
         advice: metaApi.redactSensitive(verifyResult.advice),
         rootCauses: (verifyResult.rootCauses || []).map(r => metaApi.redactSensitive(r)),
+        wweb: wwebStatus,
         message: `Meta API Error (${verifyResult.code}): ${safeUserMsg || safeError}`
       });
     }
@@ -258,8 +284,40 @@ app.get('/api/status', async (req, res) => {
       connected: false,
       configured: false,
       error: metaApi.redactSensitive(err.message),
+      wweb: whatsappWeb.getWhatsAppWebStatus(),
       message: 'Failed to verify Meta Cloud API status.'
     });
+  }
+});
+
+// API: WhatsApp Web Multi-Device Status (QR Code & Linked User)
+app.get('/api/wweb/status', (req, res) => {
+  try {
+    const status = whatsappWeb.getWhatsAppWebStatus();
+    res.json({ success: true, ...status });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: Initialize or Re-trigger WhatsApp Web Socket & Fresh QR Code
+app.post('/api/wweb/init', async (req, res) => {
+  try {
+    const force = req.body?.force === true;
+    const result = await whatsappWeb.initWhatsAppWeb(force);
+    res.json({ success: true, ...result, ...whatsappWeb.getWhatsAppWebStatus() });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: Disconnect WhatsApp Web & Clear Saved Multi-Device Credentials
+app.post('/api/wweb/disconnect', async (req, res) => {
+  try {
+    const result = await whatsappWeb.disconnectWhatsAppWeb();
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
@@ -646,6 +704,82 @@ app.post('/api/backup/restore', upload.single('backupFile'), async (req, res) =>
 app.post('/api/send-single', upload.single('mediaFile'), async (req, res) => {
   try {
     const { to, text, templateName, templateLang, recipientName, countryCode } = req.body;
+    const engine = (req.body.engine || req.headers['x-engine-mode'] || (whatsappWeb.getWhatsAppWebStatus().connected ? 'web' : 'meta')).toLowerCase();
+
+    // === 100% FREE WHATSAPP WEB MODE DISPATCH ===
+    if (engine === 'web') {
+      const wwebStatus = whatsappWeb.getWhatsAppWebStatus();
+      if (!wwebStatus.connected) {
+        return res.status(400).json({
+          success: false,
+          error: 'Free WhatsApp Web is not connected. Please scan the QR code to link your phone.'
+        });
+      }
+
+      if (!to || !to.trim()) {
+        return res.status(400).json({ success: false, error: 'Recipient phone number is required.' });
+      }
+
+      const defaultCode = (countryCode || '91').replace(/\D/g, '') || '91';
+      const cleanPhone = metaApi.cleanPhoneNumber(to, defaultCode);
+      if (!metaApi.isValidE164(cleanPhone)) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid phone number format: '${to}'. Must contain a valid country code and 10-15 digits.`
+        });
+      }
+
+      const isOptedOut = await db.isOptedOut(cleanPhone);
+      if (isOptedOut) {
+        return res.status(403).json({
+          success: false,
+          error: `Recipient (+${cleanPhone}) has opted out of messaging.`
+        });
+      }
+
+      let mType = 'image';
+      if (req.file) {
+        const mime = req.file.mimetype || '';
+        if (mime.includes('pdf')) mType = 'document';
+        else if (mime.includes('video')) mType = 'video';
+      }
+
+      const webResult = await whatsappWeb.sendWhatsAppWebMessage({
+        to: cleanPhone,
+        text: (text || '').trim(),
+        mediaPath: req.file ? req.file.path : null,
+        mediaType: mType,
+        filename: req.file ? req.file.originalname : 'attachment.pdf'
+      });
+
+      if (webResult.success) {
+        await db.saveOutgoingReply({
+          phone: cleanPhone,
+          name: recipientName || cleanPhone,
+          text: (text || `[${mType.toUpperCase()} Attachment]`).trim(),
+          type: req.file ? mType : 'text',
+          metaMessageId: webResult.messageId,
+          targetPhoneId: 'whatsapp_web',
+          status: 'sent'
+        }).catch(() => {});
+
+        return res.json({
+          success: true,
+          recipient: cleanPhone,
+          messageId: webResult.messageId,
+          engine: 'whatsapp_web',
+          message: 'Message delivered directly via 100% Free WhatsApp Web Engine!'
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          recipient: cleanPhone,
+          error: webResult.error,
+          engine: 'whatsapp_web'
+        });
+      }
+    }
+
     const cfg = await getEffectiveConfig(req);
 
     if (!cfg.token || !cfg.phoneNumberId) {
@@ -1290,6 +1424,7 @@ function launchBackgroundCampaignJob({
   recipients,
   templateText,
   mediaId = null,
+  mediaPath = null,
   mediaType = 'image',
   filename = 'attachment.pdf',
   templateName = null,
@@ -1297,11 +1432,14 @@ function launchBackgroundCampaignJob({
   delayMs = 1500,
   token,
   phoneNumberId,
-  wabaId = null
+  wabaId = null,
+  engine = 'meta'
 }) {
   const job = {
     id: campaignId,
     sessionId,
+    engine,
+    mediaPath,
     status: 'running', // 'running' | 'paused' | 'completed' | 'cancelled' | 'failed'
     total: recipients.length,
     currentIndex: 0,
@@ -1346,84 +1484,91 @@ function launchBackgroundCampaignJob({
       broadcast({ type: 'log', text, logType: type, timestamp: entry.time });
     };
 
-    addLog(`Connecting to Official Meta WhatsApp Cloud API...`);
-    addLog(`Background campaign engine started: ${job.total} recipients queued. [Campaign ID: ${job.id}]`);
+    if (job.engine === 'web') {
+      addLog(`Connecting to 100% Free WhatsApp Web Engine (Zero Meta Cost Mode)...`, 'ok');
+      addLog(`Background campaign engine started: ${job.total} recipients queued. [Campaign ID: ${job.id}]`);
+    } else {
+      addLog(`Connecting to Official Meta WhatsApp Cloud API...`);
+      addLog(`Background campaign engine started: ${job.total} recipients queued. [Campaign ID: ${job.id}]`);
+    }
 
     // 1. Fetch conversations from DB to know which recipients have active 24h windows
     let existingConvs = [];
-    try {
-      existingConvs = await db.getConversations();
-    } catch (e) {}
-
-    // 2. Resolve approved template to comply with Meta 24-hr policy
     let effectiveTemplate = job.templateName || null;
     let effectiveLang = job.templateLang || 'en_US';
     let matchedTemplate = null;
 
-    if (!job.wabaId && job.token && job.phoneNumberId) {
+    if (job.engine === 'meta') {
       try {
-        const autoWaba = await metaApi.autoDiscoverWabaId(job.token, job.phoneNumberId);
-        if (autoWaba) {
-          job.wabaId = autoWaba;
-          await db.setSetting('WHATSAPP_BUSINESS_ACCOUNT_ID', autoWaba).catch(() => {});
-        }
+        existingConvs = await db.getConversations();
       } catch (e) {}
-    }
 
-    if (job.wabaId) {
-      try {
-        const tplsRes = await metaApi.fetchApprovedTemplates(job.token, job.wabaId);
-        if (tplsRes.success) {
-          const nonHelloWorld = (tplsRes.templates || []).filter(t => !t.isHelloWorld && t.name.toLowerCase() !== 'hello_world');
-          if (!effectiveTemplate && nonHelloWorld.length > 0) {
-            effectiveTemplate = nonHelloWorld[0].name;
-            effectiveLang = nonHelloWorld[0].language || 'en_US';
-            addLog(`[Policy Compliance] Contacts outside 24h window require a Meta Template. Auto-selected approved template: '${effectiveTemplate}' (${effectiveLang})`, 'ok');
-          } else if (!effectiveTemplate && (tplsRes.inReview || []).length > 0) {
-            addLog(`[Policy Notice] Custom template(s) '${tplsRes.inReview.map(t => t.name).join(', ')}' are currently PENDING Meta approval. Meta restricts 'hello_world' on live numbers. Once Meta finishes review, click ⟳ Refresh.`, 'warn');
+      // 2. Resolve approved template to comply with Meta 24-hr policy
+      if (!job.wabaId && job.token && job.phoneNumberId) {
+        try {
+          const autoWaba = await metaApi.autoDiscoverWabaId(job.token, job.phoneNumberId);
+          if (autoWaba) {
+            job.wabaId = autoWaba;
+            await db.setSetting('WHATSAPP_BUSINESS_ACCOUNT_ID', autoWaba).catch(() => {});
           }
-          if (effectiveTemplate) {
-            const cleanTpl = effectiveTemplate.trim().toLowerCase();
-            const sameName = (tplsRes.allTemplates || []).filter(t => (t.name || '').trim().toLowerCase() === cleanTpl);
-            matchedTemplate = sameName.find(t => t.language === effectiveLang) || sameName[0] || null;
-            if (matchedTemplate) {
-              if (matchedTemplate.language) effectiveLang = matchedTemplate.language;
-              if (matchedTemplate.status !== 'APPROVED') {
-                addLog(`[Template Notice] Selected template '${effectiveTemplate}' has status '${matchedTemplate.status}' in Meta WABA. Only APPROVED templates can be delivered.`, 'warn');
+        } catch (e) {}
+      }
+
+      if (job.wabaId) {
+        try {
+          const tplsRes = await metaApi.fetchApprovedTemplates(job.token, job.wabaId);
+          if (tplsRes.success) {
+            const nonHelloWorld = (tplsRes.templates || []).filter(t => !t.isHelloWorld && t.name.toLowerCase() !== 'hello_world');
+            if (!effectiveTemplate && nonHelloWorld.length > 0) {
+              effectiveTemplate = nonHelloWorld[0].name;
+              effectiveLang = nonHelloWorld[0].language || 'en_US';
+              addLog(`[Policy Compliance] Contacts outside 24h window require a Meta Template. Auto-selected approved template: '${effectiveTemplate}' (${effectiveLang})`, 'ok');
+            } else if (!effectiveTemplate && (tplsRes.inReview || []).length > 0) {
+              addLog(`[Policy Notice] Custom template(s) '${tplsRes.inReview.map(t => t.name).join(', ')}' are currently PENDING Meta approval. Meta restricts 'hello_world' on live numbers. Once Meta finishes review, click ⟳ Refresh.`, 'warn');
+            }
+            if (effectiveTemplate) {
+              const cleanTpl = effectiveTemplate.trim().toLowerCase();
+              const sameName = (tplsRes.allTemplates || []).filter(t => (t.name || '').trim().toLowerCase() === cleanTpl);
+              matchedTemplate = sameName.find(t => t.language === effectiveLang) || sameName[0] || null;
+              if (matchedTemplate) {
+                if (matchedTemplate.language) effectiveLang = matchedTemplate.language;
+                if (matchedTemplate.status !== 'APPROVED') {
+                  addLog(`[Template Notice] Selected template '${effectiveTemplate}' has status '${matchedTemplate.status}' in Meta WABA. Only APPROVED templates can be delivered.`, 'warn');
+                }
               }
             }
           }
+        } catch (e) {
+          console.warn('[Template Auto-Detect Error]:', e.message);
         }
-      } catch (e) {
-        console.warn('[Template Auto-Detect Error]:', e.message);
       }
-    }
 
-    // 3. Pre-flight Billing Currency Check (Protects against Error 131042)
-    if (job.wabaId && job.token) {
-      try {
-        const currCheck = await metaApi.getWabaCurrency(job.token, job.wabaId);
-        if (currCheck.success && currCheck.currencyConfigured === false) {
-          const billingUrl = `https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=${job.wabaId}&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account`;
-          const billingErrMsg = `Meta Account Currency Not Configured (Error 131042): WhatsApp Business Account currency is missing in Meta Business Manager. Meta Cloud API blocks message delivery to handsets. Please configure your billing currency at: ${billingUrl}`;
-          addLog(`\n[CRITICAL HALT - BILLING BLOCKER 131042]`, 'err');
-          addLog(billingErrMsg, 'err');
-          job.status = 'failed';
-          job.completedAt = new Date().toISOString();
-          await db.updateCampaignStats(job.id, job.sent, job.failed, 'failed').catch(() => {});
-          broadcast({
-            type: 'finish',
-            exitCode: 131042,
-            sentCount: 0,
-            failedCount: job.total,
-            status: 'failed',
-            error: billingErrMsg,
-            billingUrl
-          });
-          return;
+      // 3. Pre-flight Billing Currency Check (Protects against Error 131042)
+      if (job.wabaId && job.token) {
+        try {
+          const currCheck = await metaApi.getWabaCurrency(job.token, job.wabaId);
+          if (currCheck.success && currCheck.currencyConfigured === false) {
+            const billingUrl = `https://business.facebook.com/billing_hub/accounts/details/?business_id=1396896010170779&asset_id=${job.wabaId}&wizard_name=CHANGE_COUNTRY_CURRENCY&account_type=whatsapp-business-account`;
+            const billingErrMsg = `Meta Account Currency Not Configured (Error 131042): WhatsApp Business Account currency is missing in Meta Business Manager. Meta Cloud API blocks message delivery to handsets. Please configure your billing currency at: ${billingUrl}`;
+            addLog(`\n[CRITICAL HALT - BILLING BLOCKER 131042]`, 'err');
+            addLog(billingErrMsg, 'err');
+            job.status = 'failed';
+            job.completedAt = new Date().toISOString();
+            await db.updateCampaignStats(job.id, job.sent, job.failed, 'failed').catch(() => {});
+            broadcast({
+              type: 'finish',
+              exitCode: 131042,
+              sentCount: 0,
+              failedCount: job.total,
+              status: 'failed',
+              error: billingErrMsg,
+              billingUrl
+            });
+            return;
+          }
+        } catch (e) {
+          console.warn('[WABA Currency Pre-check Error]:', e.message);
         }
-      } catch (e) {
-        console.warn('[WABA Currency Pre-check Error]:', e.message);
       }
     }
 
@@ -1446,6 +1591,97 @@ function launchBackgroundCampaignJob({
         const phone = recip.phone;
         const cleanPhone = metaApi.cleanPhoneNumber(phone);
 
+        // Dynamic Variable Replacement: {{name}}, {{phone}}, and any spreadsheet column {{col_name}}
+        let textToSend = (job.templateText || '');
+        if (recip.raw_row && typeof recip.raw_row === 'object') {
+          for (const [col, val] of Object.entries(recip.raw_row)) {
+            const regex = new RegExp(`\\{\\{${col}\\}\\}`, 'gi');
+            textToSend = textToSend.replace(regex, String(val !== undefined && val !== null ? val : ''));
+          }
+        }
+        textToSend = textToSend.replace(/\{\{name\}\}/gi, name).replace(/\{\{phone\}\}/gi, cleanPhone);
+
+        // === 100% FREE WHATSAPP WEB BULK DISPATCH ===
+        if (job.engine === 'web') {
+          addLog(`[${i + 1}/${job.total}] Sending Free WhatsApp message to ${name} (+${cleanPhone})...`);
+
+          const wStatus = whatsappWeb.getWhatsAppWebStatus();
+          if (!wStatus.connected) {
+            job.status = 'failed';
+            addLog(`[CRITICAL HALT] WhatsApp Web disconnected. Please scan the QR code to re-link your phone.`, 'err');
+            break;
+          }
+
+          const result = await whatsappWeb.sendWhatsAppWebMessage({
+            to: cleanPhone,
+            text: textToSend,
+            mediaPath: job.mediaPath,
+            mediaType: job.mediaType,
+            filename: job.filename
+          });
+
+          if (result.success) {
+            job.sent++;
+            job.accepted++;
+            addLog(`--> DELIVERED via Free WhatsApp Web (Msg ID: ${result.messageId}) [₹0 Meta Cost]`, 'ok');
+
+            await db.logCampaignRecipient(job.id, cleanPhone, name, 'sent', result.messageId).catch(() => {});
+            await db.saveOutgoingReply({
+              phone: cleanPhone,
+              name,
+              text: textToSend || '[Media Attachment]',
+              metaMessageId: result.messageId,
+              targetPhoneId: 'whatsapp_web',
+              status: 'sent'
+            }).catch(() => {});
+          } else {
+            job.failed++;
+            addLog(`--> FAILED via WhatsApp Web: ${result.error}`, 'err');
+
+            await db.logCampaignRecipient(
+              job.id,
+              cleanPhone,
+              name,
+              'failed',
+              null,
+              500,
+              result.error
+            ).catch(() => {});
+
+            await db.saveOutgoingReply({
+              phone: cleanPhone,
+              name,
+              text: textToSend || '[Media Attachment]',
+              targetPhoneId: 'whatsapp_web',
+              status: 'failed',
+              errorMessage: result.error
+            }).catch(() => {});
+          }
+
+          await db.updateCampaignStats(job.id, job.sent, job.failed, job.status === 'running' ? 'running' : job.status).catch(() => {});
+
+          broadcast({
+            type: 'progress',
+            index: i + 1,
+            total: job.total,
+            percent: Math.round(((i + 1) / job.total) * 100),
+            sent: job.sent,
+            failed: job.failed,
+            recipient: { name, phone },
+            result
+          });
+
+          // Anti-Ban Human-like Pacing: 5s to 8s randomized delay between messages to protect user's WhatsApp number
+          if (i < job.total - 1 && job.status === 'running') {
+            const basePacing = Math.max(job.delayMs || 5000, 5000);
+            const antiBanDelay = basePacing + Math.floor(Math.random() * 2500);
+            addLog(`[Anti-Ban Protection] Pacing ${Math.round(antiBanDelay / 1000)}s before next message to protect linked phone number...`);
+            await new Promise(r => setTimeout(r, antiBanDelay));
+          }
+
+          continue; // Finish web message, proceed to next recipient
+        }
+
         addLog(`[${i + 1}/${job.total}] Sending to ${name} (+${cleanPhone})...`);
 
         // Check if this contact has an active 24h care window
@@ -1462,16 +1698,6 @@ function launchBackgroundCampaignJob({
         if (job.mediaId && tplToUse && !hasMediaHdr && i === job.currentIndex) {
           addLog(`[Template Safety] Approved template '${tplToUse}' has no media header in Meta. Media parameter safely omitted to strictly comply with Meta Cloud API rules (prevents Error 132018).`, 'ok');
         }
-
-        // Dynamic Variable Replacement: {{name}}, {{phone}}, and any spreadsheet column {{col_name}}
-        let textToSend = (job.templateText || '');
-        if (recip.raw_row && typeof recip.raw_row === 'object') {
-          for (const [col, val] of Object.entries(recip.raw_row)) {
-            const regex = new RegExp(`\\{\\{${col}\\}\\}`, 'gi');
-            textToSend = textToSend.replace(regex, String(val !== undefined && val !== null ? val : ''));
-          }
-        }
-        textToSend = textToSend.replace(/\{\{name\}\}/gi, name).replace(/\{\{phone\}\}/gi, cleanPhone);
 
         // Build template variables array for approved templates with variable parameters
         let tplVars = null;
@@ -1708,12 +1934,24 @@ function launchBackgroundCampaignJob({
 // API: Start Background Bulk Campaign
 app.post('/api/bulk/start', async (req, res) => {
   try {
+    const engine = (req.body?.engine || req.headers['x-engine-mode'] || (whatsappWeb.getWhatsAppWebStatus().connected ? 'web' : 'meta')).toLowerCase();
     const cfg = await getEffectiveConfig(req);
-    if (!cfg.token || !cfg.phoneNumberId) {
-      return res.status(401).json({
-        success: false,
-        error: 'Meta Cloud API not configured. Please enter your Phone Number ID and Permanent Access Token in Settings.'
-      });
+
+    if (engine === 'web') {
+      const wStatus = whatsappWeb.getWhatsAppWebStatus();
+      if (!wStatus.connected) {
+        return res.status(400).json({
+          success: false,
+          error: 'Free WhatsApp Web is not connected. Please scan the QR code to link your phone.'
+        });
+      }
+    } else {
+      if (!cfg.token || !cfg.phoneNumberId) {
+        return res.status(401).json({
+          success: false,
+          error: 'Meta Cloud API not configured. Please enter your Phone Number ID and Permanent Access Token in Settings.'
+        });
+      }
     }
 
     const sDir = getSessionDir(req);
@@ -1760,13 +1998,19 @@ app.post('/api/bulk/start', async (req, res) => {
     let mediaType = 'image';
     let mediaFilename = 'attachment.pdf';
     if (mediaPath) {
-      try {
-        const up = await metaApi.uploadMedia(cfg.token, cfg.phoneNumberId, mediaPath);
-        mediaId = up.mediaId;
-        mediaType = up.type;
-        mediaFilename = up.filename;
-      } catch (e) {
-        console.warn('[Bulk Media Upload Note]:', e.message);
+      if (engine === 'meta') {
+        try {
+          const up = await metaApi.uploadMedia(cfg.token, cfg.phoneNumberId, mediaPath);
+          mediaId = up.mediaId;
+          mediaType = up.type;
+          mediaFilename = up.filename;
+        } catch (e) {
+          console.warn('[Bulk Media Upload Note]:', e.message);
+        }
+      } else {
+        mediaFilename = path.basename(mediaPath);
+        if (mediaFilename.endsWith('.pdf')) mediaType = 'document';
+        else if (mediaFilename.endsWith('.mp4')) mediaType = 'video';
       }
     }
 
@@ -1776,6 +2020,8 @@ app.post('/api/bulk/start', async (req, res) => {
     const job = launchBackgroundCampaignJob({
       sessionId: sid,
       campaignId,
+      engine,
+      mediaPath,
       recipients: parsed.preview,
       templateText,
       mediaId,
@@ -1783,7 +2029,7 @@ app.post('/api/bulk/start', async (req, res) => {
       filename: mediaFilename,
       templateName: (req.body?.templateName || cfg.templateName || '').trim() || null,
       templateLang: (req.body?.templateLang || cfg.templateLang || 'en_US').trim(),
-      delayMs: parseInt(req.body?.delayMs) || 1500,
+      delayMs: parseInt(req.body?.delayMs) || (engine === 'web' ? 5000 : 1500),
       token: cfg.token,
       phoneNumberId: cfg.phoneNumberId,
       wabaId: cfg.wabaId
@@ -1958,7 +2204,59 @@ app.post('/api/bulk/retry-failed', async (req, res) => {
 app.post('/api/bulk/send-single-recipient', async (req, res) => {
   try {
     const { phone, name, templateName, templateLang } = req.body;
+    const engine = (req.body?.engine || req.headers['x-engine-mode'] || (whatsappWeb.getWhatsAppWebStatus().connected ? 'web' : 'meta')).toLowerCase();
     const cfg = await getEffectiveConfig(req);
+
+    if (engine === 'web') {
+      const wStatus = whatsappWeb.getWhatsAppWebStatus();
+      if (!wStatus.connected) {
+        return res.status(400).json({ success: false, error: 'Free WhatsApp Web is not connected. Please scan the QR code to link your phone.' });
+      }
+      if (!phone) {
+        return res.status(400).json({ success: false, error: 'Recipient phone number is required.' });
+      }
+      const cleanPhone = metaApi.cleanPhoneNumber(phone);
+      if (!metaApi.isValidE164(cleanPhone)) {
+        return res.status(400).json({ success: false, error: `Invalid phone number: +${cleanPhone}` });
+      }
+
+      const sDir = getSessionDir(req);
+      const msgPath = path.join(sDir, 'message.txt');
+      let textToSend = 'Hello {{name}},\nThank you for choosing our service!';
+      if (fs.existsSync(msgPath)) {
+        textToSend = fs.readFileSync(msgPath, 'utf8');
+      }
+      textToSend = textToSend.replace(/\{\{name\}\}/gi, name || 'Customer');
+
+      const mediaPath = findSessionMedia(sDir);
+      let mediaType = 'image';
+      if (mediaPath && mediaPath.endsWith('.pdf')) mediaType = 'document';
+      else if (mediaPath && mediaPath.endsWith('.mp4')) mediaType = 'video';
+
+      const webRes = await whatsappWeb.sendWhatsAppWebMessage({
+        to: cleanPhone,
+        text: textToSend,
+        mediaPath,
+        mediaType,
+        filename: mediaPath ? path.basename(mediaPath) : 'attachment.pdf'
+      });
+
+      if (webRes.success) {
+        await db.logCampaignRecipient('manual_single_excel', cleanPhone, name || 'Customer', 'sent', webRes.messageId).catch(() => {});
+        await db.saveOutgoingReply({
+          phone: cleanPhone,
+          name: name || 'Customer',
+          text: textToSend,
+          metaMessageId: webRes.messageId,
+          targetPhoneId: 'whatsapp_web',
+          status: 'sent'
+        }).catch(() => {});
+        return res.json({ success: true, messageId: webRes.messageId, recipient: cleanPhone, engine: 'whatsapp_web' });
+      } else {
+        return res.status(500).json({ success: false, error: webRes.error, recipient: cleanPhone, engine: 'whatsapp_web' });
+      }
+    }
+
     if (!cfg.token || !cfg.phoneNumberId) {
       return res.status(401).json({ success: false, error: 'Meta Cloud API not configured.' });
     }
@@ -2082,14 +2380,28 @@ app.get('/api/stream-campaign', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
+  const engine = (req.query?.engine || (whatsappWeb.getWhatsAppWebStatus().connected ? 'web' : 'meta')).toLowerCase();
   const cfg = await getEffectiveConfig(req);
-  if (!cfg.token || !cfg.phoneNumberId) {
-    res.write(`data: ${JSON.stringify({
-      type: 'error',
-      text: '[Configuration Error] Meta WhatsApp Cloud API credentials missing! Please configure Phone Number ID and Permanent Access Token in Settings.'
-    })}\n\n`);
-    res.write(`data: ${JSON.stringify({ type: 'finish', exitCode: 1 })}\n\n`);
-    return res.end();
+
+  if (engine === 'web') {
+    const wStatus = whatsappWeb.getWhatsAppWebStatus();
+    if (!wStatus.connected) {
+      res.write(`data: ${JSON.stringify({
+        type: 'error',
+        text: '[Connection Error] Free WhatsApp Web is not connected! Please scan the QR code on the dashboard to link your phone.'
+      })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'finish', exitCode: 1 })}\n\n`);
+      return res.end();
+    }
+  } else {
+    if (!cfg.token || !cfg.phoneNumberId) {
+      res.write(`data: ${JSON.stringify({
+        type: 'error',
+        text: '[Configuration Error] Meta WhatsApp Cloud API credentials missing! Please configure Phone Number ID and Permanent Access Token in Settings.'
+      })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'finish', exitCode: 1 })}\n\n`);
+      return res.end();
+    }
   }
 
   const sid = getSessionId(req);
@@ -2137,12 +2449,18 @@ app.get('/api/stream-campaign', async (req, res) => {
     let mediaType = 'image';
     let mediaFilename = 'attachment.pdf';
     if (mediaPath) {
-      try {
-        const up = await metaApi.uploadMedia(cfg.token, cfg.phoneNumberId, mediaPath);
-        mediaId = up.mediaId;
-        mediaType = up.type;
-        mediaFilename = up.filename;
-      } catch (e) {}
+      if (engine === 'meta') {
+        try {
+          const up = await metaApi.uploadMedia(cfg.token, cfg.phoneNumberId, mediaPath);
+          mediaId = up.mediaId;
+          mediaType = up.type;
+          mediaFilename = up.filename;
+        } catch (e) {}
+      } else {
+        mediaFilename = path.basename(mediaPath);
+        if (mediaFilename.endsWith('.pdf')) mediaType = 'document';
+        else if (mediaFilename.endsWith('.mp4')) mediaType = 'video';
+      }
     }
 
     const campaignId = 'camp_' + Date.now();
@@ -2151,6 +2469,8 @@ app.get('/api/stream-campaign', async (req, res) => {
     job = launchBackgroundCampaignJob({
       sessionId: sid,
       campaignId,
+      engine,
+      mediaPath,
       recipients: parsed.preview,
       templateText,
       mediaId,
@@ -2158,7 +2478,7 @@ app.get('/api/stream-campaign', async (req, res) => {
       filename: mediaFilename,
       templateName: (req.query.template || cfg.templateName || '').trim() || null,
       templateLang: (req.query.templateLang || cfg.templateLang || 'en_US').trim(),
-      delayMs: 1500,
+      delayMs: parseInt(req.query.delayMs) || (engine === 'web' ? 5000 : 1500),
       token: cfg.token,
       phoneNumberId: cfg.phoneNumberId,
       wabaId: cfg.wabaId
@@ -2328,12 +2648,39 @@ app.get('/api/inbox/messages/:phone', async (req, res) => {
   }
 });
 
-// API: Send Reply to Contact via Meta Cloud API
-// Fixes the bug where inbox replies were not reaching recipients
+// API: Send Reply to Contact via WhatsApp Web or Meta Cloud API
 app.post('/api/inbox/reply', async (req, res) => {
   try {
     const { to, message, templateName, templateLang } = req.body;
+    const engine = (req.body?.engine || (whatsappWeb.getWhatsAppWebStatus().connected && !req.body?.templateName ? 'web' : 'meta')).toLowerCase();
     const cfg = await getEffectiveConfig(req);
+
+    if (engine === 'web' || (!cfg.token && whatsappWeb.getWhatsAppWebStatus().connected)) {
+      const wStatus = whatsappWeb.getWhatsAppWebStatus();
+      if (!wStatus.connected) {
+        return res.status(400).json({ success: false, error: 'WhatsApp Web is not connected. Please scan the QR code to link your phone.' });
+      }
+      if (!to || !message || !message.trim()) {
+        return res.status(400).json({ success: false, error: 'Recipient phone number and reply message are required.' });
+      }
+      const cleanPhone = metaApi.cleanPhoneNumber(to);
+      const webRes = await whatsappWeb.sendWhatsAppWebMessage({
+        to: cleanPhone,
+        text: message.trim()
+      });
+      if (webRes.success) {
+        await db.saveOutgoingReply({
+          phone: cleanPhone,
+          text: message.trim(),
+          metaMessageId: webRes.messageId,
+          targetPhoneId: 'whatsapp_web',
+          status: 'sent'
+        }).catch(() => {});
+        return res.json({ success: true, messageId: webRes.messageId, mode: 'whatsapp_web' });
+      } else {
+        return res.status(500).json({ success: false, error: webRes.error, mode: 'whatsapp_web' });
+      }
+    }
 
     if (!cfg.token || !cfg.phoneNumberId) {
       return res.status(401).json({
