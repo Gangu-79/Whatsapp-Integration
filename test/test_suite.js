@@ -637,6 +637,27 @@ async function runAllTests() {
     assert(res.code === 'NOT_CONNECTED' || res.error.includes('not connected'));
   });
 
+  await runTest('whatsapp_web.requestPairingCode should validate phone number input properly', async () => {
+    const { requestPairingCode } = require('../whatsapp_web');
+    await assert.rejects(
+      async () => await requestPairingCode(''),
+      /required/i,
+      'Should reject empty phone'
+    );
+    await assert.rejects(
+      async () => await requestPairingCode('123'),
+      /invalid phone number/i,
+      'Should reject short phone'
+    );
+  });
+
+  await runTest('whatsapp_web.getWhatsAppWebStatus should include pairingCode and pairingPhone fields', () => {
+    const { getWhatsAppWebStatus } = require('../whatsapp_web');
+    const status = getWhatsAppWebStatus();
+    assert('pairingCode' in status, 'Status must include pairingCode key');
+    assert('pairingPhone' in status, 'Status must include pairingPhone key');
+  });
+
   // --------------------------------------------------------------------------
   // SUMMARY
   // --------------------------------------------------------------------------

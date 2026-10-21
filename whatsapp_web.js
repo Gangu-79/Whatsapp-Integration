@@ -22,9 +22,11 @@ const { useMultiFileAuthState, DisconnectReason } = baileys || {};
 const AUTH_DIR = path.join(__dirname, 'data', 'baileys_auth');
 
 let sock = null;
-let connectionStatus = 'disconnected'; // 'disconnected' | 'connecting' | 'qr_ready' | 'connected'
+let connectionStatus = 'disconnected'; // 'disconnected' | 'connecting' | 'qr_ready' | 'code_ready' | 'connected'
 let currentQrCodeDataUrl = null;
 let currentQrRaw = null;
+let currentPairingCode = null;
+let currentPairingPhone = null;
 let connectedUser = null;
 let lastError = null;
 let reconnectTimer = null;
@@ -120,6 +122,8 @@ async function initWhatsAppWeb(forceNew = false) {
         connectionStatus = 'connected';
         currentQrCodeDataUrl = null;
         currentQrRaw = null;
+        currentPairingCode = null;
+        currentPairingPhone = null;
 
         const rawId = sock?.user?.id || '';
         const cleanPhone = rawId.split(':')[0].split('@')[0];
@@ -145,6 +149,8 @@ async function initWhatsAppWeb(forceNew = false) {
           connectionStatus = 'disconnected';
           connectedUser = null;
           currentQrCodeDataUrl = null;
+          currentPairingCode = null;
+          currentPairingPhone = null;
           try {
             fs.rmSync(AUTH_DIR, { recursive: true, force: true });
             fs.mkdirSync(AUTH_DIR, { recursive: true });
@@ -199,9 +205,66 @@ function getWhatsAppWebStatus() {
     status: connectionStatus,
     connected: connectionStatus === 'connected',
     qrCode: currentQrCodeDataUrl,
+    pairingCode: currentPairingCode,
+    pairingPhone: currentPairingPhone,
     user: connectedUser,
     error: lastError
   };
+}
+
+/**
+ * Request an 8-character Pairing Code for Linking with Phone Number
+ * WhatsApp allows users to link devices without scanning QR by entering this code in their phone.
+ */
+async function requestPairingCode(phone) {
+  if (!phone) {
+    throw new Error('Phone number is required to generate pairing code.');
+  }
+
+  const cleanPhone = cleanPhoneNumber(phone);
+  if (!cleanPhone || cleanPhone.length < 10) {
+    throw new Error('Invalid phone number. Please enter a valid 10-digit number with country code (e.g. 919876543210).');
+  }
+
+  if (sock && connectionStatus === 'connected') {
+    return { status: 'already_connected', user: connectedUser };
+  }
+
+  // Ensure socket is initialized
+  if (!sock || connectionStatus === 'disconnected') {
+    await initWhatsAppWeb(false);
+  }
+
+  // Wait for the WebSocket connection to open (up to 8-10 seconds)
+  let waitAttempts = 0;
+  while ((!sock?.ws || !sock.ws.isOpen) && waitAttempts < 25) {
+    await new Promise(res => setTimeout(res, 250));
+    waitAttempts++;
+  }
+
+  if (!sock?.ws || !sock.ws.isOpen) {
+    throw new Error('Connecting to WhatsApp servers timed out. Please try again.');
+  }
+
+  try {
+    const rawCode = await sock.requestPairingCode(cleanPhone);
+    const formattedCode = rawCode?.length === 8 ? `${rawCode.slice(0, 4)}-${rawCode.slice(4)}` : (rawCode || '');
+    currentPairingCode = formattedCode;
+    currentPairingPhone = cleanPhone;
+    connectionStatus = 'code_ready';
+
+    console.log(`[WhatsApp Web] Generated pairing code for +${cleanPhone}: ${formattedCode}`);
+
+    return {
+      success: true,
+      status: 'code_ready',
+      pairingCode: formattedCode,
+      phone: cleanPhone
+    };
+  } catch (err) {
+    console.error(`[WhatsApp Web Pairing Code Error for ${cleanPhone}]:`, err.message);
+    throw new Error('WhatsApp pairing code error: ' + err.message);
+  }
 }
 
 /**
@@ -225,6 +288,8 @@ async function disconnectWhatsAppWeb() {
   connectedUser = null;
   currentQrCodeDataUrl = null;
   currentQrRaw = null;
+  currentPairingCode = null;
+  currentPairingPhone = null;
 
   try {
     fs.rmSync(AUTH_DIR, { recursive: true, force: true });
@@ -316,6 +381,7 @@ async function sendWhatsAppWebMessage({
 module.exports = {
   initWhatsAppWeb,
   getWhatsAppWebStatus,
+  requestPairingCode,
   disconnectWhatsAppWeb,
   sendWhatsAppWebMessage,
   onIncomingMessage,

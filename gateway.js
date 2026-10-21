@@ -311,6 +311,20 @@ app.post('/api/wweb/init', async (req, res) => {
   }
 });
 
+// API: Request WhatsApp Web 8-Character Pairing Code (Link with phone number without QR)
+app.post('/api/wweb/pairing-code', async (req, res) => {
+  try {
+    const phone = req.body?.phone;
+    if (!phone) {
+      return res.status(400).json({ success: false, error: 'Phone number is required to generate pairing code' });
+    }
+    const result = await whatsappWeb.requestPairingCode(phone);
+    res.json({ success: true, ...result, ...whatsappWeb.getWhatsAppWebStatus() });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // API: Disconnect WhatsApp Web & Clear Saved Multi-Device Credentials
 app.post('/api/wweb/disconnect', async (req, res) => {
   try {

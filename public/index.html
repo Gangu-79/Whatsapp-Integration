@@ -1743,34 +1743,104 @@
         <!-- WHATSAPP WEB DEVICE LINKING CONTAINER (Shown when engine === 'web') -->
         <div id="wwebDeviceSection" style="display:block; background:rgba(15,23,42,0.7); border:1px solid rgba(16,185,129,0.3); border-radius:14px; padding:18px;">
           
-          <!-- State 1: Disconnected / QR Ready -->
+          <!-- State 1: Disconnected / Ready to Link (Dual Option: QR Code or 8-Digit Code) -->
           <div id="wwebStateQr" style="display:none;">
-            <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center; justify-content:center;">
-              <div style="background:#fff; padding:12px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.3); text-align:center;">
-                <img id="wwebQrImg" src="" alt="WhatsApp Web QR Code" style="width:190px; height:190px; display:block; margin:0 auto;" />
-                <div style="font-size:11px; color:#475569; font-weight:700; margin-top:6px;">Scan with WhatsApp</div>
-              </div>
-              <div style="flex:1; min-width:260px;">
-                <div style="font-size:15px; font-weight:800; color:#10b981; margin-bottom:6px;">
-                  📱 Scan QR Code for 100% Free Bulk Messaging
+            <!-- Linking Method Tabs -->
+            <div style="display:flex; gap:10px; margin-bottom:16px; border-bottom:1px solid rgba(16,185,129,0.2); padding-bottom:12px; flex-wrap:wrap;">
+              <button type="button" id="tabBtnWWebQr" onclick="switchWWebMethod('qr')" style="background:rgba(16,185,129,0.25); border:1px solid #10b981; color:#fff; font-size:12.5px; font-weight:800; padding:8px 16px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                📷 <span>Scan QR Code (QR స్కాన్)</span>
+              </button>
+              <button type="button" id="tabBtnWWebCode" onclick="switchWWebMethod('code')" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#94a3b8; font-size:12.5px; font-weight:800; padding:8px 16px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                🔢 <span>Link with Phone Number Code (కోడ్ ద్వారా లింక్ - కెమెరా అవసరం లేదు)</span>
+              </button>
+            </div>
+
+            <!-- Panel 1: QR Code Method -->
+            <div id="wwebPanelQr">
+              <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center; justify-content:center;">
+                <div style="background:#fff; padding:12px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.3); text-align:center;">
+                  <img id="wwebQrImg" src="" alt="WhatsApp Web QR Code" style="width:190px; height:190px; display:block; margin:0 auto;" />
+                  <div style="font-size:11px; color:#475569; font-weight:700; margin-top:6px;">Scan with WhatsApp</div>
                 </div>
-                <div style="font-size:12px; color:#cbd5e1; line-height:1.5; margin-bottom:12px;">
-                  Send unlimited bulk messages with <b>Zero Money Spent (₹0 Meta API Cost)</b>! No Meta Token, No Credit Card, and No Template approvals needed.
-                </div>
-                <ol style="margin:0 0 14px 18px; padding:0; font-size:12px; color:#e2e8f0; line-height:1.7;">
-                  <li>Open <b>WhatsApp</b> on your phone (మీ మొబైల్‌లో వాట్సాప్ ఓపెన్ చేయండి).</li>
-                  <li>Tap <b>Menu (⋮)</b> or <b>Settings</b> ➔ <b>Linked Devices</b> (లింక్డ్ డివైజెస్).</li>
-                  <li>Tap <b>Link a Device</b> and point camera here (ఈ QR కోడ్‌ని స్కాన్ చేయండి).</li>
-                  <li><b>Done!</b> Launch 1-click bulk Excel campaigns for free!</li>
-                </ol>
-                <div style="display:flex; gap:10px; align-items:center;">
-                  <button type="button" onclick="refreshWWebQr()" class="btn" style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#10b981; font-size:12px; font-weight:700; padding:7px 14px; border-radius:8px; cursor:pointer;">
-                    🔄 Refresh QR Code
-                  </button>
-                  <span id="wwebQrLoading" style="display:none; font-size:12px; color:#94a3b8;">Generating new QR...</span>
+                <div style="flex:1; min-width:260px;">
+                  <div style="font-size:15px; font-weight:800; color:#10b981; margin-bottom:6px;">
+                    📱 Scan QR Code for 100% Free Bulk Messaging
+                  </div>
+                  <div style="font-size:12px; color:#cbd5e1; line-height:1.5; margin-bottom:12px;">
+                    Send unlimited bulk messages with <b>Zero Money Spent (₹0 Meta API Cost)</b>! No Meta Token, No Credit Card, and No Template approvals needed.
+                  </div>
+                  <ol style="margin:0 0 14px 18px; padding:0; font-size:12px; color:#e2e8f0; line-height:1.7;">
+                    <li>Open <b>WhatsApp</b> on your phone (మీ మొబైల్‌లో వాట్సాప్ ఓపెన్ చేయండి).</li>
+                    <li>Tap <b>Menu (⋮)</b> or <b>Settings</b> ➔ <b>Linked Devices</b> (లింక్డ్ డివైజెస్).</li>
+                    <li>Tap <b>Link a Device</b> and point camera here (ఈ QR కోడ్‌ని స్కాన్ చేయండి).</li>
+                    <li><b>Done!</b> Launch 1-click bulk Excel campaigns for free!</li>
+                  </ol>
+                  <div style="display:flex; gap:10px; align-items:center;">
+                    <button type="button" onclick="refreshWWebQr()" class="btn" style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#10b981; font-size:12px; font-weight:700; padding:7px 14px; border-radius:8px; cursor:pointer;">
+                      🔄 Refresh QR Code
+                    </button>
+                    <span id="wwebQrLoading" style="display:none; font-size:12px; color:#94a3b8;">Generating new QR...</span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- Panel 2: Phone Number Pairing Code Method (No Camera Needed) -->
+            <div id="wwebPanelCode" style="display:none;">
+              <div style="max-width:620px; margin:0 auto;">
+                <div style="font-size:15px; font-weight:800; color:#34d399; margin-bottom:4px;">
+                  🔢 Link WhatsApp via 8-Digit Pairing Code (ఫోన్ నంబర్ కోడ్ ద్వారా లింక్)
+                </div>
+                <div style="font-size:12px; color:#cbd5e1; margin-bottom:14px; line-height:1.5;">
+                  కెమెరా లేదా QR కోడ్ అవసరం లేకుండా, మీ మొబైల్ నంబర్ ఎంటర్ చేసి 8-అంకెల కోడ్ ద్వారా వెంటనే లాగిన్ అవ్వండి:
+                </div>
+
+                <!-- Input Box -->
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
+                  <div style="flex:1; min-width:240px;">
+                    <input type="tel" id="wwebPhoneInput" placeholder="Enter Mobile Number (e.g. 919876543210)" style="width:100%; background:#0f172a; border:1.5px solid rgba(16,185,129,0.4); border-radius:8px; color:#fff; padding:10px 14px; font-size:13.5px; font-weight:600; outline:none; box-sizing:border-box;" />
+                  </div>
+                  <button type="button" id="btnRequestPairingCode" onclick="generatePairingCode()" class="btn" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:13px; font-weight:800; padding:10px 18px; border-radius:8px; border:none; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    ⚡ <span>Get 8-Digit Code (కోడ్ పొందండి)</span>
+                  </button>
+                </div>
+
+                <!-- Loading State -->
+                <div id="wwebCodeLoading" style="display:none; text-align:center; padding:14px; background:rgba(15,23,42,0.6); border-radius:8px; margin-bottom:14px;">
+                  <span style="font-size:13px; color:#34d399; font-weight:700;">⏳ Requesting 8-digit Pairing Code from WhatsApp servers...</span>
+                </div>
+
+                <!-- Pairing Code Card (Shown once code is generated) -->
+                <div id="wwebCodeResultCard" style="display:none; background:rgba(16,185,129,0.1); border:1.5px solid #10b981; border-radius:12px; padding:16px; margin-bottom:14px; text-align:center;">
+                  <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#94a3b8; font-weight:800; margin-bottom:6px;">Your 8-Digit WhatsApp Pairing Code:</div>
+                  <div style="display:flex; justify-content:center; align-items:center; gap:14px; flex-wrap:wrap; margin:10px 0;">
+                    <div id="wwebCodeDisplay" style="font-size:28px; font-weight:900; letter-spacing:4px; color:#10b981; background:#0f172a; border:1px solid rgba(16,185,129,0.4); border-radius:10px; padding:8px 24px; font-family:var(--font-mono); box-shadow:0 0 15px rgba(16,185,129,0.3);">
+                      ---- ----
+                    </div>
+                    <button type="button" onclick="copyPairingCode()" id="btnCopyPairingCode" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; font-size:12px; font-weight:700; padding:9px 14px; border-radius:8px; cursor:pointer;">
+                      📋 Copy Code
+                    </button>
+                  </div>
+                  <div style="font-size:11.5px; color:#cbd5e1; margin-top:6px;">
+                    ⏱️ Enter this code in WhatsApp on your phone within 60 seconds.
+                  </div>
+                </div>
+
+                <!-- Step-by-Step Instructions -->
+                <div style="background:rgba(15,23,42,0.5); border-radius:10px; padding:12px 16px; border:1px solid rgba(255,255,255,0.08);">
+                  <div style="font-size:12px; font-weight:800; color:#e2e8f0; margin-bottom:6px;">📱 How to enter code on your phone (ఫోన్‌లో కోడ్ ఎలా ఎంటర్ చేయాలి):</div>
+                  <ol style="margin:0 0 0 16px; padding:0; font-size:12px; color:#cbd5e1; line-height:1.7;">
+                    <li>మీ మొబైల్‌లో <b>WhatsApp</b> ఓపెన్ చేయండి.</li>
+                    <li>పైన <b>Menu (⋮)</b> లేదా <b>Settings</b> ➔ <b>Linked Devices</b> (లింక్ చేసిన పరికరాలు) కి వెళ్ళండి.</li>
+                    <li><b>Link a Device</b> నొక్కండి.</li>
+                    <li>కెమెరా స్క్రీన్ క్రింద ఉండే <b>"Link with phone number instead"</b> (లేదా ఫోన్ నంబర్‌తో లింక్ చేయండి) పై ట్యాప్ చేయండి.</li>
+                    <li>పైన కనిపిస్తున్న ఈ 8-అంకెల కోడ్ ఎంటర్ చేయండి. అంతే, వెంటనే లింక్ అయిపోతుంది!</li>
+                  </ol>
+                </div>
+
+              </div>
+            </div>
+
           </div>
 
           <!-- State 2: Connected & Active -->
@@ -2904,6 +2974,117 @@
       }
     }
 
+    let wwebActiveMethod = 'qr';
+
+    function switchWWebMethod(method) {
+      wwebActiveMethod = method;
+      const tabQr = $('tabBtnWWebQr');
+      const tabCode = $('tabBtnWWebCode');
+      const panelQr = $('wwebPanelQr');
+      const panelCode = $('wwebPanelCode');
+
+      if (method === 'qr') {
+        if (tabQr) {
+          tabQr.style.background = 'rgba(16,185,129,0.25)';
+          tabQr.style.borderColor = '#10b981';
+          tabQr.style.color = '#fff';
+        }
+        if (tabCode) {
+          tabCode.style.background = 'rgba(255,255,255,0.05)';
+          tabCode.style.borderColor = 'rgba(255,255,255,0.15)';
+          tabCode.style.color = '#94a3b8';
+        }
+        if (panelQr) panelQr.style.display = 'block';
+        if (panelCode) panelCode.style.display = 'none';
+      } else {
+        if (tabCode) {
+          tabCode.style.background = 'rgba(16,185,129,0.25)';
+          tabCode.style.borderColor = '#10b981';
+          tabCode.style.color = '#fff';
+        }
+        if (tabQr) {
+          tabQr.style.background = 'rgba(255,255,255,0.05)';
+          tabQr.style.borderColor = 'rgba(255,255,255,0.15)';
+          tabQr.style.color = '#94a3b8';
+        }
+        if (panelQr) panelQr.style.display = 'none';
+        if (panelCode) panelCode.style.display = 'block';
+      }
+    }
+
+    async function generatePairingCode() {
+      const phoneInput = $('wwebPhoneInput');
+      const phone = phoneInput ? phoneInput.value.trim() : '';
+      if (!phone || phone.replace(/\D/g, '').length < 10) {
+        toast('Please enter a valid 10-digit mobile number with country code (e.g. 919876543210).', 'err_');
+        return;
+      }
+
+      const btn = $('btnRequestPairingCode');
+      const loading = $('wwebCodeLoading');
+      const card = $('wwebCodeResultCard');
+      const display = $('wwebCodeDisplay');
+
+      if (btn) btn.disabled = true;
+      if (loading) loading.style.display = 'block';
+      if (card) card.style.display = 'none';
+
+      try {
+        const res = await apiFetch('/api/wweb/pairing-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to generate pairing code');
+        }
+
+        if (display) display.textContent = data.pairingCode || '--------';
+        if (card) card.style.display = 'block';
+        toast('Pairing code generated! Enter it in WhatsApp on your phone.', 'ok_');
+
+        // Rapid status polling (every 2s) to detect device connection
+        let rapidPolls = 0;
+        const pollInterval = setInterval(async () => {
+          rapidPolls++;
+          try {
+            const sRes = await apiFetch('/api/wweb/status');
+            const sData = await sRes.json();
+            if (sData.connected) {
+              clearInterval(pollInterval);
+              updateWWebUI(sData);
+              toast('WhatsApp Linked Successfully! ✓', 'ok_');
+            }
+          } catch (e) {}
+          if (rapidPolls >= 45) clearInterval(pollInterval);
+        }, 2000);
+
+      } catch (err) {
+        toast('Pairing code error: ' + err.message, 'err_');
+      } finally {
+        if (btn) btn.disabled = false;
+        if (loading) loading.style.display = 'none';
+      }
+    }
+
+    function copyPairingCode() {
+      const display = $('wwebCodeDisplay');
+      const code = display ? display.textContent.trim().replace(/\s/g, '') : '';
+      if (!code) return;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = $('btnCopyPairingCode');
+        if (btn) {
+          const orig = btn.textContent;
+          btn.textContent = 'Copied! ✓';
+          setTimeout(() => { btn.textContent = orig; }, 2000);
+        }
+        toast('Pairing code copied to clipboard!', 'ok_');
+      }).catch(() => {
+        toast('Code: ' + code, 'ok_');
+      });
+    }
+
     function updateWWebUI(wweb) {
       if (!wweb) return;
       const qrState = $('wwebStateQr');
@@ -2928,18 +3109,25 @@
           if (lbl) lbl.textContent = 'Free Web · +' + (wweb.user?.phone || 'Linked');
           if (badge) badge.className = 'conn-badge live';
         }
-      } else if (wweb.qrCode) {
+      } else if (wweb.qrCode || wweb.pairingCode || wweb.status === 'code_ready' || wweb.status === 'qr_ready') {
         if (connState) connState.style.display = 'none';
         if (waitState) waitState.style.display = 'none';
         if (qrState) qrState.style.display = 'block';
-        if (qrImg) qrImg.src = wweb.qrCode;
+        if (qrImg && wweb.qrCode) qrImg.src = wweb.qrCode;
+
+        if (wweb.pairingCode) {
+          const display = $('wwebCodeDisplay');
+          const card = $('wwebCodeResultCard');
+          if (display) display.textContent = wweb.pairingCode;
+          if (card) card.style.display = 'block';
+        }
 
         if (currentEngineMode === 'web') {
           const dot_ = $('dot');
           const lbl = $('clbl');
           const badge = $('cbadge');
           if (dot_) dot_.className = 'dot';
-          if (lbl) lbl.textContent = 'Free Web · Scan QR';
+          if (lbl) lbl.textContent = wweb.pairingCode ? 'Free Web · Enter Code' : 'Free Web · Scan QR';
           if (badge) badge.className = 'conn-badge';
         }
       } else {
